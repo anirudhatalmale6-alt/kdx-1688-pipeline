@@ -49,14 +49,48 @@ a long catalogue run does not die halfway through.
 The namespace and API name are configuration, not constants, because they
 differ between permission packages.
 
+## KDX import contract — measured, not assumed
+
+`POST https://kdx-sa.com/api/v1/products/import`, header `X-API-Token`,
+body `{"products":[ ... ]}`. The field list was established by sending a wrong
+type for every candidate field and reading which ones the validator rejected:
+
+| Field | Required | Type |
+|---|---|---|
+| `source_offer_id` | yes | string — the 1688 offer id, and the update key |
+| `name_en` | yes | string |
+| `name_ar` | no | string |
+| `description_ar` | no | string |
+| `description_en` | no | string |
+| `price` | no | number |
+| `images` | no | array |
+| `category` | no | array |
+
+Anything else — `sku`, `weight`, `stock`, `shipping`, `currency`, `source_url` —
+passes the HTTP layer untouched but is not validated, so KDX does not store it.
+
+```bash
+KDX_API_TOKEN=... python3 verify_kdx.py     # 11 checks, run it twice
+```
+
+The suite pairs each success with a control: a wrong token must be refused, a
+product without `name_en` must be caught before it leaves, and the update
+payload is asserted to contain no `sku` / `url` / `rating` / `sales` field.
+
 ## Still open
 
-1. **How the system checks Temu, SHEIN, AliExpress, Amazon and Noon.** None of
-   the five offers image search to third parties. The engine is written so the
-   comparison source is pluggable — it consumes a list of `CompetitorHit`
-   objects and does not care where they came from — but something has to
-   produce them.
-2. The KDX endpoint contract: URL, auth header, expected JSON. Only
-   `FIELD_MAP` and `ENDPOINTS` in `src/kdx_client.py` change when it arrives.
-3. Which translation service pays for the Chinese → Arabic/English rewriting.
-4. The CNY → SAR rate: fixed number, or fetched daily.
+1. **How the system checks Temu, SHEIN, AliExpress, Amazon and Noon.** The five
+   platforms offer no image search to third parties; Google Lens through SerpApi
+   does return merchant and price and is the route being used. The engine
+   consumes a list of `CompetitorHit` objects and does not care where they came
+   from, so this stays one replaceable seam.
+2. **Weight and the shipping flag have nowhere to land in KDX.** The agreed rule
+   is ≤2 kg → fast shipping, >2 kg → free shipping. The import endpoint accepts
+   neither `weight` nor a shipping field, so KDX cannot currently tell the two
+   apart. One extra accepted field solves it.
+3. `GET /api/alibaba/categories` on kdx-sa.com answers HTTP 500 with
+   `gw.SignatureInvalid` from 1688. The same app key and secret sign correctly
+   from `src/aop_client.py`, so the fault is in the Laravel signing or in the
+   secret stored on that server.
+4. User authorization (OAuth) for the product-detail APIs. Category APIs need
+   none, which is why the category tree already works.

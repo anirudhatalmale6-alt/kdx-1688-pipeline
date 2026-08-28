@@ -1,9 +1,27 @@
 """
 Client for the KDX Laravel endpoint that receives products.
 
-The field mapping lives in one dictionary on purpose: the moment you send me
-the endpoint contract (URL, auth header, expected JSON), only FIELD_MAP and
-ENDPOINTS change - no logic anywhere else moves.
+The contract below is not guessed: it was measured against the live endpoint on
+2026-08-28 by sending deliberately wrong types for every candidate field and
+reading back which ones the validator complained about. Fields the validator
+never mentions are silently discarded by KDX, so sending them is pointless.
+
+Measured contract for POST /api/v1/products/import
+    header  X-API-Token: <token>
+    body    {"products": [ {...}, {...} ]}
+
+    source_offer_id  REQUIRED   the 1688 offer id; also the update key
+    name_en          REQUIRED   string
+    name_ar          optional   string
+    description_ar   optional   string
+    description_en   optional   string
+    price            optional   number
+    images           optional   array
+    category         optional   array
+
+Anything else (sku, weight, stock, shipping, currency, source_url) is accepted
+by the HTTP layer but not validated and therefore not stored. Weight and the
+shipping flag still need a home on the KDX side - see README.
 """
 
 from __future__ import annotations
@@ -13,83 +31,104 @@ import time
 import urllib.error
 import urllib.request
 
-# Placeholder mapping: our internal name -> the name your API expects.
+IMPORT_PATH = "/api/v1/products/import"
+
+# Our internal name -> the name the KDX validator recognises.
 FIELD_MAP = {
-    "sku": "sku",
+    "source_offer_id": "source_offer_id",
     "name_ar": "name_ar",
     "name_en": "name_en",
     "description_ar": "description_ar",
     "description_en": "description_en",
     "price": "price",
-    "stock": "stock",
-    "weight_kg": "weight",
-    "requires_shipping": "requires_shipping",
-    "shipping_type": "shipping_type",
     "images": "images",
-    "attributes": "attributes",
     "category": "category",
-    "keywords": "keywords",
-    "source_offer_id": "source_offer_id",
 }
 
-ENDPOINTS = {
-    "create": "/api/products",
-    "update": "/api/products/{sku}",
-    "lookup": "/api/products/{sku}",
-}
+REQUIRED = ("source_offer_id", "name_en")
+
+# Sent on an update of a product KDX already has. Deliberately narrow: the SKU,
+# the product URL, the ratings and the sales count are not in this set, so an
+# update cannot overwrite them.
+MUTABLE = ("source_offer_id", "name_en", "price", "images",
+           "description_ar", "description_en")
+
+
+class KdxError(RuntimeError):
+    pass
 
 
 class KdxClient:
-    def __init__(self, base_url: str, token: str, timeout: int = 30, max_retries: int = 3):
+    def __init__(self, base_url: str, token: str, timeout: int = 45,
+                 max_retries: int = 3, pace_seconds: float = 2.0):
         self.base_url = base_url.rstrip("/")
         self.token = token
         self.timeout = timeout
         self.max_retries = max_retries
+        # kdx-sa.com answers bursts with a 403 firewall page, so calls are paced.
+        self.pace_seconds = pace_seconds
+        self._last_call = 0.0
 
-    def _request(self, method: str, path: str, payload: dict | None = None) -> dict:
+    def _wait_turn(self) -> None:
+        gap = time.time() - self._last_call
+        if gap < self.pace_seconds:
+            time.sleep(self.pace_seconds - gap)
+        self._last_call = time.time()
+
+    def _post(self, path: str, payload: dict) -> dict:
         url = self.base_url + path
-        body = json.dumps(payload, ensure_ascii=False).encode("utf-8") if payload else None
+        body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         headers = {
-            "Authorization": f"Bearer {self.token}",
+            "X-API-Token": self.token,
             "Accept": "application/json",
             "Content-Type": "application/json",
         }
 
         last_error: Exception | None = None
         for attempt in range(self.max_retries):
-            request = urllib.request.Request(url, data=body, headers=headers, method=method)
+            self._wait_turn()
+            request = urllib.request.Request(url, data=body, headers=headers, method="POST")
             try:
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
                     raw = response.read().decode("utf-8")
                     return json.loads(raw) if raw else {}
             except urllib.error.HTTPError as exc:
-                if exc.code == 404 and method == "GET":
-                    return {}
-                # 4xx other than rate limiting is our bug, not a blip: fail loudly.
-                if 400 <= exc.code < 500 and exc.code != 429:
-                    raise RuntimeError(f"KDX {exc.code}: {exc.read().decode('utf-8', 'replace')}")
+                detail = exc.read().decode("utf-8", "replace")
+                # 422 is our payload being wrong and 401 is the token being wrong.
+                # Neither improves by trying again, so fail loudly instead.
+                if exc.code in (401, 422) or (400 <= exc.code < 500 and exc.code != 429):
+                    raise KdxError(f"KDX {exc.code}: {detail}")
                 last_error = exc
             except Exception as exc:
                 last_error = exc
             time.sleep(2 ** attempt)
 
-        raise RuntimeError(f"KDX request failed after {self.max_retries} attempts: {last_error}")
+        raise KdxError(f"KDX request failed after {self.max_retries} attempts: {last_error}")
 
-    def to_payload(self, product: dict) -> dict:
-        return {FIELD_MAP[key]: value for key, value in product.items() if key in FIELD_MAP}
+    def to_payload(self, product: dict, fields: tuple | None = None) -> dict:
+        allowed = fields or tuple(FIELD_MAP)
+        payload = {FIELD_MAP[key]: value for key, value in product.items()
+                   if key in FIELD_MAP and key in allowed}
+        missing = [key for key in REQUIRED if not payload.get(FIELD_MAP[key])]
+        if missing:
+            raise KdxError(f"product is missing required field(s): {missing}")
+        return payload
 
-    def exists(self, sku: str) -> bool:
-        return bool(self._request("GET", ENDPOINTS["lookup"].format(sku=sku)))
+    def push(self, products: list, batch_size: int = 20) -> list:
+        """Send new products. Returns one response dict per batch."""
+        responses = []
+        for start in range(0, len(products), batch_size):
+            batch = [self.to_payload(p) for p in products[start:start + batch_size]]
+            responses.append(self._post(IMPORT_PATH, {"products": batch}))
+        return responses
 
-    def create(self, product: dict) -> dict:
-        return self._request("POST", ENDPOINTS["create"], self.to_payload(product))
-
-    def update(self, sku: str, product: dict) -> dict:
+    def update(self, products: list, batch_size: int = 20) -> list:
         """
-        Update path only ever carries the mutable fields. SKU, product URL,
-        ratings and sales count are deliberately not in this payload, so an
-        update can never overwrite them.
+        Same endpoint, narrowed payload. KDX keys on source_offer_id, so an
+        existing product is updated rather than duplicated.
         """
-        mutable = {"price", "stock", "description_ar", "description_en", "images"}
-        payload = self.to_payload({k: v for k, v in product.items() if k in mutable})
-        return self._request("PUT", ENDPOINTS["update"].format(sku=sku), payload)
+        responses = []
+        for start in range(0, len(products), batch_size):
+            batch = [self.to_payload(p, MUTABLE) for p in products[start:start + batch_size]]
+            responses.append(self._post(IMPORT_PATH, {"products": batch}))
+        return responses
