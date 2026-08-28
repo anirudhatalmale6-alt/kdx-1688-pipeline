@@ -1,0 +1,314 @@
+[
+  {
+    "id": 67,
+    "name": "办公、文化",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 1038378,
+    "name": "鞋",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 311,
+    "name": "童装",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 312,
+    "name": "内衣",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 54,
+    "name": "服饰配件、饰品",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 1813,
+    "name": "玩具",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 10166,
+    "name": "女装",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 2,
+    "name": "食品酒水",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 122916001,
+    "name": "宠物及园艺",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 122916002,
+    "name": "汽车用品",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 58,
+    "name": "灯饰照明",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 10165,
+    "name": "男装",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 57,
+    "name": "电子元器件",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 53,
+    "name": "传媒、广电",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 70,
+    "name": "安全、防护",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 68,
+    "name": "包装",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 7,
+    "name": "数码、电脑",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 5,
+    "name": "电工电气",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 4,
+    "name": "纺织、皮革",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 1042954,
+    "name": "箱包皮具",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 65,
+    "name": "机械及行业设备",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 59,
+    "name": "五金、工具",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 8,
+    "name": "化工",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 55,
+    "name": "橡塑",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 201346017,
+    "name": "建材",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 64,
+    "name": "环保",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 10208,
+    "name": "仪器仪表",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 15,
+    "name": "居家日用品",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 201547801,
+    "name": "日用餐厨饮具",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 201547901,
+    "name": "收纳清洁用具",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 96,
+    "name": "家纺家饰",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 97,
+    "name": "美容护肤/彩妆",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 6,
+    "name": "家用电器",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 13,
+    "name": "家装建材",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 12,
+    "name": "交通运输",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 10,
+    "name": "能源",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 1,
+    "name": "农业",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 71,
+    "name": "汽摩及配件",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 509,
+    "name": "通信产品",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 9,
+    "name": "冶金矿产",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 66,
+    "name": "医药、保养",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 72,
+    "name": "印刷",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 18,
+    "name": "运动户外",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 1426,
+    "name": "机床",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 69,
+    "name": "商务服务",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 2829,
+    "name": "二手设备转让",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 2805,
+    "name": "加工",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 130822220,
+    "name": "个护/家清",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 130823000,
+    "name": "成人用品",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 130822002,
+    "name": "餐饮生鲜",
+    "isLeaf": false,
+    "categoryType": "3"
+  },
+  {
+    "id": 123614001,
+    "name": "钢铁",
+    "isLeaf": false,
+    "categoryType": "1"
+  },
+  {
+    "id": 202052814,
+    "name": "新能源",
+    "isLeaf": false,
+    "categoryType": "3"
+  }
+]
