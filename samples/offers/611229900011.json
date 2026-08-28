@@ -20,6 +20,7 @@
       },
       "productAttribute": [
         {"attributeName": "电压", "attributeValue": "220V"},
+        {"attributeName": "频率", "attributeValue": "50/60Hz"},
         {"attributeName": "功率", "attributeValue": "3000W"}
       ],
       "skuInfos": []
