@@ -10,18 +10,23 @@ Measured contract for POST /api/v1/products/import
     header  X-API-Token: <token>
     body    {"products": [ {...}, {...} ]}
 
-    source_offer_id  REQUIRED   the 1688 offer id; also the update key
-    name_en          REQUIRED   string
-    name_ar          optional   string
-    description_ar   optional   string
-    description_en   optional   string
-    price            optional   number
-    images           optional   array
-    category         optional   array
+    source_offer_id         REQUIRED   the 1688 offer id; also the update key
+    name_en                 REQUIRED   string
+    name_ar                 optional   string
+    description_ar          optional   string
+    description_en          optional   string
+    price                   optional   number
+    images                  optional   array
+    sizes                   optional   array
+    needs_shipment          optional   boolean  <- sets fast vs free delivery
+    category.main_category  optional   array
+    category.sub_category   optional   array
 
-Anything else (sku, weight, stock, shipping, currency, source_url) is accepted
-by the HTTP layer but not validated and therefore not stored. Weight and the
-shipping flag still need a home on the KDX side - see README.
+Anything else (source, product_url, name, name_original, price_currency, weight,
+sku, stock) passes the HTTP layer untouched and is then discarded. It is still
+sent because the client asked for that shape, but nothing may depend on it.
+
+The product JSON itself is built in src/mapping.py.
 """
 
 from __future__ import annotations
@@ -33,25 +38,18 @@ import urllib.request
 
 IMPORT_PATH = "/api/v1/products/import"
 
-# Our internal name -> the name the KDX validator recognises.
-FIELD_MAP = {
-    "source_offer_id": "source_offer_id",
-    "name_ar": "name_ar",
-    "name_en": "name_en",
-    "description_ar": "description_ar",
-    "description_en": "description_en",
-    "price": "price",
-    "images": "images",
-    "category": "category",
-}
-
 REQUIRED = ("source_offer_id", "name_en")
 
-# Sent on an update of a product KDX already has. Deliberately narrow: the SKU,
-# the product URL, the ratings and the sales count are not in this set, so an
-# update cannot overwrite them.
-MUTABLE = ("source_offer_id", "name_en", "price", "images",
-           "description_ar", "description_en")
+# Fields KDX validates. Anything outside this set is accepted by the HTTP layer
+# and then discarded, so it may be sent but never relied on.
+VALIDATED = ("source_offer_id", "name_en", "name_ar", "description_ar",
+             "description_en", "price", "images", "sizes", "needs_shipment",
+             "category")
+
+# Sent when KDX already has the product. Deliberately narrow: SKU, ratings and
+# sales count are not in this set, so an update cannot overwrite them.
+MUTABLE = ("source_offer_id", "name_en", "name_ar", "price", "images",
+           "sizes", "needs_shipment", "description_ar", "description_en")
 
 
 class KdxError(RuntimeError):
@@ -106,10 +104,14 @@ class KdxClient:
         raise KdxError(f"KDX request failed after {self.max_retries} attempts: {last_error}")
 
     def to_payload(self, product: dict, fields: tuple | None = None) -> dict:
-        allowed = fields or tuple(FIELD_MAP)
-        payload = {FIELD_MAP[key]: value for key, value in product.items()
-                   if key in FIELD_MAP and key in allowed}
-        missing = [key for key in REQUIRED if not payload.get(FIELD_MAP[key])]
+        """
+        Products arrive already in the KDX schema (see src/mapping.py). On the
+        update path `fields` narrows them; on create everything is sent.
+        """
+        payload = dict(product) if fields is None else {
+            key: value for key, value in product.items() if key in fields
+        }
+        missing = [key for key in REQUIRED if not payload.get(key)]
         if missing:
             raise KdxError(f"product is missing required field(s): {missing}")
         return payload

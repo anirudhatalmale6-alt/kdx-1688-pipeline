@@ -1,0 +1,12 @@
+[Unit]
+Description=KDX 1688 OAuth callback catcher
+After=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/kdx/oauth_callback.py
+Restart=always
+RestartSec=3
+WorkingDirectory=/opt/kdx
+
+[Install]
+WantedBy=multi-user.target

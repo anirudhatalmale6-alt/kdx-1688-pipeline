@@ -64,18 +64,31 @@ type for every candidate field and reading which ones the validator rejected:
 | `description_en` | no | string |
 | `price` | no | number |
 | `images` | no | array |
-| `category` | no | array |
+| `sizes` | no | array |
+| `needs_shipment` | no | boolean — `true` = fast delivery, `false` = free |
+| `category.main_category` | no | array |
+| `category.sub_category` | no | array |
 
-Anything else — `sku`, `weight`, `stock`, `shipping`, `currency`, `source_url` —
-passes the HTTP layer untouched but is not validated, so KDX does not store it.
+Anything else — `source`, `product_url`, `name`, `name_original`,
+`price_currency`, `weight`, `sku`, `stock` — passes the HTTP layer untouched but
+is not validated, so KDX does not store it. They are still sent because the
+client specified that shape; nothing depends on getting them back.
+
+`src/mapping.py` owns the product JSON. `needs_shipment` is derived from weight
+(≤ 2 kg → `true`), so the weight itself never needs to reach KDX.
 
 ```bash
-KDX_API_TOKEN=... python3 verify_kdx.py     # 11 checks, run it twice
+KDX_API_TOKEN=... python3 verify_kdx.py     # 22 checks, run it twice
 ```
 
-The suite pairs each success with a control: a wrong token must be refused, a
-product without `name_en` must be caught before it leaves, and the update
-payload is asserted to contain no `sku` / `url` / `rating` / `sales` field.
+Each success is paired with a control: a wrong token must be refused, a product
+without `name_en` must be caught before it leaves, KDX itself must reject a
+malformed `needs_shipment`, and the update payload is asserted to carry no
+`sku` / `product_url` / `rating` / `sales` / `stock`.
+
+**Images are hot-linked, not mirrored.** KDX stores the URL and the shop renders
+it directly, so a URL that 404s shows the customer a broken-image box — that is
+what a placeholder URL in an early test produced.
 
 ## Still open
 
@@ -84,13 +97,15 @@ payload is asserted to contain no `sku` / `url` / `rating` / `sales` field.
    does return merchant and price and is the route being used. The engine
    consumes a list of `CompetitorHit` objects and does not care where they came
    from, so this stays one replaceable seam.
-2. **Weight and the shipping flag have nowhere to land in KDX.** The agreed rule
-   is ≤2 kg → fast shipping, >2 kg → free shipping. The import endpoint accepts
-   neither `weight` nor a shipping field, so KDX cannot currently tell the two
-   apart. One extra accepted field solves it.
+2. **User authorization for 1688.** `redirect_uri` is mandatory on
+   `auth.1688.com/oauth/authorize` and every guessed value is refused. Proven
+   with a control pair in a real browser (curl only receives Alibaba's JS
+   challenge page): omitting it returns `缺少必要参数` (missing required
+   parameter), a wrong one returns `非法请求` (invalid request). Only the value
+   registered in the client's own 1688 console will work.
 3. `GET /api/alibaba/categories` on kdx-sa.com answers HTTP 500 with
    `gw.SignatureInvalid` from 1688. The same app key and secret sign correctly
    from `src/aop_client.py`, so the fault is in the Laravel signing or in the
    secret stored on that server.
-4. User authorization (OAuth) for the product-detail APIs. Category APIs need
-   none, which is why the category tree already works.
+4. The 1688 server only accepts inbound SSH: ports 80 and 8080 are blocked
+   upstream by the host, so nothing web-facing can be served from it.
