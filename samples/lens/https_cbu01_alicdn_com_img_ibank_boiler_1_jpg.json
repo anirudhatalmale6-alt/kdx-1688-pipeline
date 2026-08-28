@@ -1,0 +1,41 @@
+{
+  "_comment": "Shape of a google_lens visual_matches response, region pinned to Saudi. Written to carry every case the scorer has to survive: a genuine SAR match, a same-photo different-capacity trap, a rival quoting USD, a marketplace that is not one of the five, and a weak visual rank.",
+  "search_metadata": {"status": "Success", "engine": "google_lens"},
+  "visual_matches": [
+    {
+      "position": 1,
+      "title": "Commercial Stainless Steel Electric Water Boiler 30L 3000W",
+      "link": "https://www.noon.com/saudi-en/electric-water-boiler-30l/N70012345A/p/",
+      "source": "noon",
+      "price": {"value": "SAR 689.00", "extracted_value": 689.0, "currency": "SAR"}
+    },
+    {
+      "position": 2,
+      "title": "Commercial Stainless Steel Electric Water Boiler 20L 2000W",
+      "link": "https://www.amazon.sa/dp/B0CXYZ1234",
+      "source": "Amazon.sa",
+      "price": {"value": "SAR 455.00", "extracted_value": 455.0, "currency": "SAR"}
+    },
+    {
+      "position": 3,
+      "title": "Commercial Stainless Steel Electric Water Boiler 30L 3000W",
+      "link": "https://www.temu.com/sa/electric-water-boiler-g-601099523.html",
+      "source": "Temu",
+      "price": {"value": "$118.99", "extracted_value": 118.99, "currency": "USD"}
+    },
+    {
+      "position": 4,
+      "title": "Commercial Stainless Steel Electric Water Boiler 30L 3000W",
+      "link": "https://www.ebay.com/itm/225533114400",
+      "source": "eBay",
+      "price": {"value": "SAR 610.00", "extracted_value": 610.0, "currency": "SAR"}
+    },
+    {
+      "position": 9,
+      "title": "Commercial Stainless Steel Electric Water Boiler 30L 3000W",
+      "link": "https://www.aliexpress.com/item/1005006112233.html",
+      "source": "AliExpress",
+      "price": {"value": "SAR 520.00", "extracted_value": 520.0, "currency": "SAR"}
+    }
+  ]
+}
