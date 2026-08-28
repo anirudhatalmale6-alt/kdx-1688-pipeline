@@ -1,0 +1,97 @@
+{
+  "source": "1688",
+  "source_offer_id": "104843239419",
+  "product_url": "https://detail.1688.com/offer/104843239419.html",
+  "category": {
+    "main_category": [],
+    "sub_category": []
+  },
+  "name": "فستان",
+  "name_original": "连衣裙",
+  "name_en": "Dress",
+  "name_ar": "فستان",
+  "images": [
+    "https://cbu01.alicdn.com/red.jpg",
+    "https://cbu01.alicdn.com/red-back.jpg",
+    "https://cbu01.alicdn.com/blue.jpg",
+    "https://cbu01.alicdn.com/main.jpg"
+  ],
+  "price": 45.9,
+  "price_currency": "SAR",
+  "price_min": 45.9,
+  "price_max": 52.0,
+  "sizes": [
+    {
+      "original": "S",
+      "en": "S",
+      "ar": "صغير"
+    },
+    {
+      "original": "M",
+      "en": "M",
+      "ar": "وسط"
+    }
+  ],
+  "needs_shipment": true,
+  "variants": [
+    {
+      "original": "红色",
+      "en": "Red",
+      "ar": "أحمر",
+      "image": "https://cbu01.alicdn.com/red.jpg",
+      "images": [
+        "https://cbu01.alicdn.com/red.jpg",
+        "https://cbu01.alicdn.com/red-back.jpg"
+      ],
+      "price": 45.9,
+      "price_min": 45.9,
+      "price_max": 47.5,
+      "sizes": [
+        {
+          "original": "S",
+          "en": "S",
+          "ar": "صغير",
+          "price": 45.9,
+          "sku_id": "sku-1",
+          "stock": 40,
+          "weight": 0.42,
+          "needs_shipment": true
+        },
+        {
+          "original": "M",
+          "en": "M",
+          "ar": "وسط",
+          "price": 47.5,
+          "sku_id": "sku-2",
+          "stock": 120,
+          "weight": 0.45,
+          "needs_shipment": true
+        }
+      ]
+    },
+    {
+      "original": "蓝色",
+      "en": "Blue",
+      "ar": "أزرق",
+      "image": "https://cbu01.alicdn.com/blue.jpg",
+      "images": [
+        "https://cbu01.alicdn.com/blue.jpg"
+      ],
+      "price": 52.0,
+      "price_min": 52.0,
+      "price_max": 52.0,
+      "sizes": [
+        {
+          "original": "M",
+          "en": "M",
+          "ar": "وسط",
+          "price": 52.0,
+          "sku_id": "sku-3",
+          "stock": 0,
+          "weight": 3.1,
+          "needs_shipment": false
+        }
+      ]
+    }
+  ]
+}
