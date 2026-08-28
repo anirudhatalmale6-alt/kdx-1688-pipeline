@@ -1,0 +1,80 @@
+{
+  "_comment": "Shape of an alibaba.product.get response, built to the published field list. Two colours x two sizes, with the photo on the colour attribute and the price on the full sku - which is how 1688 organises an offer. Replaced by a recorded live response the day the ACL opens.",
+  "result": {
+    "productInfo": {
+      "productID": 104843239419,
+      "categoryID": 1031910,
+      "subject": "2024新款夏季女士短袖T恤 纯棉宽松百搭上衣",
+      "description": "<p>面料：100%纯棉</p><p>适合季节：夏季</p>",
+      "image": {
+        "images": [
+          "https://cbu01.alicdn.com/img/ibank/main-1.jpg",
+          "https://cbu01.alicdn.com/img/ibank/main-2.jpg"
+        ]
+      },
+      "productShippingInfo": {
+        "weight": 0.35,
+        "unitWeight": 0.35
+      },
+      "productSaleInfo": {
+        "amountOnSale": 1620,
+        "priceRangeList": [
+          {"startQuantity": 2, "price": 28.50},
+          {"startQuantity": 50, "price": 26.00}
+        ]
+      },
+      "productAttribute": [
+        {"attributeID": 100, "attributeName": "品牌", "attributeValue": "OEM"},
+        {"attributeID": 182, "attributeName": "材质", "attributeValue": "纯棉"},
+        {"attributeID": 340, "attributeName": "电压", "attributeValue": "220V"},
+        {"attributeID": 341, "attributeName": "频率", "attributeValue": "50/60Hz"}
+      ],
+      "skuInfos": [
+        {
+          "skuId": 5501001,
+          "specId": "a1b2c3",
+          "amountOnSale": 400,
+          "price": 28.50,
+          "attributes": [
+            {"attributeID": 3216, "attributeName": "颜色", "attributeValue": "白色",
+             "skuImageUrl": "https://cbu01.alicdn.com/img/ibank/white.jpg"},
+            {"attributeID": 3151, "attributeName": "尺码", "attributeValue": "S"}
+          ]
+        },
+        {
+          "skuId": 5501002,
+          "specId": "a1b2c4",
+          "amountOnSale": 620,
+          "price": 29.80,
+          "attributes": [
+            {"attributeID": 3216, "attributeName": "颜色", "attributeValue": "白色",
+             "skuImageUrl": "https://cbu01.alicdn.com/img/ibank/white.jpg"},
+            {"attributeID": 3151, "attributeName": "尺码", "attributeValue": "M"}
+          ]
+        },
+        {
+          "skuId": 5501003,
+          "specId": "a1b2c5",
+          "amountOnSale": 300,
+          "price": 30.00,
+          "attributes": [
+            {"attributeID": 3216, "attributeName": "颜色", "attributeValue": "黑色",
+             "skuImageUrl": "https://cbu01.alicdn.com/img/ibank/black.jpg"},
+            {"attributeID": 3151, "attributeName": "尺码", "attributeValue": "S"}
+          ]
+        },
+        {
+          "skuId": 5501004,
+          "specId": "a1b2c6",
+          "amountOnSale": 0,
+          "price": 31.20,
+          "attributes": [
+            {"attributeID": 3216, "attributeName": "颜色", "attributeValue": "黑色",
+             "skuImageUrl": "https://cbu01.alicdn.com/img/ibank/black.jpg"},
+            {"attributeID": 3151, "attributeName": "尺码", "attributeValue": "M"}
+          ]
+        }
+      ]
+    }
+  }
+}

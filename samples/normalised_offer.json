@@ -1,0 +1,98 @@
+{
+  "source": "1688",
+  "source_offer_id": "104843239419",
+  "product_url": "https://detail.1688.com/offer/104843239419.html",
+  "category": {
+    "main_category": [],
+    "sub_category": []
+  },
+  "name": "تيشيرت",
+  "name_original": "2024新款夏季女士短袖T恤 纯棉宽松百搭上衣",
+  "name_en": "T-shirt",
+  "name_ar": "تيشيرت",
+  "images": [
+    "https://cbu01.alicdn.com/img/ibank/white.jpg",
+    "https://cbu01.alicdn.com/img/ibank/black.jpg",
+    "https://cbu01.alicdn.com/img/ibank/main-1.jpg",
+    "https://cbu01.alicdn.com/img/ibank/main-2.jpg"
+  ],
+  "price": 28.5,
+  "price_currency": "SAR",
+  "price_min": 28.5,
+  "price_max": 31.2,
+  "sizes": [
+    {
+      "original": "S",
+      "en": "S",
+      "ar": "S"
+    },
+    {
+      "original": "M",
+      "en": "M",
+      "ar": "M"
+    }
+  ],
+  "needs_shipment": true,
+  "variants": [
+    {
+      "original": "白色",
+      "en": "白色",
+      "ar": "白色",
+      "image": "https://cbu01.alicdn.com/img/ibank/white.jpg",
+      "images": [
+        "https://cbu01.alicdn.com/img/ibank/white.jpg"
+      ],
+      "price": 28.5,
+      "price_min": 28.5,
+      "price_max": 29.8,
+      "sizes": [
+        {
+          "original": "S",
+          "en": "S",
+          "ar": "S",
+          "price": 28.5,
+          "sku_id": "5501001",
+          "stock": 400
+        },
+        {
+          "original": "M",
+          "en": "M",
+          "ar": "M",
+          "price": 29.8,
+          "sku_id": "5501002",
+          "stock": 620
+        }
+      ]
+    },
+    {
+      "original": "黑色",
+      "en": "黑色",
+      "ar": "黑色",
+      "image": "https://cbu01.alicdn.com/img/ibank/black.jpg",
+      "images": [
+        "https://cbu01.alicdn.com/img/ibank/black.jpg"
+      ],
+      "price": 30.0,
+      "price_min": 30.0,
+      "price_max": 31.2,
+      "sizes": [
+        {
+          "original": "S",
+          "en": "S",
+          "ar": "S",
+          "price": 30.0,
+          "sku_id": "5501003",
+          "stock": 300
+        },
+        {
+          "original": "M",
+          "en": "M",
+          "ar": "M",
+          "price": 31.2,
+          "sku_id": "5501004",
+          "stock": 0
+        }
+      ]
+    }
+  ]
+}

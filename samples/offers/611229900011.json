@@ -1,0 +1,28 @@
+{
+  "_comment": "An offer with no sku table and no colour axis - one price, one photo set, heavy enough for free shipping. The awkward cases are fixtures too, not afterthoughts.",
+  "result": {
+    "productInfo": {
+      "productID": 611229900011,
+      "categoryID": 127204001,
+      "subject": "商用不锈钢电热开水器 30L 大容量",
+      "description": "<p>容量：30L</p><p>功率：3000W</p>",
+      "image": {
+        "images": [
+          "https://cbu01.alicdn.com/img/ibank/boiler-1.jpg",
+          "https://cbu01.alicdn.com/img/ibank/boiler-2.jpg",
+          "https://cbu01.alicdn.com/img/ibank/boiler-3.jpg"
+        ]
+      },
+      "productShippingInfo": {"weight": 12.4},
+      "productSaleInfo": {
+        "amountOnSale": 85,
+        "priceRangeList": [{"startQuantity": 1, "price": 460.00}]
+      },
+      "productAttribute": [
+        {"attributeName": "电压", "attributeValue": "220V"},
+        {"attributeName": "功率", "attributeValue": "3000W"}
+      ],
+      "skuInfos": []
+    }
+  }
+}
