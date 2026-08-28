@@ -46,8 +46,10 @@ def check(label: str, condition: bool, detail: str = "") -> None:
 
 
 def client_for(token: str) -> AopClient:
-    return AopClient(Credentials(app_key=os.environ["KDX_1688_APP_KEY"],
-                                 app_secret=os.environ["KDX_1688_APP_SECRET"],
+    # Blank defaults on purpose: section 1 is pure logic and must run for anyone
+    # who clones this without credentials.
+    return AopClient(Credentials(app_key=os.environ.get("KDX_1688_APP_KEY", ""),
+                                 app_secret=os.environ.get("KDX_1688_APP_SECRET", ""),
                                  access_token=token))
 
 
