@@ -22,6 +22,7 @@ import hashlib
 import hmac
 import json
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
@@ -81,6 +82,10 @@ class AopError(RuntimeError):
 
 
 class AopClient:
+    # Statuses where the gateway has already made up its mind: a bad signature,
+    # a rejected token, a missing permission. Retrying only delays the message.
+    NO_RETRY_STATUS = frozenset({400, 401, 403, 404})
+
     def __init__(
         self,
         credentials: Credentials,
@@ -118,6 +123,26 @@ class AopClient:
                 )
                 with urllib.request.urlopen(request, timeout=self.timeout) as response:
                     payload = json.loads(response.read().decode("utf-8"))
+            except urllib.error.HTTPError as exc:
+                # The body of a 4xx is the gateway's actual complaint, and it is
+                # the only place the useful part appears. Reading it cost me a
+                # day once: a bare "HTTP Error 400" turned out to be
+                # gw.APIACLDecline, "AppKey is not allowed(acl)", which is a
+                # completely different problem from a malformed request.
+                detail = exc.read().decode("utf-8", "replace")
+                try:
+                    payload = json.loads(detail)
+                except ValueError:
+                    payload = {"error_code": str(exc.code), "error_message": detail[:500]}
+                code = str(payload.get("error_code") or payload.get("errorCode") or exc.code)
+                message = payload.get("error_message") or payload.get("errorMessage") or detail[:500]
+                if exc.code in self.NO_RETRY_STATUS:
+                    # Wrong key, missing permission, bad parameters: repeating
+                    # the same request three times cannot change the answer.
+                    raise AopError(f"HTTP {exc.code} {code}: {message}", payload) from None
+                last_error = AopError(f"HTTP {exc.code} {code}: {message}", payload)
+                time.sleep(2 ** attempt)
+                continue
             except Exception as exc:  # network / decode
                 last_error = exc
                 time.sleep(2 ** attempt)
@@ -143,6 +168,14 @@ class TokenStore:
     """
     Access tokens expire. Refresh ahead of expiry rather than on failure, so a
     long catalogue run never dies halfway through.
+
+    Except that KDX's app is a self-use ("自用型") app, and those are issued a
+    fixed token from the 1688 console with no expiry and no refresh_token. The
+    account owner renews it by hand, if ever. Verified against the live gateway:
+    that token authenticates, while an invented one is refused with 401. So a
+    token that has no expiry and no refresh_token is treated as static and
+    handed back untouched - the alternative was this class raising
+    "no refresh_token available" on a token that works perfectly.
     """
 
     REFRESH_ROUTE = ApiRoute(namespace="system.oauth2", api_name="getToken")
@@ -151,8 +184,15 @@ class TokenStore:
         self.client = client
         self.margin = refresh_margin_seconds
 
+    def is_static(self) -> bool:
+        credentials = self.client.credentials
+        return bool(credentials.access_token) and not credentials.refresh_token \
+            and not credentials.expires_at
+
     def ensure_fresh(self) -> str:
         credentials = self.client.credentials
+        if self.is_static():
+            return credentials.access_token
         if credentials.access_token and time.time() < credentials.expires_at - self.margin:
             return credentials.access_token
         if not credentials.refresh_token:
