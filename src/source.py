@@ -290,6 +290,186 @@ def normalise(payload: dict) -> dict:
     }
 
 
+# --------------------------------------------------------------------------
+# LinkPlus: the one channel this appKey actually holds.
+# --------------------------------------------------------------------------
+#
+# Measured against the live gateway on 30 August 2026 with the client's own
+# credentials, using a control pair - alibaba.product.get answers
+# gw.APIACLDecline while this one answers gw.ParamMissing, and a parameter
+# complaint can only come from an API we are allowed to call:
+#
+#     com.alibaba.linkplus / alibaba.cross.similar.offer.search / 1
+#     required: picUrl (String), page (Integer)
+#     pageSize is accepted but CAPPED AT 20 - asking for 50 or 100 still
+#     returns 20, so paging is the only way to go deeper.
+#
+# It returns eleven fields and no more. There is no weight, no SKU table, no
+# description and only one image; every guessed detail-API name in the same
+# namespace came back gw.APIUnsupported, so there is nothing to join against.
+# That absence is the whole reason for the weight policy below.
+
+LINKPLUS_ROUTE = ApiRoute(namespace="com.alibaba.linkplus",
+                          api_name="alibaba.cross.similar.offer.search", version="1")
+
+# oldPrice is an integer in fen. Measured, not assumed: of 20 offers in one
+# response, 10 carried prices that are not whole multiples of 100 (1010, 970,
+# 1049, ...). An integer field that carries fractions of a yuan cannot itself
+# be denominated in yuan.
+PRICE_DIVISOR = Decimal(os.environ.get("KDX_LINKPLUS_PRICE_DIVISOR", "100"))
+
+
+def _category_weights() -> dict:
+    """
+    {categoryId: kilograms}, from a JSON file or inline JSON.
+
+    The client supplies this because only he knows what he is importing. It is
+    deliberately not guessed: see weight_for_category.
+    """
+    raw = os.environ.get("KDX_CATEGORY_WEIGHTS", "").strip()
+    if not raw:
+        return {}
+    if os.path.exists(raw):
+        with open(raw, encoding="utf-8") as handle:
+            raw = handle.read()
+    try:
+        return {str(k): float(v) for k, v in json.loads(raw).items()}
+    except (ValueError, AttributeError) as exc:
+        raise SourceError(f"KDX_CATEGORY_WEIGHTS is not a JSON object of "
+                          f"category -> kilograms: {exc}") from None
+
+
+def weight_for_category(category_id: str) -> tuple[float, bool]:
+    """
+    Return (kilograms, is_assumed) for a LinkPlus offer.
+
+    This channel never reports a weight, and the shipping rule turns on 2 kg,
+    so something has to fill the gap. What must NOT happen is the gap being
+    filled silently: _weight_of's 2.5 kg fallback sits above the 2 kg line, so
+    every product would be classed heavy, and by the client's own rule a heavy
+    product with no price match is never published. The catalogue would empty
+    itself and every audit line would read as though someone had weighed the
+    box.
+
+    So the second return value travels with the number, and the audit says the
+    weight was assumed rather than measured.
+
+        KDX_LINKPLUS_WEIGHT_MODE = table (default) | light
+        KDX_CATEGORY_WEIGHTS     = {"1031912": 0.5, ...}
+        KDX_LINKPLUS_DEFAULT_WEIGHT_KG = used where the table is silent
+    """
+    mode = os.environ.get("KDX_LINKPLUS_WEIGHT_MODE", "table").strip().lower()
+    if mode == "light":
+        return 0.5, True
+    table = _category_weights()
+    known = table.get(str(category_id))
+    if known is not None:
+        return float(known), True
+    return float(os.environ.get("KDX_LINKPLUS_DEFAULT_WEIGHT_KG", "2.5")), True
+
+
+def normalise_search_row(row: dict) -> dict:
+    """
+    One row of alibaba.cross.similar.offer.search, in the normalised shape.
+
+    Kept separate from normalise() rather than folded into it: that function
+    describes a product detail response, and pretending a search row is one
+    would hide how much less this channel carries.
+    """
+    offer_id = str(row.get("offerId") or "")
+    if not offer_id:
+        raise SourceError("search row carries no offerId")
+
+    raw_price = row.get("oldPrice")
+    if raw_price is None:
+        raise SourceError(f"offer {offer_id} carries no price")
+    price = (Decimal(str(raw_price)) / PRICE_DIVISOR).quantize(Decimal("0.01"))
+
+    image = str(row.get("imageUrl") or "")
+    gallery = [image] if image else []
+    category_id = str(row.get("categoryId") or "")
+    weight, assumed = weight_for_category(category_id)
+
+    return {
+        "offer_id": offer_id,
+        "title_zh": str(row.get("subject") or ""),
+        # This channel has no description at all. An empty string is the
+        # truthful answer; inventing one from the title would be worse.
+        "description_zh": "",
+        "category_id": category_id,
+        "weight_kg": weight,
+        "weight_assumed": assumed,
+        "images": gallery,
+        "attributes": {},
+        # No SKU table means no colours and no sizes - one variant, one price.
+        "variants": [{"original": "", "image": image, "images": gallery,
+                      "sizes": [], "price": price}],
+        "source_channel": "linkplus",
+        "min_order": int(row.get("quantityBegin") or 0),
+        "unit": str(row.get("unit") or ""),
+        "detail_url": str(row.get("detailUrl") or ""),
+    }
+
+
+class LinkPlusSource:
+    """
+    Discovery by photograph, which is the only shape this channel has.
+
+    It is a search, not a lookup: there is no way to ask for offer 123 by id.
+    get_product therefore serves offers this source has already seen, and says
+    plainly what it cannot do for anything else, rather than returning an empty
+    product that would look like a 1688 outage.
+    """
+
+    PAGE_SIZE = 20      # the gateway's cap, measured; asking for more is ignored
+
+    def __init__(self, client: AopClient, country: str = "", language: str = ""):
+        self.client = client
+        self.country = country or os.environ.get("KDX_LINKPLUS_COUNTRY", "US")
+        self.language = language or os.environ.get("KDX_LINKPLUS_LANGUAGE", "en")
+        self._seen: dict = {}
+
+    def search_by_image(self, pic_url: str, page: int = 1) -> list:
+        if not pic_url:
+            raise SourceError("LinkPlus search needs a picUrl")
+        payload = self.client.call(LINKPLUS_ROUTE, {
+            "picUrl": pic_url,
+            "page": int(page),
+            "pageSize": self.PAGE_SIZE,
+            "country": self.country,
+            "language": self.language,
+        })
+        rows = ((payload.get("result") or {}).get("result")) or []
+        products = []
+        for row in rows:
+            try:
+                product = normalise_search_row(row)
+            except SourceError:
+                continue          # a row without a price is not a product
+            self._seen[product["offer_id"]] = product
+            products.append(product)
+        return products
+
+    def total_for_image(self, pic_url: str) -> int:
+        payload = self.client.call(LINKPLUS_ROUTE, {
+            "picUrl": pic_url, "page": 1, "pageSize": self.PAGE_SIZE,
+            "country": self.country, "language": self.language,
+        })
+        return int((payload.get("result") or {}).get("total") or 0)
+
+    def offer_ids(self) -> list:
+        return sorted(self._seen)
+
+    def get_product(self, offer_id: str) -> dict:
+        product = self._seen.get(str(offer_id))
+        if product is None:
+            raise SourceError(
+                f"offer {offer_id} was not returned by a LinkPlus search. This "
+                f"channel only searches by photograph; fetching one offer by id "
+                f"needs alibaba.product.get, which is still gw.APIACLDecline.")
+        return product
+
+
 class AopSource:
     """The official API. Correct, and blocked until the ACL is lifted."""
 
@@ -376,12 +556,16 @@ class FixtureSource:
 
 
 def build_source(client: AopClient | None = None):
-    """Pick the source from KDX_SOURCE: aop (default), http, or fixture."""
+    """Pick the source from KDX_SOURCE: aop (default), linkplus, http, fixture."""
     choice = os.environ.get("KDX_SOURCE", "aop").strip().lower()
     if choice == "fixture":
         return FixtureSource()
     if choice == "http":
         return HttpSource()
+    if choice == "linkplus":
+        if client is None:
+            raise SourceError("KDX_SOURCE=linkplus needs a configured AopClient")
+        return LinkPlusSource(client)
     if client is None:
         raise SourceError("KDX_SOURCE=aop needs a configured AopClient")
     return AopSource(client)

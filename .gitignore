@@ -4,3 +4,8 @@ __pycache__/
 *.jpg
 out/
 data/categories_raw.json
+
+# client account screenshots - private, never publish
+*.jpeg
+1890.png
+1891.png

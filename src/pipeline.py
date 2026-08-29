@@ -150,6 +150,34 @@ def _restate_uncompared(results: list) -> None:
                 "المنتج ثقيل ولا يُنشر بدون مقارنة - مؤجَّل وليس مرفوضاً")
 
 
+def _restate_assumed_weight(results: list, normalised: dict) -> None:
+    """
+    Say "assumed" where the weight was assumed.
+
+    The LinkPlus channel never reports a weight, so source.weight_for_category
+    supplies one. The rejection text written by the engine names that number as
+    though the box had been on a scale - "the weight 2.5 kg is more than 2 kg" -
+    which is a measurement claim we are not entitled to make.
+
+    Same treatment as _restate_uncompared, and for the same reason: the decision
+    is untouched, only the sentence the client reads. He needs to be able to
+    tell a product that is genuinely too heavy from one that merely fell through
+    a gap in his category weight table, because those call for different
+    actions - drop the product, or fill in the table.
+    """
+    if not normalised.get("weight_assumed"):
+        return
+    category = normalised.get("category_id") or "-"
+    for result in results:
+        if result.audit.reason_code == "heavy_and_unmatched":
+            result.audit.reason_code = "assumed_heavy_and_unmatched"
+            result.audit.reason_ar = (
+                f"الوزن غير متوفر في هذه القناة، وافترضناه "
+                f"{result.variant.weight_kg} كجم للتصنيف {category}. "
+                f"بهذا الافتراض يُعد المنتج ثقيلاً، ولم يُعثر له على مطابقة، "
+                f"فلم يُنشر. حدِّد وزن هذا التصنيف لتغيير النتيجة")
+
+
 class Pipeline:
     def __init__(self, *, source, provider, engine, budget=None, audit_log=None,
                  shopping=None,
@@ -261,6 +289,9 @@ class Pipeline:
         results = self.engine.evaluate(product, hits)
         if not compared:
             _restate_uncompared(results)
+        # After _restate_uncompared, so "nobody searched" still wins as the
+        # explanation: an assumed weight only matters once a search happened.
+        _restate_assumed_weight(results, normalised)
         self._audit(results, spent)
 
         variants = to_kdx_variants(results, self._terms(product))
