@@ -354,17 +354,30 @@ def weight_for_category(category_id: str) -> tuple[float, bool]:
     So the second return value travels with the number, and the audit says the
     weight was assumed rather than measured.
 
-        KDX_LINKPLUS_WEIGHT_MODE = table (default) | light
+    The client decided on 30 August: products going out by fast shipping may be
+    booked at 1 kg. This channel cannot tell fast from slow, so in practice that
+    means everything it returns is 1 kg, which is under the 2 kg line, which
+    makes it light and fast-shipped. That is his decision and it is recorded
+    here rather than buried: KDX_LINKPLUS_LIGHT_WEIGHT_KG holds the number so he
+    can move it without a code change.
+
+    Resolution order, in every mode: a category he has given a weight for wins,
+    because the only reason to type a number into that table is to state a real
+    one. Only where the table is silent does the mode decide.
+
+        KDX_LINKPLUS_WEIGHT_MODE = light (default) | table
         KDX_CATEGORY_WEIGHTS     = {"1031912": 0.5, ...}
-        KDX_LINKPLUS_DEFAULT_WEIGHT_KG = used where the table is silent
+        KDX_LINKPLUS_LIGHT_WEIGHT_KG   = light mode's number  (his 1 kg)
+        KDX_LINKPLUS_DEFAULT_WEIGHT_KG = table mode's fallback, deliberately
+                                         above 2 kg so a silent gap is caught
     """
-    mode = os.environ.get("KDX_LINKPLUS_WEIGHT_MODE", "table").strip().lower()
-    if mode == "light":
-        return 0.5, True
     table = _category_weights()
     known = table.get(str(category_id))
     if known is not None:
         return float(known), True
+    mode = os.environ.get("KDX_LINKPLUS_WEIGHT_MODE", "light").strip().lower()
+    if mode == "light":
+        return float(os.environ.get("KDX_LINKPLUS_LIGHT_WEIGHT_KG", "1.0")), True
     return float(os.environ.get("KDX_LINKPLUS_DEFAULT_WEIGHT_KG", "2.5")), True
 
 

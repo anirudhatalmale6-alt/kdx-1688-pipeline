@@ -134,30 +134,43 @@ except source.SourceError as exc:
 else:
     check("a row with no offerId is refused", False, "it was accepted")
 
-print("\n5. weight: always flagged as assumed, never silently measured")
+print("\n5. weight: his 1 kg decision, and still flagged as assumed")
+import mapping  # noqa: E402
+
+with env(KDX_LINKPLUS_WEIGHT_MODE=None, KDX_CATEGORY_WEIGHTS=None,
+         KDX_LINKPLUS_LIGHT_WEIGHT_KG=None, KDX_LINKPLUS_DEFAULT_WEIGHT_KG=None):
+    importlib.reload(source)
+    weight, assumed = source.weight_for_category("1031912")
+    check("out of the box the weight is his 1 kg", weight == 1.0, str(weight))
+    check("and it is reported as ASSUMED - nobody weighed the box", assumed is True)
+    check("the assumption reaches the product",
+          source.normalise_search_row(rows()[0])["weight_assumed"] is True)
+    # The point of the decision: 1 kg is under the line, so the product is
+    # light and fast-shipped instead of heavy and silently unpublished.
+    check("1 kg is under the 2 kg line, so the product ships fast",
+          mapping.needs_shipment(Decimal("1.0")) is True)
+    check("CONTROL the old 2.5 kg fallback would NOT have shipped fast",
+          mapping.needs_shipment(Decimal("2.5")) is False)
+
+with env(KDX_LINKPLUS_LIGHT_WEIGHT_KG="0.4", KDX_CATEGORY_WEIGHTS=None):
+    importlib.reload(source)
+    check("CONTROL the number is his to change without a code edit",
+          source.weight_for_category("1031912")[0] == 0.4)
+
+with env(KDX_LINKPLUS_WEIGHT_MODE="light", KDX_CATEGORY_WEIGHTS='{"1031912": 6.0}'):
+    importlib.reload(source)
+    check("a category he HAS weighed wins even in light mode",
+          source.weight_for_category("1031912")[0] == 6.0)
+    check("a category he has not weighed still gets the 1 kg default",
+          source.weight_for_category("999999")[0] == 1.0)
+    check("even a table value is reported as assumed - nobody weighed it",
+          source.weight_for_category("1031912")[1] is True)
+
 with env(KDX_LINKPLUS_WEIGHT_MODE="table", KDX_CATEGORY_WEIGHTS=None,
          KDX_LINKPLUS_DEFAULT_WEIGHT_KG=None):
     importlib.reload(source)
-    weight, assumed = source.weight_for_category("1031912")
-    check("with no table the fallback is used", weight == 2.5, str(weight))
-    check("and it is reported as ASSUMED", assumed is True)
-    check("the assumption reaches the product",
-          source.normalise_search_row(rows()[0])["weight_assumed"] is True)
-
-with env(KDX_LINKPLUS_WEIGHT_MODE="table",
-         KDX_CATEGORY_WEIGHTS='{"1031912": 0.4}'):
-    importlib.reload(source)
-    weight, assumed = source.weight_for_category("1031912")
-    check("the client's table wins for a known category", weight == 0.4, str(weight))
-    check("an unknown category still falls back",
-          source.weight_for_category("999999")[0] == 2.5)
-    check("even a table value is reported as assumed - nobody weighed it",
-          assumed is True)
-
-with env(KDX_LINKPLUS_WEIGHT_MODE="light", KDX_CATEGORY_WEIGHTS=None):
-    importlib.reload(source)
-    check("light mode puts everything under the 2 kg line",
-          source.weight_for_category("1031912")[0] <= 2.0)
+    check("table mode keeps the loud 2.5 kg fallback, so a gap is caught",
+          source.weight_for_category("1031912")[0] == 2.5)
 
 with env(KDX_CATEGORY_WEIGHTS="{not json"):
     importlib.reload(source)

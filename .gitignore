@@ -9,3 +9,5 @@ data/categories_raw.json
 *.jpeg
 1890.png
 1891.png
+*.jpg
+image.jpg
