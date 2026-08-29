@@ -21,8 +21,19 @@ import os
 import time
 from datetime import datetime, timedelta, timezone
 
-STATE_PATH = os.environ.get("KDX_BUDGET_STATE", "/opt/kdx/points.json")
-DAILY_POINTS = int(os.environ.get("KDX_DAILY_POINTS", "300"))
+import paths
+
+
+# Resolved when a budget is built, not when this module is imported: a cron job
+# sets the environment before python starts, but a test - and the operator
+# running a one-off with a different state directory - sets it afterwards.
+def budget_state_path() -> str:
+    return paths.state_path("points.json", "KDX_BUDGET_STATE")
+
+
+def daily_points() -> int:
+    return int(os.environ.get("KDX_DAILY_POINTS", "300"))
+
 
 # The client's day, not UTC: they asked for the run to start at midnight their
 # time. Saudi Arabia is UTC+3 all year with no daylight saving.
@@ -39,9 +50,9 @@ def business_day(now: datetime | None = None) -> str:
 
 
 class PointBudget:
-    def __init__(self, daily: int = DAILY_POINTS, state_path: str = STATE_PATH):
-        self.daily = daily
-        self.state_path = state_path
+    def __init__(self, daily: int | None = None, state_path: str = ""):
+        self.daily = daily_points() if daily is None else daily
+        self.state_path = state_path or budget_state_path()
         self.state = self._load()
 
     def _load(self) -> dict:

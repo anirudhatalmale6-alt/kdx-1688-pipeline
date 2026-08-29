@@ -14,6 +14,33 @@ python3 demo_rules.py
 No dependencies, no network, no credentials. It builds ten products that each
 trigger a different rule and prints the audit log the real pipeline would write.
 
+## The nightly run
+
+```bash
+# what the server does at 00:00 Riyadh
+python3 daily_run.py
+
+# the same thing without publishing anything
+python3 daily_run.py --dry-run --quota 20
+```
+
+The channel this appKey holds searches by photograph and has no lookup, so the
+night starts from `KDX_SEEDS` — a file of image URLs — and walks outwards.
+Measured against the live gateway on 29 August: one photograph is worth about
+75 offers over four pages, and expanding what comes back reaches new offers, so
+**300 products took 56 gateway calls and 73 seconds from a single seed**.
+
+Two things make that repeatable rather than a one-off:
+
+* every offer already handed over is recorded on disk, so tomorrow does not
+  republish today;
+* the offers a night finds beyond its quota are kept, not discarded — they were
+  already paid for with a gateway call, and the next night takes them before it
+  searches anything.
+
+`deploy/` has the systemd service and timer, and `deploy/kdx.env.example` lists
+every setting. Credentials belong in `/etc/kdx/kdx.env` and nowhere else.
+
 ## What is implemented
 
 Every rule below comes from your messages and is exercised by the demo:

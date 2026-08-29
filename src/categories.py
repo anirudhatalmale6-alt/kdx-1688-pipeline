@@ -64,13 +64,14 @@ def flatten(node: dict, path: tuple = ()) -> list:
 
 
 if __name__ == "__main__":
-    import os
     import sys
 
-    from aop_client import Credentials
+    import aop_client
 
-    client = AopClient(Credentials(app_key=os.environ["ALI_APP_KEY"],
-                                   app_secret=os.environ["ALI_APP_SECRET"]))
+    # This used to read ALI_APP_KEY / ALI_APP_SECRET, names nothing else in the
+    # project sets. It would have raised KeyError the first time anyone ran it
+    # on the server with a correctly configured environment.
+    client = aop_client.build_from_env()
     roots = root_categories(client)
     print(json.dumps(roots, ensure_ascii=False, indent=2))
     print(f"\n{len(roots)} root categories", file=sys.stderr)

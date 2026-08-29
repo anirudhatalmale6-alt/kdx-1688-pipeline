@@ -21,6 +21,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import os
 import time
 import urllib.error
 import urllib.parse
@@ -217,3 +218,38 @@ class TokenStore:
         expires_in = int(payload.get("expires_in", 0))
         credentials.expires_at = int(time.time()) + expires_in if expires_in else 0
         return credentials.access_token
+
+
+ENV_APP_KEY = "KDX_1688_APP_KEY"
+ENV_APP_SECRET = "KDX_1688_APP_SECRET"
+ENV_TOKEN = "KDX_1688_TOKEN"
+ENV_REFRESH = "KDX_1688_REFRESH_TOKEN"
+
+
+def build_from_env(**kwargs) -> "AopClient":
+    """
+    The one place credentials are read.
+
+    Every script here used to read them itself, and they had drifted: three
+    spellings of the token and, in src/categories.py, an entirely different pair
+    of names left over from the first day. On a server that reads a single
+    environment file, a name that nobody sets is not a warning - it is a
+    KeyError at midnight, in a cron job whose output nobody is watching.
+
+    The message names what is missing, because the commonest failure here is a
+    token that was never set rather than one that is wrong.
+    """
+    missing = [name for name in (ENV_APP_KEY, ENV_APP_SECRET, ENV_TOKEN)
+               if not os.environ.get(name)]
+    if missing:
+        raise AopError(
+            "1688 credentials are not in the environment: "
+            + ", ".join(missing)
+            + ". Set them in the service's environment file; they must not be "
+              "written into the repository.")
+    return AopClient(
+        Credentials(app_key=os.environ[ENV_APP_KEY],
+                    app_secret=os.environ[ENV_APP_SECRET],
+                    access_token=os.environ[ENV_TOKEN],
+                    refresh_token=os.environ.get(ENV_REFRESH, "")),
+        **kwargs)

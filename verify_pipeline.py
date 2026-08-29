@@ -332,6 +332,31 @@ def main() -> int:
           0 < sum(int(row["points_spent"] or 0) for row in shirt) < len(shirt),
           f"{sum(int(r['points_spent'] or 0) for r in shirt)} points over {len(shirt)} rows")
 
+    print("the nightly path prices a product without asking for it back")
+    # The channel we hold has no lookup, and a product taken from the discovery
+    # ledger was never in this process's memory. Before run_product existed the
+    # second nightly run skipped every one of its products with "was not
+    # returned by a LinkPlus search" - so this is a regression check, not a
+    # hypothetical.
+    runner = build()
+    normalised = runner.source.get_product(TSHIRT)
+
+    class NoLookup:
+        """A source that behaves the way the live channel does."""
+
+        def get_product(self, offer_id):
+            raise source.SourceError(
+                f"offer {offer_id} was not returned by a LinkPlus search")
+
+    runner.source = NoLookup()
+    outcomes = runner.run_products([normalised])
+    check("a product handed straight over is priced", not outcomes[0].error,
+          str(outcomes[0].error))
+    check("and it produced the same number of published variants",
+          outcomes[0].published == 3, str(outcomes[0].published))
+    check("CONTROL asking the same source for it by id still fails",
+          bool(runner.run_offer(TSHIRT).error))
+
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0
 

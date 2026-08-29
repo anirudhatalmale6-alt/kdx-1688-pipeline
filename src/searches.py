@@ -33,11 +33,18 @@ import time
 from datetime import datetime
 from decimal import Decimal
 
+import paths
 from budget import RIYADH
 from rules import CompetitorHit
 
-STATE_PATH = os.environ.get("KDX_SEARCH_STATE", "/opt/kdx/searches.json")
-CACHE_PATH = os.environ.get("KDX_COMPARE_CACHE", "/opt/kdx/comparisons.json")
+
+def meter_state_path() -> str:
+    return paths.state_path("searches.json", "KDX_SEARCH_STATE")
+
+
+def cache_path() -> str:
+    return paths.state_path("comparisons.json", "KDX_COMPARE_CACHE")
+
 
 # The plan the client is on, in searches a month. Wrong-but-low is the safe
 # direction: it stops early, it never overspends a plan that was smaller than
@@ -80,7 +87,7 @@ class SearchMeter:
         # nothing" into "spend thirty thousand" fails in the direction that
         # costs the client money.
         self.cap = MONTHLY_CAP if cap is None else int(cap)
-        self.state_path = state_path or STATE_PATH
+        self.state_path = state_path or meter_state_path()
         self.state = self._load()
 
     def _load(self) -> dict:
@@ -186,7 +193,7 @@ def _hit_from_dict(row: dict) -> CompetitorHit:
 
 class ComparisonCache:
     def __init__(self, path: str = "", ttl_days: int | None = None, clock=time.time):
-        self.path = path or CACHE_PATH
+        self.path = path or cache_path()
         # Same rule as the cap above: 0 days means every answer is stale on
         # arrival, and must not be read as "unset".
         self.ttl_seconds = (TTL_DAYS if ttl_days is None else int(ttl_days)) * 86400

@@ -17,6 +17,8 @@ import os
 import time
 from datetime import datetime
 
+import paths
+
 COLUMNS = [
     "timestamp",
     "offer_id",
@@ -50,9 +52,9 @@ REASONS_AR = {
 
 class AuditLog:
     def __init__(self, path: str | None = None):
-        self.path = path or os.environ.get(
-            "KDX_AUDIT_LOG",
-            f"/opt/kdx/logs/audit-{datetime.now().strftime('%Y-%m')}.csv")
+        self.path = path or paths.state_path(
+            os.path.join("logs", f"audit-{datetime.now().strftime('%Y-%m')}.csv"),
+            "KDX_AUDIT_LOG")
         self._ensure_header()
 
     def _ensure_header(self) -> None:

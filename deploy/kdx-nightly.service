@@ -1,0 +1,28 @@
+[Unit]
+Description=KDX: pull 1688 products, price them, publish to kdx-sa.com
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=kdx
+WorkingDirectory=/opt/kdx/app
+# Credentials live here and nowhere else. The file is root:kdx 0640 - it holds
+# the 1688 token, the OpenAI key and the KDX API token, and none of the three
+# belongs in the repository.
+EnvironmentFile=/etc/kdx/kdx.env
+ExecStart=/usr/bin/python3 /opt/kdx/app/daily_run.py
+# A night that runs long is not a night that should be killed halfway: it would
+# leave products discovered, charged against the quota, and never published.
+TimeoutStartSec=6h
+Nice=10
+
+# The run needs the state directory and nothing else on the disk.
+ProtectSystem=strict
+ReadWritePaths=/opt/kdx
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -228,6 +228,7 @@ class Pipeline:
         return self.term_translator(labels)
 
     def run_offer(self, offer_id: str) -> OfferOutcome:
+        """Fetch one offer by id, then price it. Only the AOP channel can do this."""
         if self.budget is not None and not self.budget.can_spend(self.points_per_offer):
             return OfferOutcome(offer_id=offer_id, product=None, results=[],
                                 error="daily point budget exhausted")
@@ -236,6 +237,23 @@ class Pipeline:
             normalised = self.source.get_product(offer_id)
         except Exception as exc:                      # noqa: BLE001 - reported, not swallowed
             return OfferOutcome(offer_id=offer_id, product=None, results=[], error=str(exc))
+        return self.run_product(normalised)
+
+    def run_product(self, normalised: dict) -> OfferOutcome:
+        """
+        Price and publish a product we already hold.
+
+        Discovery hands over the whole product, not an id. Asking the source to
+        fetch it back would be pointless on the AOP channel and impossible on
+        this one - there is no lookup, and a product that came out of last
+        night's surplus is not in this process's memory at all. That was not
+        theoretical: the second nightly run skipped all twelve of its products
+        with "was not returned by a LinkPlus search" until this split existed.
+        """
+        offer_id = normalised["offer_id"]
+        if self.budget is not None and not self.budget.can_spend(self.points_per_offer):
+            return OfferOutcome(offer_id=offer_id, product=None, results=[],
+                                error="daily point budget exhausted")
 
         spent = 0
         if self.budget is not None:
@@ -389,9 +407,20 @@ class Pipeline:
                 break
         return outcomes
 
+    def run_products(self, products) -> list:
+        """The nightly path: products discovery already has in its hands."""
+        outcomes = []
+        for normalised in products:
+            outcome = self.run_product(normalised)
+            outcomes.append(outcome)
+            if outcome.error == "daily point budget exhausted":
+                break
+        return outcomes
+
 
 def build(*, dry_run: bool = True, translate: bool | None = None, cny_to_sar=None):
     """Assemble a pipeline from the environment, for the scheduler and the CLI."""
+    import aop_client
     import audit as audit_module
     import budget as budget_module
     import source as source_module
@@ -426,8 +455,16 @@ def build(*, dry_run: bool = True, translate: bool | None = None, cny_to_sar=Non
         shopping = None if shopping is None else searches_module.Metered(
             shopping, meter, note="shopping")
 
+    # linkplus is the channel we actually hold, and it needs a signed client.
+    # build_source raises rather than silently falling back if one is missing,
+    # so the client is built whenever credentials exist and left as None
+    # otherwise - which keeps fixture and dry runs working without keys.
+    client = None
+    if os.environ.get(aop_client.ENV_APP_KEY) and os.environ.get(aop_client.ENV_TOKEN):
+        client = aop_client.build_from_env()
+
     return Pipeline(
-        source=source_module.build_source(),
+        source=source_module.build_source(client),
         categories=categories,
         provider=provider,
         shopping=shopping,

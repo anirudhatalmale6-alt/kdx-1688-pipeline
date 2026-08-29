@@ -1,0 +1,17 @@
+[Unit]
+Description=Start the KDX run at midnight, Riyadh time
+
+[Timer]
+# The client asked for 00:00 his time. Saudi Arabia is UTC+3 with no daylight
+# saving, so this is unambiguous - but it is spelled out rather than written as
+# 21:00 UTC, because a server whose timezone is later changed would silently
+# start running at the wrong hour.
+OnCalendar=*-*-* 00:00:00 Asia/Riyadh
+# A machine that was off at midnight still gets its run.
+Persistent=true
+# Not exactly on the hour, every night, from the same IP.
+RandomizedDelaySec=300
+Unit=kdx-nightly.service
+
+[Install]
+WantedBy=timers.target
