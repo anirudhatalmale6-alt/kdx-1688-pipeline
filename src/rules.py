@@ -52,7 +52,10 @@ COMPARISON_PLATFORMS = ["Temu", "SHEIN", "AliExpress", "Amazon", "Noon"]
 
 # Mains specification the client accepts for anything electrical.
 REQUIRED_VOLTAGE = re.compile(r"\b220\s*v\b", re.IGNORECASE)
-REQUIRED_FREQUENCY = re.compile(r"\b(50|60)\s*/?\s*(60)?\s*hz\b", re.IGNORECASE)
+# Any frequency at all, versus one we can sell. The pair is what lets "not
+# stated" be told apart from "stated and unsuitable".
+ANY_FREQUENCY = re.compile(r"\b\d{2,3}\s*(?:/\s*\d{2,3}\s*)?hz\b", re.IGNORECASE)
+ACCEPTED_FREQUENCY = re.compile(r"\b(?:50|60)\s*(?:/\s*(?:50|60)\s*)?hz\b", re.IGNORECASE)
 
 # Signals that a product is mains-powered at all.
 ELECTRICAL_HINTS = re.compile(
@@ -165,9 +168,26 @@ def is_electrical(product: Product) -> bool:
 
 
 def has_accepted_mains_spec(product: Product) -> bool:
-    """Client rule: mains products are only accepted at 220V and 50/60Hz."""
+    """
+    Client rule, as he revised it on 29 August: 220V is required, a stated
+    frequency is not.
+
+    The original rule demanded both. It was put to him because most 1688
+    listings state the voltage and never mention the frequency at all, so the
+    strict reading rejected nearly every electrical product. His answer: accept
+    a product that states 220V and says nothing about frequency.
+
+    Silent is still not the same as wrong. A listing that does state a frequency
+    we cannot sell - 400Hz industrial equipment - stays rejected, otherwise
+    "did not mention it" and "mentioned it and it is unusable in Saudi Arabia"
+    would be treated as the same thing.
+    """
     text = product.searchable_text()
-    return bool(REQUIRED_VOLTAGE.search(text) and REQUIRED_FREQUENCY.search(text))
+    if not REQUIRED_VOLTAGE.search(text):
+        return False
+    if ANY_FREQUENCY.search(text):
+        return bool(ACCEPTED_FREQUENCY.search(text))
+    return True
 
 
 def shipping_flag(weight_kg: Decimal) -> tuple[str, str]:
@@ -249,7 +269,8 @@ class Engine:
         if is_electrical(product) and not has_accepted_mains_spec(product):
             return [
                 self._reject(product, variant, "mains_spec",
-                             "منتج كهربائي بمواصفات غير مقبولة - المطلوب 220v و 50/60Hz")
+                             "منتج كهربائي بمواصفات غير مقبولة - المطلوب 220 فولت، "
+                             "وإذا ذُكر التردد فيجب أن يكون 50 أو 60 هرتز")
                 for variant in product.variants
             ]
 
@@ -317,6 +338,15 @@ class Engine:
             shipping_type=shipping_type,
         )
         return PricingResult(variant, decision, audit, price)
+
+    def reject(self, product, variant, code, reason_ar) -> PricingResult:
+        """
+        Refuse one variant for a reason decided outside the engine - today that
+        is the category tree. Public so callers do not have to reach for the
+        private one, and so every rejection still produces the same audit row
+        as the engine's own.
+        """
+        return self._reject(product, variant, code, reason_ar)
 
     def _reject(self, product, variant, code, reason_ar, cost=None, match=None,
                 requires_shipping="", shipping_type="") -> PricingResult:

@@ -32,6 +32,7 @@ os.environ["KDX_AUDIT_LOG"] = os.path.join(WORK, "audit.csv")
 
 import audit as audit_module  # noqa: E402
 import budget as budget_module  # noqa: E402
+import catalog  # noqa: E402
 import compare  # noqa: E402
 import pipeline as pipeline_module  # noqa: E402
 import rules  # noqa: E402
@@ -77,9 +78,27 @@ def fake_terms(terms, **_kwargs):
     return {term: TERMS.get(term, {"en": term, "ar": term}) for term in terms}
 
 
+# A miniature category tree covering the two fixtures, so the department that
+# reaches KDX can be checked without depending on the 1497-row real one.
+CATEGORY_ROWS = [
+    {"id": 10166, "parent_id": None, "depth": 1, "name_zh": "女装",
+     "name_en": "Women's Clothing", "name_ar": "ملابس نسائية",
+     "path_zh": "女装", "is_leaf": False, "state": "allowed", "reason": "", "matched": ""},
+    {"id": 1031910, "parent_id": 10166, "depth": 2, "name_zh": "连衣裙",
+     "name_en": "Dresses", "name_ar": "فساتين",
+     "path_zh": "女装 > 连衣裙", "is_leaf": True, "state": "allowed", "reason": "", "matched": ""},
+    {"id": 130823000, "parent_id": None, "depth": 1, "name_zh": "成人用品",
+     "name_en": "Adult Products", "name_ar": "منتجات للبالغين",
+     "path_zh": "成人用品", "is_leaf": False, "state": "blocked",
+     "reason": "sexual", "matched": "成人用品"},
+]
+
+
 def build(daily_points: int = 300, cny_to_sar: str = "0.52", translate: bool = True,
-          state: str = "points.json", offers: str | None = None):
+          state: str = "points.json", offers: str | None = None,
+          categories=catalog.CategoryIndex(CATEGORY_ROWS)):
     return pipeline_module.Pipeline(
+        categories=categories,
         source=source_module.FixtureSource(offers),
         provider=compare.FixtureProvider(),
         engine=rules.Engine(cny_to_sar=Decimal(cny_to_sar)),
@@ -164,23 +183,50 @@ def main() -> int:
         result.audit.reason_code == "banned_category" for result in banned.results),
         str({result.audit.reason_code for result in banned.results}))
 
-    print("5. an electrical product must state both 220V and the frequency")
-    quiet = os.path.join(WORK, "quiet")
-    os.makedirs(quiet, exist_ok=True)
-    with open(os.path.join(HERE, "samples", "offers", f"{BOILER}.json"), encoding="utf-8") as fh:
-        payload = json.load(fh)
-    payload["result"]["productInfo"]["productAttribute"] = [
-        {"attributeName": "电压", "attributeValue": "220V"}]
-    payload["result"]["productInfo"]["productID"] = 888000222
-    with open(os.path.join(quiet, "888000222.json"), "w", encoding="utf-8") as fh:
-        json.dump(payload, fh, ensure_ascii=False)
+    print("5. the mains rule as the client revised it: 220V required, frequency optional")
 
-    silent = build(offers=quiet, state="quiet.json").run_offer("888000222")
-    check("a voltage with no stated frequency is not published",
-          silent.product is None and silent.published == 0)
-    check("and the reason names the missing spec",
-          all(result.audit.reason_code == "mains_spec" for result in silent.results),
-          str({result.audit.reason_code for result in silent.results}))
+    def boiler_with(attributes: list, offer_id: int, folder: str):
+        """The boiler fixture with its electrical attributes replaced."""
+        directory = os.path.join(WORK, folder)
+        os.makedirs(directory, exist_ok=True)
+        with open(os.path.join(HERE, "samples", "offers", f"{BOILER}.json"),
+                  encoding="utf-8") as handle:
+            payload = json.load(handle)
+        payload["result"]["productInfo"]["productAttribute"] = attributes
+        payload["result"]["productInfo"]["productID"] = offer_id
+        with open(os.path.join(directory, f"{offer_id}.json"), "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, ensure_ascii=False)
+        return build(offers=directory, state=f"{folder}.json").run_offer(str(offer_id))
+
+    silent = boiler_with([{"attributeName": "电压", "attributeValue": "220V"}],
+                         888000222, "quiet")
+    check("220V with no frequency stated is now published",
+          silent.published == 1 and silent.product is not None,
+          silent.results[0].audit.reason_ar if silent.results else "no results")
+
+    # Controls. Without these, "it published" would only prove the filter was
+    # switched off, not that it was narrowed.
+    wrong_hz = boiler_with([{"attributeName": "电压", "attributeValue": "220V"},
+                            {"attributeName": "频率", "attributeValue": "400Hz"}],
+                           888000333, "wronghz")
+    check("CONTROL: a frequency that IS stated and unusable is still rejected",
+          wrong_hz.published == 0
+          and all(r.audit.reason_code == "mains_spec" for r in wrong_hz.results),
+          str({r.audit.reason_code for r in wrong_hz.results}))
+
+    wrong_volts = boiler_with([{"attributeName": "电压", "attributeValue": "110V"},
+                               {"attributeName": "频率", "attributeValue": "60Hz"}],
+                              888000444, "wrongv")
+    check("CONTROL: 110V is rejected however good the frequency is",
+          wrong_volts.published == 0
+          and all(r.audit.reason_code == "mains_spec" for r in wrong_volts.results),
+          str({r.audit.reason_code for r in wrong_volts.results}))
+
+    dual = boiler_with([{"attributeName": "电压", "attributeValue": "110V/220V"},
+                        {"attributeName": "频率", "attributeValue": "50/60Hz"}],
+                       888000555, "dual")
+    check("a dual-voltage product counts as 220V", dual.published == 1,
+          dual.results[0].audit.reason_ar if dual.results else "no results")
 
     print("6. skipping translation must not silently change the price")
     untranslated = build(translate=False, state="untranslated.json").run_offer(BOILER)
@@ -203,16 +249,63 @@ def main() -> int:
     check("and the reason is the budget, not an API error",
           outcomes[-1].error == "daily point budget exhausted", outcomes[-1].error)
 
-    print("8. the audit file accounts for every variant")
+    print("8. the department KDX files the product under comes from the tree")
+    category = outcome.product["category"]
+    check("the main department is the root of the branch",
+          category["main_category"] and category["main_category"][0]["name_ar"] == "ملابس نسائية",
+          str(category["main_category"]))
+    check("the sub department is the category the offer actually names",
+          category["sub_category"] and category["sub_category"][0]["id"] == 1031910,
+          str(category["sub_category"]))
+    no_tree = build(categories=None, state="notree.json").run_offer(TSHIRT)
+    check("CONTROL: with no tree loaded the block is empty, not invented",
+          no_tree.product["category"]["main_category"] == []
+          and no_tree.published == 3,
+          str(no_tree.product["category"]))
+
+    print("8b. a category the client excluded is refused before anything is spent")
+    banned_category_dir = os.path.join(WORK, "bannedcat")
+    os.makedirs(banned_category_dir, exist_ok=True)
+    with open(os.path.join(HERE, "samples", "offers", f"{TSHIRT}.json"), encoding="utf-8") as fh:
+        payload = json.load(fh)
+    # An innocent title in an excluded department: the title filter cannot see
+    # this one, only the tree can.
+    payload["result"]["productInfo"]["categoryID"] = 130823000
+    payload["result"]["productInfo"]["productID"] = 777000111
+    with open(os.path.join(banned_category_dir, "777000111.json"), "w", encoding="utf-8") as fh:
+        json.dump(payload, fh, ensure_ascii=False)
+
+    by_category = build(offers=banned_category_dir, state="bannedcat.json").run_offer("777000111")
+    check("nothing is published from a blocked department",
+          by_category.product is None and by_category.published == 0)
+    check("and the reason names the department, not a word in the title",
+          all(r.audit.reason_code == "banned_category" for r in by_category.results)
+          and "منتجات للبالغين" in by_category.results[0].audit.reason_ar,
+          by_category.results[0].audit.reason_ar if by_category.results else "no results")
+    check("CONTROL: the same product in an allowed department publishes",
+          build(offers=banned_category_dir, state="bannedcat2.json",
+                categories=catalog.CategoryIndex(
+                    [dict(row, state="allowed") if row["id"] == 130823000 else row
+                     for row in CATEGORY_ROWS])).run_offer("777000111").published == 3,
+          "otherwise this only proves the fixture is broken")
+
+    print("9. the audit file accounts for every variant")
     with open(os.path.join(WORK, "audit.csv"), encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
     check("there is a line per variant, published or not", len(rows) >= 4, str(len(rows)))
     check("rejections carry an Arabic reason",
           all(row["reason_ar"] for row in rows if row["decision"] != "publish"))
-    check("the read cost is charged once per offer, not once per variant",
-          sum(int(row["points_spent"] or 0) for row in rows
-              if row["offer_id"] == TSHIRT) == 2,
-          "one point for each of the two times this offer was read")
+    # The bug this catches: budget.spend() answers with the points REMAINING,
+    # so writing its return value here made every row claim ~299 points for a
+    # one-point read. Asserting a total would need updating every time a check
+    # above reads another offer; asserting the shape does not.
+    charges = [int(row["points_spent"] or 0) for row in rows]
+    check("no row was ever charged more than the cost of one read",
+          set(charges) <= {0, 1}, str(sorted(set(charges))))
+    shirt = [row for row in rows if row["offer_id"] == TSHIRT]
+    check("the read cost is charged once per read, not once per variant",
+          0 < sum(int(row["points_spent"] or 0) for row in shirt) < len(shirt),
+          f"{sum(int(r['points_spent'] or 0) for r in shirt)} points over {len(shirt)} rows")
 
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0
