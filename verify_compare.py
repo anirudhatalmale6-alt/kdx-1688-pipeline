@@ -199,8 +199,16 @@ def main() -> int:
                   {"platform": "Noon", "score": Decimal("100"), "link": "y",
                    "title": "t", "price": None}]
 
-    strict = compare.prices_from_shopping(identified, live_shopping, OUR_TITLE, "sku-1")
-    check("at the client's 95% wording rule, real listings price NOTHING",
+    # Why the default moved to 60 on 29 August. Set back to 95 explicitly here,
+    # because the finding is about that number and it must not depend on which
+    # value happens to be the default today.
+    original = compare.TEXT_THRESHOLD
+    try:
+        compare.TEXT_THRESHOLD = Decimal("95")
+        strict = compare.prices_from_shopping(identified, live_shopping, OUR_TITLE, "sku-1")
+    finally:
+        compare.TEXT_THRESHOLD = original
+    check("at the client's original 95% wording rule, real listings price NOTHING",
           strict == [], f"{len(strict)} hits")
     check("because the best a real rival title scores against ours is 75",
           max(compare.text_score(OUR_TITLE, row.get("title", "")) for row in on_platforms)
@@ -263,12 +271,48 @@ def main() -> int:
     check("nothing left to look up means no shopping call is paid for",
           shopping.calls == 0, f"{shopping.calls} calls")
 
-    # The recorded boiler fixture does contain an unpriced identified platform -
-    # a Temu listing quoting USD - so it SHOULD reach for the shopping engine.
+    # The recorded boiler fixture identifies two platforms: Noon quoting 689 SAR
+    # and Temu quoting USD, which is dropped. Under the client's rule of 29
+    # August - do not buy a second search when a price is already in hand - this
+    # product costs one search and is priced against Noon.
+    #
+    # That rule has a price of its own, and it is measurable here rather than
+    # arguable: the shopping engine, if it were asked, finds the same boiler on
+    # Amazon at 553.01 SAR. Undercutting 689 instead of 553 puts us 136 SAR
+    # above the cheapest rival on this one product. Both behaviours are kept,
+    # one environment variable apart, so the choice stays the client's.
     shopping = CountingShopping(live_shopping)
-    compare.hits_for_product(compare.FixtureProvider(), product, OUR_TITLE, shopping=shopping)
-    check("a rival identified but quoted in the wrong currency is looked up",
-          shopping.calls == 1, f"{shopping.calls} calls")
+    cheap = compare.hits_for_product(compare.FixtureProvider(), product, OUR_TITLE,
+                                     shopping=shopping)
+    check("a price already in hand means no second search is bought",
+          shopping.calls == 0, f"{shopping.calls} calls")
+    check("so the product is priced against the rival the picture priced",
+          min(hit.price_sar for hit in cheap["sku-boiler"]) == Decimal("689.00"),
+          str(sorted(hit.price_sar for hit in cheap["sku-boiler"])))
+
+    original_when = compare.SHOPPING_WHEN
+    try:
+        compare.SHOPPING_WHEN = "any-unpriced"
+        shopping = CountingShopping(live_shopping)
+        thorough = compare.hits_for_product(compare.FixtureProvider(), product, OUR_TITLE,
+                                            shopping=shopping)
+        check("the thorough setting looks up the platform that quoted no SAR price",
+              shopping.calls == 1, f"{shopping.calls} calls")
+        # And on this product it buys nothing: the picture identified Noon
+        # (priced) and Temu (not priced), and the recorded shopping response
+        # contains no Temu row at all - 5 Amazon rows, 2 Noon, 33 elsewhere.
+        # Amazon quotes 553.01 there, cheaper than Noon's 689, and we still do
+        # not take it, because the picture never identified Amazon for this
+        # product and a shopping row on its own is not allowed to establish
+        # identity. That guard is the point, not a shortfall.
+        check("but on this product the extra search changes nothing",
+              min(hit.price_sar for hit in thorough["sku-boiler"]) == Decimal("689.00"),
+              str(sorted(hit.price_sar for hit in thorough["sku-boiler"])))
+        check("CONTROL: the cheaper Amazon row was there and was deliberately not used",
+              any(compare.sar_price(row.get("price")) == Decimal("553.01")
+                  for row in live_shopping))
+    finally:
+        compare.SHOPPING_WHEN = original_when
 
     class UnpricedLens:
         """Identifies two platforms, quotes neither - the measured normal case."""
@@ -292,6 +336,66 @@ def main() -> int:
     compare.hits_for_product(NoMatchLens(), product, OUR_TITLE, shopping=shopping)
     check("CONTROL: no identified platform means no second search is paid for",
           shopping.calls == 0, f"{shopping.calls} calls")
+
+    print("13. one search per product, or one per colour - the bill lives here")
+
+    class CountingLens:
+        def __init__(self):
+            self.calls, self.images = 0, []
+
+        def search_by_image(self, image_url):
+            self.calls += 1
+            self.images.append(image_url)
+            return [{"link": "https://www.noon.com/x", "source": "Noon", "title": OUR_TITLE,
+                     "price": {"currency": "SAR", "extracted_value": 689.0,
+                               "value": "SAR 689.00"}}]
+
+    colours = [
+        rules.Variant(sku_id=f"sku-{name}", attributes={"color": name,
+                                                        "images": [f"https://img/{name}.jpg"]},
+                      price_cny=Decimal("460.00"), stock=5, weight_kg=Decimal("12.4"))
+        for name in ("black", "white", "silver", "red", "blue")
+    ]
+    five = rules.Product(offer_id="611229900012", title_zh="商用不锈钢电热开水器 30L",
+                         description_zh="220V 3000W", images=[BOILER_IMAGE],
+                         variants=colours)
+
+    lens = CountingLens()
+    per_product = compare.hits_for_product(lens, five, OUR_TITLE, scope="product")
+    check("five colours cost one search, not five", lens.calls == 1, f"{lens.calls} calls")
+    check("and the one searched is the product's main photo",
+          lens.images == [BOILER_IMAGE], str(lens.images))
+    check("every colour still gets the answer",
+          sorted(per_product) == sorted(v.sku_id for v in colours), str(sorted(per_product)))
+    # The hit carries no variant tag, which is what makes applying it to all
+    # five legitimate rather than a shortcut - rules.best_match already refuses
+    # a TAGGED hit against a different variant, and would have refused these.
+    check("the hit is untagged, so the pricing engine accepts it for any colour",
+          all(hit.matched_variant == "" for rows in per_product.values() for hit in rows))
+    check("and rules.best_match does accept it for a colour that was not searched",
+          rules.best_match(per_product["sku-red"], colours[3]) is not None)
+
+    lens = CountingLens()
+    per_colour = compare.hits_for_product(lens, five, OUR_TITLE, scope="variant")
+    check("the precise setting is still there and costs five searches",
+          lens.calls == 5, f"{lens.calls} calls")
+    check("and there each hit is tagged to the photo that found it",
+          per_colour["sku-red"][0].matched_variant == "sku-red")
+    check("CONTROL: that tagged hit is refused against another colour",
+          rules.best_match(per_colour["sku-red"], colours[0]) is None,
+          "the red photo's price must not price the black one")
+
+    class NeverCalled:
+        def search_by_image(self, image_url):
+            raise AssertionError("a product with no photo must not be searched")
+
+    naked = rules.Product(offer_id="611229900013", title_zh="x", description_zh="",
+                          images=[], variants=[
+                              rules.Variant(sku_id="sku-none", attributes={},
+                                            price_cny=Decimal("10"), stock=1,
+                                            weight_kg=Decimal("1"))])
+    check("CONTROL: a product with no photo at all buys no search",
+          compare.hits_for_product(NeverCalled(), naked, OUR_TITLE, scope="product") == {})
 
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0

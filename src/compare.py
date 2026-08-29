@@ -57,17 +57,43 @@ VISUAL_DECAY_PER_RANK = Decimal("2")
 
 # How closely the WORDS have to agree, separately from the picture.
 #
-# Defaults to the client's own 95, and measurement says that number almost never
-# fires: on a real Saudi shopping response for one boiler, the best-scoring
-# Amazon listing for the same product reached 75. Marketplace titles are simply
-# not written like ours - "20L/30L/40L Commercial Catering Urn" against
-# "Commercial Stainless Steel Electric Water Boiler 30L 3000W".
+# 60, on the client's decision of 29 August, and the number comes from a
+# measurement rather than a preference: at his original 95 the comparison never
+# fires at all. On a real Saudi shopping response for one boiler the
+# best-scoring Amazon listing for the same product reached 75, because
+# marketplace titles are not written like ours - "20L/30L/40L Commercial
+# Catering Urn" against "Commercial Stainless Steel Electric Water Boiler 30L
+# 3000W". At 60 that same product yields three genuine rival prices.
 #
 # It is a separate number from MATCH_THRESHOLD because the two guard different
-# things. The picture establishes identity; the words are only here to catch the
-# case where one photo sells two sizes, and the specification veto below does
-# most of that work already. Lowering this does not loosen the picture.
-TEXT_THRESHOLD = Decimal(os.environ.get("KDX_TEXT_MATCH_MIN", str(MATCH_THRESHOLD)))
+# things. The picture establishes identity and stays at 95; the words are only
+# here to catch the case where one photo sells two sizes, and the specification
+# veto below does most of that work already. Lowering this does not loosen the
+# picture. KDX_TEXT_MATCH_MIN puts it back to 95 without a code change.
+DEFAULT_TEXT_THRESHOLD = "60"
+TEXT_THRESHOLD = Decimal(os.environ.get("KDX_TEXT_MATCH_MIN", DEFAULT_TEXT_THRESHOLD))
+
+# One image search per PRODUCT, or one per colour?
+#
+# Per colour is more precise - the black photo is compared against black ones -
+# but it multiplies the bill by the number of colours, and the client's
+# constraint is the monthly SerpApi allowance. "product" searches the main photo
+# once and lets the result stand for every colour of that product; the hits it
+# produces carry no variant tag, which is exactly how rules.best_match already
+# treats a hit that was not matched to one particular colour.
+#
+# Set KDX_LENS_SCOPE=variant to buy back the precision when the allowance allows
+# it. Nothing else in the pipeline changes.
+LENS_SCOPE = os.environ.get("KDX_LENS_SCOPE", "product").strip().lower()
+
+# When is the second (price) search allowed to happen?
+#
+#   no-price      only when not one identified rival quoted a price. The
+#                 client's instruction of 29 August, and the cheaper rule.
+#   any-unpriced  whenever any identified rival is missing its price. More
+#                 accurate - it can still find a cheaper platform that the image
+#                 search identified but did not price - and costs more searches.
+SHOPPING_WHEN = os.environ.get("KDX_SHOPPING_WHEN", "no-price").strip().lower()
 
 # Marketing filler that inflates title overlap without saying anything about
 # which product this is.
@@ -388,46 +414,94 @@ def build_provider():
 # The stage
 # --------------------------------------------------------------------------
 
+def needs_price_search(matches: list, when: str = "") -> bool:
+    """
+    Is the second, paid, price search justified?
+
+    No identified rival means no second search: a shopping row is only ever
+    allowed to price a platform the picture already matched, so with nothing
+    matched the call could not produce a single usable price. That single guard
+    is the difference between one search per product and two.
+    """
+    when = (when or SHOPPING_WHEN).strip().lower()
+    if not matches:
+        return False
+    if when == "any-unpriced":
+        return any(match["price"] is None for match in matches)
+    # "no-price": the image search already answered the price question for this
+    # product, so do not pay to ask it again.
+    return not any(match["price"] is not None for match in matches)
+
+
+def main_image(product) -> str:
+    """The one photo that stands for the whole product, for a product-scope search."""
+    for image in getattr(product, "images", []) or []:
+        if image:
+            return image
+    for variant in getattr(product, "variants", []) or []:
+        images = (variant.attributes or {}).get("images") or []
+        if isinstance(images, str):
+            images = [images]
+        for image in images:
+            if image:
+                return image
+    return ""
+
+
 def hits_for_product(provider, product, title_en: str, max_images_per_variant: int = 1,
-                     shopping=None) -> dict:
+                     shopping=None, scope: str = "") -> dict:
     """
-    Search each variant by its own photo and return {sku_id: [CompetitorHit]}.
+    Search by photo and return {sku_id: [CompetitorHit]}.
 
-    Per variant, not per product: the whole point of grouping by photo is that
-    the black one is compared against black ones. A hit found from the black
-    photo is tagged with that variant's sku so rules.best_match cannot apply it
-    to another.
+    Two scopes, and which one is in force is a money decision, not a technical
+    one - see LENS_SCOPE above.
 
-    Every image searched costs one provider call, so this is where the daily
-    budget is actually spent - hence one image per variant by default.
+      product  (default) one search on the main photo, the answer applies to
+               every colour. Hits carry no variant tag, so rules.best_match
+               accepts them against any variant.
+      variant  one search per colour photo. A hit found from the black photo is
+               tagged with that variant's sku so it cannot be applied to the
+               white one. Precise, and N times the cost.
+
+    The price search, when it runs at all, runs at most once per product in
+    either scope.
     """
+    scope = (scope or LENS_SCOPE).strip().lower()
+    variants = list(getattr(product, "variants", []) or [])
     hits: dict = {}
     searched: dict = {}
     shopping_rows = None            # fetched at most once per product, not per variant
-    for variant in getattr(product, "variants", []) or []:
+
+    def resolve(matches: list, sku: str) -> list:
+        nonlocal shopping_rows
+        found = [CompetitorHit(platform=m["platform"], price_sar=m["price"],
+                               match_score=m["score"], url=m["link"],
+                               matched_variant=sku)
+                 for m in matches if m["price"] is not None]
+        if shopping is not None and needs_price_search(matches):
+            if shopping_rows is None:
+                shopping_rows = shopping.search_by_title(title_en)
+            found.extend(prices_from_shopping(matches, shopping_rows, title_en, sku))
+        return found
+
+    if scope == "product":
+        image = main_image(product)
+        if not image:
+            return {}
+        found = resolve(identity_matches(provider.search_by_image(image), title_en), "")
+        # The same list under every sku: one search, one answer, and the empty
+        # variant tag is what makes it legitimately usable against all of them.
+        return {variant.sku_id: list(found) for variant in variants}
+
+    for variant in variants:
         images = (variant.attributes or {}).get("images") or []
         if isinstance(images, str):
             images = [images]
         for image in images[:max_images_per_variant]:
             if image not in searched:
                 searched[image] = provider.search_by_image(image)
-
             matches = identity_matches(searched[image], title_en)
-            found = [CompetitorHit(platform=m["platform"], price_sar=m["price"],
-                                   match_score=m["score"], url=m["link"],
-                                   matched_variant=variant.sku_id)
-                     for m in matches if m["price"] is not None]
-
-            # Only ask for prices when the picture already found one of the five
-            # and none of them quoted a price. No identity, no second search -
-            # that is the difference between one call a product and two.
-            if shopping is not None and any(m["price"] is None for m in matches):
-                if shopping_rows is None:
-                    shopping_rows = shopping.search_by_title(title_en)
-                found.extend(prices_from_shopping(matches, shopping_rows, title_en,
-                                                  variant.sku_id))
-
-            hits.setdefault(variant.sku_id, []).extend(found)
+            hits.setdefault(variant.sku_id, []).extend(resolve(matches, variant.sku_id))
     return hits
 
 

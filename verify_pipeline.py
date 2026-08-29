@@ -249,10 +249,19 @@ def main() -> int:
     check("the outcome says the comparison did not run",
           untranslated.compared is False,
           "a Chinese title cannot match an English one, so the search is skipped openly")
-    check("and the price is visibly a margin price, not an undercut",
-          untranslated.results[0].decision == rules.Decision.REJECT
-          and untranslated.results[0].audit.reason_code == "heavy_and_unmatched",
+    check("and the heavy product is held back rather than published unpriced",
+          untranslated.results[0].decision == rules.Decision.REJECT,
+          str(untranslated.results[0].decision))
+    # The reason is "nobody looked", not "nothing was found". The engine's own
+    # heavy_and_unmatched reason reads, in Arabic, that the product was not
+    # found on any comparison platform - true after a search, a false statement
+    # before one, and the client reads this file to find out why his catalogue
+    # is short.
+    check("with a reason that does not claim a search happened",
+          untranslated.results[0].audit.reason_code == "not_compared",
           untranslated.results[0].audit.reason_code)
+    check("CONTROL: the same offer, searched, is rejected for the honest reason instead",
+          all(result.audit.reason_code != "not_compared" for result in boiler.results))
     check("while the translated run priced the same offer from Noon",
           boiler.compared is True and "Noon" in boiler.results[0].audit.pricing_basis,
           "the two runs must differ, otherwise this check proves nothing")

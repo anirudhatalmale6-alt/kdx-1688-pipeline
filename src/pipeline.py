@@ -39,6 +39,8 @@ class OfferOutcome:
     points_spent: int = 0
     error: str = ""
     compared: bool = True         # False when the image search was not run at all
+    searches_spent: int = 0       # SerpApi searches this offer cost
+    from_cache: bool = False      # the comparison was reused, not bought again
 
     @property
     def published(self) -> int:
@@ -125,12 +127,35 @@ def to_kdx_variants(results: list, terms: dict) -> list:
     return list(grouped.values())
 
 
+def _restate_uncompared(results: list) -> None:
+    """
+    Correct the audit reason on a product that was never searched.
+
+    The client's rule is that a heavy product with no match is not published, so
+    the engine rejects it as "heavy_and_unmatched" - and that reason says, in
+    Arabic, that the product was not found on any comparison platform. When the
+    monthly search allowance is gone, or the product was not translated, nobody
+    looked, and writing "not found" would be a false statement in the file the
+    client reads to understand why his catalogue is short.
+
+    The decision does not change: without a match a heavy product still cannot
+    be published. Only the stated reason changes, from a wrong one to a true
+    one, and it says the product is waiting rather than refused.
+    """
+    for result in results:
+        if result.audit.reason_code == "heavy_and_unmatched":
+            result.audit.reason_code = "not_compared"
+            result.audit.reason_ar = (
+                "لم تتم المقارنة لهذا المنتج (لم يُبحث عنه). "
+                "المنتج ثقيل ولا يُنشر بدون مقارنة - مؤجَّل وليس مرفوضاً")
+
+
 class Pipeline:
     def __init__(self, *, source, provider, engine, budget=None, audit_log=None,
                  shopping=None,
                  kdx=None, translate: bool = True, dry_run: bool = True,
                  points_per_offer: int = 1, enricher=None, term_translator=None,
-                 categories=None):
+                 categories=None, cache=None, meter=None):
         self.source = source
         self.provider = provider
         # Prices, when the image search finds the product but not its price.
@@ -149,6 +174,10 @@ class Pipeline:
         # The built category tree, used to name the department KDX files the
         # product under and to refuse a category the client excluded.
         self.categories = categories
+        # The SerpApi allowance: what has already been answered (cache) and how
+        # much of the month is left to spend (meter).
+        self.cache = cache
+        self.meter = meter
 
     def _enrich(self, product: rules.Product) -> dict:
         if not self.translate:
@@ -224,27 +253,21 @@ class Pipeline:
 
         enriched = self._enrich(product)
 
-        # The comparison platforms are searched with the English name, so an
-        # untranslated product cannot be compared: every title check would score
-        # zero against a Chinese title and every product would quietly fall
-        # through to margin pricing. Quietly is the problem - a product priced
-        # by margin because the translation was skipped looks identical to one
-        # priced by margin because it genuinely has no rival, and the two carry
-        # different prices. So the search is skipped openly and the outcome says
-        # it was, rather than running a search that is guaranteed to find
-        # nothing.
-        compared = not enriched.get("_untranslated")
-        hits = (compare.hits_for_product(self.provider, product,
-                                         enriched.get("name_en", ""), shopping=self.shopping)
-                if compared else {})
+        # Cache first, then the meter, then the search - see _compare below.
+        hits, searches, from_cache, compared = self._compare(
+            product, enriched.get("name_en", ""),
+            translated=not enriched.get("_untranslated"))
 
         results = self.engine.evaluate(product, hits)
+        if not compared:
+            _restate_uncompared(results)
         self._audit(results, spent)
 
         variants = to_kdx_variants(results, self._terms(product))
         if not variants:
             return OfferOutcome(offer_id=offer_id, product=None, results=results,
-                                points_spent=spent, compared=compared)
+                                points_spent=spent, compared=compared,
+                                searches_spent=searches, from_cache=from_cache)
 
         main_category, sub_category = (
             self.categories.resolve(normalised.get("category_id"))
@@ -268,7 +291,54 @@ class Pipeline:
             self.kdx.push([payload])
 
         return OfferOutcome(offer_id=offer_id, product=payload, results=results,
-                            points_spent=spent, compared=compared)
+                            points_spent=spent, compared=compared,
+                            searches_spent=searches, from_cache=from_cache)
+
+    def _compare(self, product: rules.Product, title_en: str, translated: bool):
+        """
+        Return (hits, searches_spent, from_cache, compared).
+
+        `compared` is False whenever no search stood behind the answer, and it
+        exists so the audit can tell apart two products that both ended up on
+        margin pricing: one that was searched and found no rival, and one that
+        was never searched at all. They carry different prices for different
+        reasons and must not look alike.
+
+        The comparison platforms are searched with the English name, so an
+        untranslated product cannot be compared: every title check would score
+        zero against a Chinese title. That search is skipped openly rather than
+        run and guaranteed to find nothing.
+        """
+        if not translated:
+            return {}, 0, False, False
+
+        if self.cache is not None:
+            cached = self.cache.get(product.offer_id)
+            if cached is not None:
+                # Answered already, under the thresholds still in force, and not
+                # yet stale. This is where the monthly bill is actually saved.
+                return cached, 0, True, True
+
+        # The meter is checked before the call, not after: an exception thrown
+        # halfway through a product would leave the run without an answer AND
+        # having spent the search.
+        need = 1 if self.shopping is None else 2
+        if self.meter is not None and not self.meter.can_spend(need):
+            return {}, 0, False, False
+
+        before = self._calls()
+        hits = compare.hits_for_product(self.provider, product, title_en,
+                                        shopping=self.shopping)
+        searches = self._calls() - before
+        if self.cache is not None:
+            # The empty answer is stored too. Most products find no qualifying
+            # rival, and not storing that is not storing the common case.
+            self.cache.put(product.offer_id, hits, searches)
+        return hits, searches, False, True
+
+    def _calls(self) -> int:
+        """Searches made so far, when the providers are metered ones."""
+        return (getattr(self.provider, "calls", 0) or 0) + (getattr(self.shopping, "calls", 0) or 0)
 
     def _audit(self, results: list, points: int) -> None:
         if self.audit_log is None:
@@ -314,11 +384,24 @@ def build(*, dry_run: bool = True, translate: bool | None = None, cny_to_sar=Non
                        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                                     "data", "categories.json")))
 
+    import searches as searches_module
+    meter = searches_module.build_meter()
+    provider = compare.build_provider()
+    shopping = compare.build_shopping_provider()
+    if meter is not None:
+        # Wrapped, so the month's count is the calls actually made rather than a
+        # number kept alongside them.
+        provider = searches_module.Metered(provider, meter, note="lens")
+        shopping = None if shopping is None else searches_module.Metered(
+            shopping, meter, note="shopping")
+
     return Pipeline(
         source=source_module.build_source(),
         categories=categories,
-        provider=compare.build_provider(),
-        shopping=compare.build_shopping_provider(),
+        provider=provider,
+        shopping=shopping,
+        cache=searches_module.build_cache(),
+        meter=meter,
         engine=rules.Engine(cny_to_sar=cny_to_sar),
         budget=budget_module.PointBudget(),
         audit_log=audit_module.AuditLog(),
