@@ -128,7 +128,8 @@ def to_kdx_variants(results: list, terms: dict) -> list:
 class Pipeline:
     def __init__(self, *, source, provider, engine, budget=None, audit_log=None,
                  kdx=None, translate: bool = True, dry_run: bool = True,
-                 points_per_offer: int = 1, enricher=None, term_translator=None):
+                 points_per_offer: int = 1, enricher=None, term_translator=None,
+                 categories=None):
         self.source = source
         self.provider = provider
         self.engine = engine
@@ -142,6 +143,9 @@ class Pipeline:
         # the joins between stages can be tested without the model in the way.
         self.enricher = enricher or enrich_module.enrich
         self.term_translator = term_translator or enrich_module.translate_terms
+        # The built category tree, used to name the department KDX files the
+        # product under and to refuse a category the client excluded.
+        self.categories = categories
 
     def _enrich(self, product: rules.Product) -> dict:
         if not self.translate:
@@ -186,6 +190,27 @@ class Pipeline:
         # The banned-category and mains-voltage filters live in the engine and
         # run before anything is translated or searched, so a product that can
         # never be published costs nothing beyond the one read that found it.
+        # The category tree is consulted first, because it can reject a product
+        # from its department alone - no title, no translation, no search.
+        # "unknown" never rejects: most leaf ids sit below the depth we walked,
+        # and refusing everything we have not walked would refuse the catalogue.
+        category_state = (self.categories.state_of(normalised.get("category_id"))
+                          if self.categories is not None else "unknown")
+
+        if category_state in ("blocked", "review"):
+            row = self.categories.by_id.get(str(normalised.get("category_id")))
+            arabic = ("فئة ممنوعة" if category_state == "blocked"
+                      else "فئة موقوفة للمراجعة")
+            results = [
+                self.engine.reject(product, variant, "banned_category",
+                                   f"{arabic} - {row['name_ar'] if row else ''} "
+                                   f"({normalised.get('category_id')})")
+                for variant in product.variants
+            ]
+            self._audit(results, spent)
+            return OfferOutcome(offer_id=offer_id, product=None, results=results,
+                                points_spent=spent)
+
         rejected_early = rules.find_banned_term(product) or (
             rules.is_electrical(product) and not rules.has_accepted_mains_spec(product))
         if rejected_early:
@@ -217,8 +242,14 @@ class Pipeline:
             return OfferOutcome(offer_id=offer_id, product=None, results=results,
                                 points_spent=spent, compared=compared)
 
+        main_category, sub_category = (
+            self.categories.resolve(normalised.get("category_id"))
+            if self.categories is not None else (None, None))
+
         payload = mapping.to_kdx_product(
             offer_id=product.offer_id,
+            main_category=main_category,
+            sub_category=sub_category,
             name_ar=enriched.get("name_ar", ""),
             name_en=enriched.get("name_en", ""),
             name_original=product.title_zh,
@@ -273,8 +304,15 @@ def build(*, dry_run: bool = True, translate: bool | None = None, cny_to_sar=Non
         kdx = kdx_client.KdxClient(os.environ.get("KDX_BASE_URL", "https://kdx-sa.com"),
                                    os.environ["KDX_API_TOKEN"])
 
+    import catalog
+    categories = catalog.CategoryIndex.load(
+        os.environ.get("KDX_CATEGORIES",
+                       os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                    "data", "categories.json")))
+
     return Pipeline(
         source=source_module.build_source(),
+        categories=categories,
         provider=compare.build_provider(),
         engine=rules.Engine(cny_to_sar=cny_to_sar),
         budget=budget_module.PointBudget(),

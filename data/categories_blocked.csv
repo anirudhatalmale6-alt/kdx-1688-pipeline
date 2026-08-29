@@ -1,0 +1,6 @@
+﻿id,parent_id,depth,name_zh,name_en,name_ar,path_zh,is_leaf,state,reason,matched
+130823000,,1,成人用品,Adult Products,منتجات للكبار,成人用品,False,blocked,sexual,成人用品
+201330711,67,2,宗教用品,Religious Items,الأدوات الدينية,办公、文化 > 宗教用品,False,blocked,religious,宗教
+201335221,54,2,佛珠/念珠,Prayer Beads,مسبحة,服饰配件、饰品 > 佛珠/念珠,True,blocked,religious,念珠
+10071,2,2,酒类,Alcoholic Beverages,المشروبات الكحولية,食品酒水 > 酒类,False,blocked,alcohol,酒类
+124272009,15,2,打火机及烟具,Lighters & Smoking,ولاعات وأدوات تدخين,居家日用品 > 打火机及烟具,False,blocked,tobacco,烟具

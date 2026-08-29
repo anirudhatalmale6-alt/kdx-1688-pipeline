@@ -1,0 +1,116 @@
+{
+  "products": [
+    {
+      "source": "1688",
+      "source_offer_id": "104843239419",
+      "product_url": "https://detail.1688.com/offer/104843239419.html",
+      "category": {
+        "main_category": [
+          {
+            "id": 10166,
+            "name_original": "女装",
+            "name_en": "Women's Clothing",
+            "name_ar": "ملابس نسائية"
+          }
+        ],
+        "sub_category": [
+          {
+            "id": 1031910,
+            "name_original": "连衣裙",
+            "name_en": "Dresses",
+            "name_ar": "فساتين"
+          }
+        ]
+      },
+      "name": "تيشيرت نسائي صيفي بأكمام قصيرة 2024 قطن 100%",
+      "name_original": "2024新款夏季女士短袖T恤 纯棉宽松百搭上衣",
+      "name_en": "2024 New Summer Women's Short Sleeve T-Shirt 100% Cotton",
+      "name_ar": "تيشيرت نسائي صيفي بأكمام قصيرة 2024 قطن 100%",
+      "images": [
+        "https://cbu01.alicdn.com/img/ibank/white.jpg",
+        "https://cbu01.alicdn.com/img/ibank/black.jpg",
+        "https://cbu01.alicdn.com/img/ibank/main-1.jpg",
+        "https://cbu01.alicdn.com/img/ibank/main-2.jpg"
+      ],
+      "price": 20.67,
+      "price_currency": "SAR",
+      "price_min": 20.67,
+      "price_max": 21.76,
+      "sizes": [
+        {
+          "original": "S",
+          "en": "S",
+          "ar": "S"
+        },
+        {
+          "original": "M",
+          "en": "M",
+          "ar": "M"
+        }
+      ],
+      "needs_shipment": true,
+      "variants": [
+        {
+          "original": "白色",
+          "en": "White",
+          "ar": "أبيض",
+          "image": "https://cbu01.alicdn.com/img/ibank/white.jpg",
+          "images": [
+            "https://cbu01.alicdn.com/img/ibank/white.jpg"
+          ],
+          "price": 20.67,
+          "price_min": 20.67,
+          "price_max": 21.62,
+          "sizes": [
+            {
+              "original": "S",
+              "en": "S",
+              "ar": "S",
+              "price": 20.67,
+              "sku_id": "5501001",
+              "stock": 400,
+              "weight": 0.35,
+              "needs_shipment": true
+            },
+            {
+              "original": "M",
+              "en": "M",
+              "ar": "M",
+              "price": 21.62,
+              "sku_id": "5501002",
+              "stock": 620,
+              "weight": 0.35,
+              "needs_shipment": true
+            }
+          ]
+        },
+        {
+          "original": "黑色",
+          "en": "Black",
+          "ar": "أسود",
+          "image": "https://cbu01.alicdn.com/img/ibank/black.jpg",
+          "images": [
+            "https://cbu01.alicdn.com/img/ibank/black.jpg"
+          ],
+          "price": 21.76,
+          "price_min": 21.76,
+          "price_max": 21.76,
+          "sizes": [
+            {
+              "original": "S",
+              "en": "S",
+              "ar": "S",
+              "price": 21.76,
+              "sku_id": "5501003",
+              "stock": 300,
+              "weight": 0.35,
+              "needs_shipment": true
+            }
+          ]
+        }
+      ],
+      "description_ar": "تيشيرت نسائي بأكمام قصيرة مصنوع من قطن 100% ناعم ومريح. تصميم واسع ومناسب لموسم الصيف. قطعة أساسية تناسب جميع الإطلالات.",
+      "description_en": "Women's short sleeve T-shirt made of 100% cotton, soft and comfortable. Loose fit suitable for summer season. A versatile essential piece for any outfit."
+    }
+  ]
+}

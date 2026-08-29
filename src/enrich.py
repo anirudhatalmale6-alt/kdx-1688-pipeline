@@ -61,6 +61,22 @@ Return ONLY a JSON object of the form
 with one entry for every original given, keys copied character for character."""
 
 
+CATEGORIES_PROMPT = """You translate category names from the 1688 wholesale catalogue for a Saudi online store.
+
+These are shop department names, not product titles: 女装, 家用电器, 五金、工具, 半身裙.
+
+Rules:
+- use the word a Saudi shopper would see in a store menu, not a literal gloss
+- keep it short: a category name, not a sentence, and no punctuation at the end
+- a name joined by 、or / stays one category: translate it as one name
+- never invent a category that is not in the input, never merge two of them
+- if a name is a brand or a latin abbreviation, leave it as it is
+
+Return ONLY a JSON object of the form
+{"terms":{"<original>":{"en":"","ar":""}}}
+with one entry for every original given, keys copied character for character."""
+
+
 def _chat(system: str, user: str, api_key: str | None, timeout: int) -> dict:
     api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
     if not api_key:
@@ -100,19 +116,12 @@ def enrich(title_zh: str, description_zh: str, api_key: str | None = None,
     return result
 
 
-def translate_terms(terms, api_key: str | None = None, timeout: int = 60) -> dict:
-    """
-    Translate the colour and size labels of one product in a single call.
-
-    Returned as {original: {"en": ..., "ar": ...}}. A label the model omits or
-    renames falls back to the original rather than disappearing: a size that
-    silently vanishes from a product is worse than a size shown in Chinese.
-    """
+def _translate_labels(terms, prompt: str, api_key: str | None, timeout: int) -> dict:
     wanted = [str(term).strip() for term in terms if str(term).strip()]
     if not wanted:
         return {}
 
-    result = _chat(TERMS_PROMPT, json.dumps(wanted, ensure_ascii=False), api_key, timeout)
+    result = _chat(prompt, json.dumps(wanted, ensure_ascii=False), api_key, timeout)
     translated = result.get("terms") or {}
 
     out = {}
@@ -121,3 +130,25 @@ def translate_terms(terms, api_key: str | None = None, timeout: int = 60) -> dic
         out[term] = {"en": str(entry.get("en") or term).strip(),
                      "ar": str(entry.get("ar") or term).strip()}
     return out
+
+
+def translate_terms(terms, api_key: str | None = None, timeout: int = 60) -> dict:
+    """
+    Translate the colour and size labels of one product in a single call.
+
+    Returned as {original: {"en": ..., "ar": ...}}. A label the model omits or
+    renames falls back to the original rather than disappearing: a size that
+    silently vanishes from a product is worse than a size shown in Chinese.
+    """
+    return _translate_labels(terms, TERMS_PROMPT, api_key, timeout)
+
+
+def translate_categories(terms, api_key: str | None = None, timeout: int = 90) -> dict:
+    """
+    Same contract as translate_terms, but prompted for shop department names.
+
+    Separate from translate_terms because the two read very differently: "均码"
+    is a size, "五金、工具" is a menu heading, and a prompt that does one well
+    does the other badly.
+    """
+    return _translate_labels(terms, CATEGORIES_PROMPT, api_key, timeout)

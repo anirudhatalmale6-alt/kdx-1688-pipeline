@@ -1,0 +1,5990 @@
+{
+ "3D打印机": {
+  "ar": "طابعات ثلاثية الأبعاد",
+  "en": "3D Printers"
+ },
+ "3D打印线材": {
+  "ar": "خيوط الطباعة ثلاثية الأبعاد",
+  "en": "3D Printing Filaments"
+ },
+ "AR / VR 头显设备配件": {
+  "ar": "نظارات AR/VR وملحقاتها",
+  "en": "AR/VR Headsets & Accessories"
+ },
+ "DIY手工材料": {
+  "ar": "مواد الحرف اليدوية",
+  "en": "DIY Craft Materials"
+ },
+ "GPS系统": {
+  "ar": "أنظمة GPS",
+  "en": "GPS Systems"
+ },
+ "IP设备": {
+  "ar": "أجهزة IP",
+  "en": "IP Devices"
+ },
+ "JK制服": {
+  "ar": "زي JK",
+  "en": "JK Uniforms"
+ },
+ "LED原料与辅料": {
+  "ar": "مواد وإكسسوارات LED",
+  "en": "LED Materials & Accessories"
+ },
+ "LED外延及芯片": {
+  "ar": "رقائق وطبقات LED",
+  "en": "LED Epitaxy & Chips"
+ },
+ "LED封装器件": {
+  "ar": "مكونات تغليف LED",
+  "en": "LED Packaging Components"
+ },
+ "LED广告标识": {
+  "ar": "لافتات إعلانية LED",
+  "en": "LED Advertising Signs"
+ },
+ "LED显示屏": {
+  "ar": "شاشات LED",
+  "en": "LED Displays"
+ },
+ "LED灯串": {
+  "ar": "أضواء LED على شكل سلسلة",
+  "en": "LED String Lights"
+ },
+ "LED照明模组": {
+  "ar": "وحدات إضاءة LED",
+  "en": "LED Lighting Modules"
+ },
+ "LED生产及检测设备": {
+  "ar": "معدات إنتاج وفحص LED",
+  "en": "LED Production & Testing Equipment"
+ },
+ "LED背光源": {
+  "ar": "إضاءة خلفية LED",
+  "en": "LED Backlights"
+ },
+ "LED车灯": {
+  "ar": "أضواء سيارات LED",
+  "en": "LED Car Lights"
+ },
+ "LED配套服务": {
+  "ar": "خدمات دعم LED",
+  "en": "LED Support Services"
+ },
+ "LED驱动与控制": {
+  "ar": "محركات ومتحكمات LED",
+  "en": "LED Drivers & Controllers"
+ },
+ "MIDI乐器/电脑音乐": {
+  "ar": "آلات MIDI والموسيقى الحاسوبية",
+  "en": "MIDI Instruments & Music"
+ },
+ "OLED": {
+  "ar": "OLED",
+  "en": "OLED"
+ },
+ "PCBA/模块": {
+  "ar": "لوحات دوائر إلكترونية ووحدات",
+  "en": "PCBA & Modules"
+ },
+ "USB新奇特": {
+  "ar": "أجهزة USB غريبة",
+  "en": "USB Gadgets"
+ },
+ "一次性巾类": {
+  "ar": "مناديل للاستعمال مرة واحدة",
+  "en": "Disposable Towels"
+ },
+ "三类医疗器械": {
+  "ar": "أجهزة طبية من الفئة الثالثة",
+  "en": "Class III Medical Devices"
+ },
+ "不锈钢型材": {
+  "ar": "بروفيلات من الفولاذ المقاوم للصدأ",
+  "en": "Stainless Steel Profiles"
+ },
+ "不锈钢板（卷）": {
+  "ar": "صفائح ولفائف من الفولاذ المقاوم للصدأ",
+  "en": "Stainless Steel Sheets & Coils"
+ },
+ "不锈钢棒材": {
+  "ar": "قضبان من الفولاذ المقاوم للصدأ",
+  "en": "Stainless Steel Bars"
+ },
+ "不锈钢管": {
+  "ar": "أنابيب من الفولاذ المقاوم للصدأ",
+  "en": "Stainless Steel Pipes"
+ },
+ "不锈钢线材": {
+  "ar": "أسلاك من الفولاذ المقاوم للصدأ",
+  "en": "Stainless Steel Wires"
+ },
+ "专业线护肤": {
+  "ar": "عناية بالبشرة احترافية",
+  "en": "Professional Skincare"
+ },
+ "专用仪器仪表": {
+  "ar": "أجهزة وأدوات متخصصة",
+  "en": "Specialized Instruments"
+ },
+ "专用机床": {
+  "ar": "آلات مخصصة",
+  "en": "Specialized Machine Tools"
+ },
+ "专用汽车": {
+  "ar": "مركبات مخصصة",
+  "en": "Specialized Vehicles"
+ },
+ "专门用途灯具": {
+  "ar": "إضاءات لأغراض خاصة",
+  "en": "Special Purpose Lighting"
+ },
+ "丝绸面料": {
+  "ar": "أقمشة حريرية",
+  "en": "Silk Fabrics"
+ },
+ "丝袜/打底袜": {
+  "ar": "جوارب طويلة وجوارب داخلية",
+  "en": "Stockings & Tights"
+ },
+ "两季电器": {
+  "ar": "أجهزة موسمية",
+  "en": "Seasonal Appliances"
+ },
+ "个人护理（医疗器械）": {
+  "ar": "أجهزة طبية للعناية الشخصية",
+  "en": "Personal Care Medical Devices"
+ },
+ "个护/家清": {
+  "ar": "العناية الشخصية والتنظيف المنزلي",
+  "en": "Personal Care & Home Cleaning"
+ },
+ "个护家清加工": {
+  "ar": "معالجة العناية الشخصية والتنظيف المنزلي",
+  "en": "Personal Care & Home Cleaning Processing"
+ },
+ "个护电器": {
+  "ar": "أجهزة العناية الشخصية",
+  "en": "Personal Care Appliances"
+ },
+ "中介服务": {
+  "ar": "خدمات الوساطة",
+  "en": "Agency Services"
+ },
+ "中厚板": {
+  "ar": "ألواح متوسطة وسميكة",
+  "en": "Medium & Thick Plates"
+ },
+ "中山装、唐装、民族服装": {
+  "ar": "ملابس تشونغشان، تانغ والملابس القومية",
+  "en": "Zhongshan, Tang & Ethnic Clothing"
+ },
+ "中巾": {
+  "ar": "مناشف متوسطة",
+  "en": "Medium Towels"
+ },
+ "中老年女装": {
+  "ar": "ملابس نسائية للمتوسطين وكبار السن",
+  "en": "Middle-aged & Elderly Women's Wear"
+ },
+ "中老年男装": {
+  "ar": "ملابس رجالية للمتوسطين وكبار السن",
+  "en": "Middle-aged & Elderly Men's Wear"
+ },
+ "中高压电力产品": {
+  "ar": "منتجات كهربائية متوسطة وعالية الجهد",
+  "en": "Medium & High Voltage Electrical Products"
+ },
+ "主令电器": {
+  "ar": "أجهزة كهربائية للتحكم الرئيسي",
+  "en": "Main Control Electrical Appliances"
+ },
+ "乐器": {
+  "ar": "آلات موسيقية",
+  "en": "Musical Instruments"
+ },
+ "乐器配件": {
+  "ar": "إكسسوارات الآلات الموسيقية",
+  "en": "Musical Instrument Accessories"
+ },
+ "乒乓球用品": {
+  "ar": "معدات تنس الطاولة",
+  "en": "Table Tennis Equipment"
+ },
+ "乘用车": {
+  "ar": "مركبات الركاب",
+  "en": "Passenger Vehicles"
+ },
+ "书写工具": {
+  "ar": "أدوات الكتابة",
+  "en": "Writing Instruments"
+ },
+ "书房家具": {
+  "ar": "أثاث غرفة الدراسة",
+  "en": "Study Room Furniture"
+ },
+ "书籍、出版物": {
+  "ar": "كتب ومنشورات",
+  "en": "Books & Publications"
+ },
+ "乳胶原液": {
+  "ar": "مصل اللاتكس",
+  "en": "Latex Serum"
+ },
+ "二手交通工具": {
+  "ar": "مركبات نقل مستعملة",
+  "en": "Used Transportation Vehicles"
+ },
+ "二手仪器仪表": {
+  "ar": "أجهزة وأدوات قياس مستعملة",
+  "en": "Used Instruments & Meters"
+ },
+ "二手体育休闲设施": {
+  "ar": "مرافق رياضية وترفيهية مستعملة",
+  "en": "Used Sports & Leisure Facilities"
+ },
+ "二手农业机械": {
+  "ar": "آلات زراعية مستعملة",
+  "en": "Used Agricultural Machinery"
+ },
+ "二手制药设备": {
+  "ar": "معدات صيدلانية مستعملة",
+  "en": "Used Pharmaceutical Equipment"
+ },
+ "二手制鞋设备": {
+  "ar": "معدات صناعة الأحذية مستعملة",
+  "en": "Used Shoe-making Equipment"
+ },
+ "二手办公设备": {
+  "ar": "معدات مكتبية مستعملة",
+  "en": "Used Office Equipment"
+ },
+ "二手包装机械": {
+  "ar": "آلات تعبئة وتغليف مستعملة",
+  "en": "Used Packaging Machinery"
+ },
+ "二手化工设备": {
+  "ar": "معدات كيميائية مستعملة",
+  "en": "Used Chemical Equipment"
+ },
+ "二手医疗设备": {
+  "ar": "معدات طبية مستعملة",
+  "en": "Used Medical Equipment"
+ },
+ "二手印刷设备": {
+  "ar": "معدات طباعة مستعملة",
+  "en": "Used Printing Equipment"
+ },
+ "二手塑料机械": {
+  "ar": "آلات بلاستيكية مستعملة",
+  "en": "Used Plastic Machinery"
+ },
+ "二手安防产品": {
+  "ar": "منتجات أمنية مستعملة",
+  "en": "Used Security Products"
+ },
+ "二手家用电器": {
+  "ar": "أجهزة منزلية مستعملة",
+  "en": "Used Home Appliances"
+ },
+ "二手工程机械": {
+  "ar": "آلات بناء مستعملة",
+  "en": "Used Construction Machinery"
+ },
+ "二手广电设备": {
+  "ar": "معدات بث مستعملة",
+  "en": "Used Broadcasting Equipment"
+ },
+ "二手建材加工设备": {
+  "ar": "معدات معالجة مواد البناء مستعملة",
+  "en": "Used Building Material Processing Equipment"
+ },
+ "二手服装加工设备": {
+  "ar": "معدات تصنيع الملابس مستعملة",
+  "en": "Used Garment Processing Equipment"
+ },
+ "二手木工机械": {
+  "ar": "آلات النجارة مستعملة",
+  "en": "Used Woodworking Machinery"
+ },
+ "二手机床": {
+  "ar": "آلات تشغيل مستعملة",
+  "en": "Used Machine Tools"
+ },
+ "二手橡胶加工设备": {
+  "ar": "معدات معالجة المطاط مستعملة",
+  "en": "Used Rubber Processing Equipment"
+ },
+ "二手汽车": {
+  "ar": "سيارات مستعملة",
+  "en": "Used Cars"
+ },
+ "二手照明器材": {
+  "ar": "معدات إضاءة مستعملة",
+  "en": "Used Lighting Equipment"
+ },
+ "二手物流设备": {
+  "ar": "معدات لوجستية مستعملة",
+  "en": "Used Logistics Equipment"
+ },
+ "二手环保设备": {
+  "ar": "معدات بيئية مستعملة",
+  "en": "Used Environmental Equipment"
+ },
+ "二手电动工具": {
+  "ar": "أدوات كهربائية مستعملة",
+  "en": "Used Power Tools"
+ },
+ "二手电子加工设备": {
+  "ar": "معدات معالجة إلكترونية مستعملة",
+  "en": "Used Electronic Processing Equipment"
+ },
+ "二手电工电气产品": {
+  "ar": "منتجات كهربائية مستعملة",
+  "en": "Used Electrical Products"
+ },
+ "二手皮革加工设备": {
+  "ar": "معدات معالجة الجلود مستعملة",
+  "en": "Used Leather Processing Equipment"
+ },
+ "二手矿业设备": {
+  "ar": "معدات تعدين مستعملة",
+  "en": "Used Mining Equipment"
+ },
+ "二手纸加工设备": {
+  "ar": "معدات معالجة الورق مستعملة",
+  "en": "Used Paper Processing Equipment"
+ },
+ "二手纺织加工设备": {
+  "ar": "معدات معالجة النسيج مستعملة",
+  "en": "Used Textile Processing Equipment"
+ },
+ "二手设备转让": {
+  "ar": "نقل معدات مستعملة",
+  "en": "Used Equipment Transfer"
+ },
+ "二手通信器材": {
+  "ar": "معدات اتصالات مستعملة",
+  "en": "Used Communication Equipment"
+ },
+ "二手通用零部件": {
+  "ar": "قطع غيار عامة مستعملة",
+  "en": "Used General Parts"
+ },
+ "二手通讯产品": {
+  "ar": "منتجات اتصالات مستعملة",
+  "en": "Used Communication Products"
+ },
+ "二手造纸设备": {
+  "ar": "معدات صناعة الورق مستعملة",
+  "en": "Used Papermaking Equipment"
+ },
+ "二手锅炉": {
+  "ar": "غلايات مستعملة",
+  "en": "Used Boilers"
+ },
+ "二手食品机械": {
+  "ar": "آلات غذائية مستعملة",
+  "en": "Used Food Machinery"
+ },
+ "二极管": {
+  "ar": "دايودات",
+  "en": "Diodes"
+ },
+ "二次元动漫服装/配件": {
+  "ar": "ملابس وإكسسوارات أنمي",
+  "en": "Anime Clothing & Accessories"
+ },
+ "五谷杂粮": {
+  "ar": "حبوب وبقوليات",
+  "en": "Grains & Cereals"
+ },
+ "五金、工具": {
+  "ar": "أدوات ومعدات",
+  "en": "Hardware & Tools"
+ },
+ "五金工具代理加盟": {
+  "ar": "وكالة وأفران أدوات ومعدات",
+  "en": "Hardware & Tools Franchise"
+ },
+ "五金工具项目合作": {
+  "ar": "شراكات أدوات ومعدات",
+  "en": "Hardware & Tools Partnerships"
+ },
+ "交通安全设施": {
+  "ar": "معدات سلامة المرور",
+  "en": "Traffic Safety Equipment"
+ },
+ "交通工具代理加盟": {
+  "ar": "وكالة مركبات",
+  "en": "Vehicle Franchise"
+ },
+ "交通工具项目合作": {
+  "ar": "شراكات مركبات",
+  "en": "Vehicle Partnerships"
+ },
+ "交通控制管理设备": {
+  "ar": "معدات التحكم المروري",
+  "en": "Traffic Control Equipment"
+ },
+ "交通检测设备": {
+  "ar": "معدات فحص المرور",
+  "en": "Traffic Inspection Equipment"
+ },
+ "交通运输": {
+  "ar": "النقل",
+  "en": "Transportation"
+ },
+ "交通运输产品加工": {
+  "ar": "معالجة منتجات النقل",
+  "en": "Transportation Product Processing"
+ },
+ "亲子装": {
+  "ar": "ملابس عائلية",
+  "en": "Parent-Child Outfits"
+ },
+ "仓储设备": {
+  "ar": "معدات التخزين",
+  "en": "Storage Equipment"
+ },
+ "代理加盟": {
+  "ar": "وكالة وأفران",
+  "en": "Agency & Franchise"
+ },
+ "仪器仪表": {
+  "ar": "أجهزة وأدوات قياس",
+  "en": "Instruments & Meters"
+ },
+ "仪器仪表代理加盟": {
+  "ar": "وكالة أجهزة وأدوات قياس",
+  "en": "Instruments Franchise"
+ },
+ "仪器仪表加工": {
+  "ar": "معالجة أجهزة وأدوات قياس",
+  "en": "Instruments Processing"
+ },
+ "仪器仪表配附件": {
+  "ar": "ملحقات أجهزة وأدوات قياس",
+  "en": "Instruments Accessories"
+ },
+ "仿真园艺": {
+  "ar": "الزراعة الصناعية",
+  "en": "Artificial Gardening"
+ },
+ "企业日常服务": {
+  "ar": "خدمات الأعمال اليومية",
+  "en": "Business Services"
+ },
+ "休闲、户外家具": {
+  "ar": "أثاث خارجي وترفيهي",
+  "en": "Leisure & Outdoor Furniture"
+ },
+ "优特钢": {
+  "ar": "فولاذ خاص",
+  "en": "Special Steel"
+ },
+ "传动件": {
+  "ar": "قطع نقل الحركة",
+  "en": "Transmission Parts"
+ },
+ "传动系统": {
+  "ar": "أنظمة النقل",
+  "en": "Transmission Systems"
+ },
+ "传媒、广电": {
+  "ar": "الإعلام والبث",
+  "en": "Media & Broadcasting"
+ },
+ "传媒、广电项目合作": {
+  "ar": "مشاريع الإعلام والبث",
+  "en": "Media & Broadcasting Projects"
+ },
+ "传媒设备及配件": {
+  "ar": "معدات الإعلام والملحقات",
+  "en": "Media Equipment & Accessories"
+ },
+ "传感器": {
+  "ar": "أجهزة الاستشعار",
+  "en": "Sensors"
+ },
+ "传热设备": {
+  "ar": "معدات نقل الحرارة",
+  "en": "Heat Transfer Equipment"
+ },
+ "传统滋补品": {
+  "ar": "مكملات تقليدية",
+  "en": "Traditional Supplements"
+ },
+ "传质设备": {
+  "ar": "معدات نقل المادة",
+  "en": "Mass Transfer Equipment"
+ },
+ "传输、交换设备": {
+  "ar": "معدات النقل والتبديل",
+  "en": "Transmission & Switching Equipment"
+ },
+ "低压电器": {
+  "ar": "كهرباء منخفضة الجهد",
+  "en": "Low Voltage Electrical"
+ },
+ "体操用品": {
+  "ar": "معدات الجمباز",
+  "en": "Gymnastics Gear"
+ },
+ "体育运动产品代理加盟": {
+  "ar": "امتيازات منتجات الرياضة",
+  "en": "Sports Product Franchises"
+ },
+ "体育运动产品加工": {
+  "ar": "تصنيع منتجات الرياضة",
+  "en": "Sports Product Manufacturing"
+ },
+ "体育运动项目合作": {
+  "ar": "شراكات مشاريع الرياضة",
+  "en": "Sports Project Partnerships"
+ },
+ "佛珠/念珠": {
+  "ar": "مسبحة",
+  "en": "Prayer Beads"
+ },
+ "作业平台": {
+  "ar": "منصات العمل",
+  "en": "Work Platforms"
+ },
+ "保健用品加工": {
+  "ar": "تصنيع منتجات الصحة",
+  "en": "Health Products Manufacturing"
+ },
+ "保健电器": {
+  "ar": "أجهزة صحية",
+  "en": "Health Appliances"
+ },
+ "保健食品": {
+  "ar": "أغذية صحية",
+  "en": "Health Foods"
+ },
+ "保暖内衣": {
+  "ar": "ملابس داخلية دافئة",
+  "en": "Thermal Underwear"
+ },
+ "保暖贴/怀炉/保暖用品": {
+  "ar": "ملحقات التدفئة",
+  "en": "Warmers & Heating Pads"
+ },
+ "保龄球用品": {
+  "ar": "معدات البولينج",
+  "en": "Bowling Supplies"
+ },
+ "信息安全产品": {
+  "ar": "منتجات أمن المعلومات",
+  "en": "Information Security Products"
+ },
+ "信息技术项目合作": {
+  "ar": "شراكات مشاريع تقنية المعلومات",
+  "en": "IT Project Partnerships"
+ },
+ "信息用化学品": {
+  "ar": "مواد كيميائية للمعلومات",
+  "en": "Information Chemicals"
+ },
+ "假发": {
+  "ar": "باروكات",
+  "en": "Wigs"
+ },
+ "停车场设备": {
+  "ar": "معدات مواقف السيارات",
+  "en": "Parking Equipment"
+ },
+ "健身器材用品": {
+  "ar": "معدات اللياقة",
+  "en": "Fitness Equipment"
+ },
+ "偶氮化合物": {
+  "ar": "مركبات أزو",
+  "en": "Azo Compounds"
+ },
+ "储能系统": {
+  "ar": "أنظمة تخزين الطاقة",
+  "en": "Energy Storage Systems"
+ },
+ "储运设备": {
+  "ar": "معدات التخزين والنقل",
+  "en": "Storage & Transport Equipment"
+ },
+ "催化剂": {
+  "ar": "محفزات",
+  "en": "Catalysts"
+ },
+ "儿童POLO衫": {
+  "ar": "قمصان بولو أطفال",
+  "en": "Kids Polo Shirts"
+ },
+ "儿童休闲箱包": {
+  "ar": "حقائب أطفال كاجوال",
+  "en": "Kids Casual Bags"
+ },
+ "儿童内衣内裤": {
+  "ar": "ملابس داخلية أطفال",
+  "en": "Kids Underwear"
+ },
+ "儿童外套/夹克/大衣（停用）": {
+  "ar": "معاطف وأجاكت أطفال (متوقف)",
+  "en": "Kids Jackets & Coats (Discontinued)"
+ },
+ "儿童家具": {
+  "ar": "أثاث أطفال",
+  "en": "Kids Furniture"
+ },
+ "儿童家居服（停用）": {
+  "ar": "ملابس منزلية أطفال (متوقف)",
+  "en": "Kids Homewear (Discontinued)"
+ },
+ "儿童帽子/围巾/手套/配件": {
+  "ar": "قبعات/أوشحة/قفازات وإكسسوارات أطفال",
+  "en": "Kids Hats/Scarves/Gloves & Accessories"
+ },
+ "儿童羽绒服/羽绒内胆（停用）": {
+  "ar": "سترات ولبادات الأطفال من الريش (متوقف)",
+  "en": "Kids Down Jackets & Liners (Discontinued)"
+ },
+ "儿童袜": {
+  "ar": "جوارب أطفال",
+  "en": "Kids Socks"
+ },
+ "儿童裙（停用）": {
+  "ar": "تنانير أطفال (متوقف)",
+  "en": "Kids Skirts (Discontinued)"
+ },
+ "儿童运动/户外服": {
+  "ar": "ملابس رياضية وخارجية للأطفال",
+  "en": "Kids Sports & Outdoor Wear"
+ },
+ "儿童音乐玩具": {
+  "ar": "ألعاب موسيقية للأطفال",
+  "en": "Kids Musical Toys"
+ },
+ "儿童饰品": {
+  "ar": "إكسسوارات أطفال",
+  "en": "Kids Accessories"
+ },
+ "充气玩具": {
+  "ar": "ألعاب قابلة للنفخ",
+  "en": "Inflatable Toys"
+ },
+ "充电器": {
+  "ar": "شواحن",
+  "en": "Chargers"
+ },
+ "充电桩": {
+  "ar": "محطات شحن",
+  "en": "Charging Stations"
+ },
+ "光伏产品及核心组件": {
+  "ar": "منتجات ومكونات الطاقة الشمسية الأساسية",
+  "en": "Photovoltaic Products & Core Components"
+ },
+ "光伏组件原材料": {
+  "ar": "مواد خام لوحدات الطاقة الشمسية",
+  "en": "Photovoltaic Module Raw Materials"
+ },
+ "光伏配套设备": {
+  "ar": "معدات دعم الطاقة الشمسية",
+  "en": "Photovoltaic Supporting Equipment"
+ },
+ "光伏零配件": {
+  "ar": "قطع غيار الطاقة الشمسية",
+  "en": "Photovoltaic Spare Parts"
+ },
+ "光学仪器": {
+  "ar": "أجهزة بصرية",
+  "en": "Optical Instruments"
+ },
+ "光学加工机械": {
+  "ar": "آلات المعالجة البصرية",
+  "en": "Optical Processing Machinery"
+ },
+ "光学摄像器材": {
+  "ar": "معدات تصوير بصرية",
+  "en": "Optical Video Equipment"
+ },
+ "光学摄影器材": {
+  "ar": "معدات تصوير فوتوغرافي بصرية",
+  "en": "Optical Photography Equipment"
+ },
+ "光电子器件": {
+  "ar": "أجهزة بصرية إلكترونية",
+  "en": "Optoelectronic Devices"
+ },
+ "公仔、玩偶、娃娃": {
+  "ar": "دمى وألعاب محشوة",
+  "en": "Dolls & Plush Toys"
+ },
+ "公共广播系统": {
+  "ar": "أنظمة البث العامة",
+  "en": "Public Broadcasting Systems"
+ },
+ "公共环卫设施": {
+  "ar": "مرافق النظافة العامة",
+  "en": "Public Sanitation Facilities"
+ },
+ "其他LED": {
+  "ar": "إضاءات LED أخرى",
+  "en": "Other LED"
+ },
+ "其他二手设备": {
+  "ar": "معدات مستعملة أخرى",
+  "en": "Other Used Equipment"
+ },
+ "其他五金": {
+  "ar": "أدوات أخرى",
+  "en": "Other Hardware"
+ },
+ "其他代理加盟": {
+  "ar": "وكالات وفرنشايز أخرى",
+  "en": "Other Franchise & Agency"
+ },
+ "其他仪器仪表": {
+  "ar": "أجهزة وأدوات قياس أخرى",
+  "en": "Other Instruments & Meters"
+ },
+ "其他休闲食品": {
+  "ar": "وجبات خفيفة أخرى",
+  "en": "Other Snacks"
+ },
+ "其他传媒、广电设备": {
+  "ar": "معدات إعلام وبث أخرى",
+  "en": "Other Media & Broadcasting Equipment"
+ },
+ "其他作业保护": {
+  "ar": "حماية العمل الأخرى",
+  "en": "Other Work Protection"
+ },
+ "其他内衣": {
+  "ar": "ملابس داخلية أخرى",
+  "en": "Other Underwear"
+ },
+ "其他农业": {
+  "ar": "زراعة أخرى",
+  "en": "Other Agriculture"
+ },
+ "其他冶金矿产": {
+  "ar": "معادن وصهر أخرى",
+  "en": "Other Metallurgy & Minerals"
+ },
+ "其他助剂": {
+  "ar": "مضافات أخرى",
+  "en": "Other Additives"
+ },
+ "其他包": {
+  "ar": "حقائب أخرى",
+  "en": "Other Bags"
+ },
+ "其他印刷行业产品": {
+  "ar": "منتجات طباعة أخرى",
+  "en": "Other Printing Products"
+ },
+ "其他商务服务": {
+  "ar": "خدمات تجارية أخرى",
+  "en": "Other Business Services"
+ },
+ "其他塑料制品": {
+  "ar": "منتجات بلاستيكية أخرى",
+  "en": "Other Plastic Products"
+ },
+ "其他安全防护设备": {
+  "ar": "معدات سلامة أخرى",
+  "en": "Other Safety Equipment"
+ },
+ "其他宠物用品": {
+  "ar": "مستلزمات حيوانات أليفة أخرى",
+  "en": "Other Pet Supplies"
+ },
+ "其他家装建材": {
+  "ar": "مواد بناء منزلية أخرى",
+  "en": "Other Home Building Materials"
+ },
+ "其他床上用品": {
+  "ar": "مستلزمات سرير أخرى",
+  "en": "Other Bedding"
+ },
+ "其他未分类": {
+  "ar": "أخرى غير مصنفة",
+  "en": "Other Unclassified"
+ },
+ "其他机床": {
+  "ar": "آلات أخرى",
+  "en": "Other Machine Tools"
+ },
+ "其他橡塑": {
+  "ar": "مطاط وبلاستيك أخرى",
+  "en": "Other Rubber & Plastics"
+ },
+ "其他橡胶制品": {
+  "ar": "منتجات مطاطية أخرى",
+  "en": "Other Rubber Products"
+ },
+ "其他照明工业": {
+  "ar": "صناعة الإضاءة الأخرى",
+  "en": "Other Lighting Industry"
+ },
+ "其他环保设备": {
+  "ar": "معدات بيئية أخرى",
+  "en": "Other Environmental Equipment"
+ },
+ "其他球类用品": {
+  "ar": "معدات رياضية كروية أخرى",
+  "en": "Other Ball Sports Goods"
+ },
+ "其他用途纸": {
+  "ar": "ورق لأغراض أخرى",
+  "en": "Other Specialty Paper"
+ },
+ "其他短外套": {
+  "ar": "سترات قصيرة أخرى",
+  "en": "Other Short Jackets"
+ },
+ "其他箱": {
+  "ar": "صناديق أخرى",
+  "en": "Other Boxes"
+ },
+ "其他类型家具": {
+  "ar": "أنواع أثاث أخرى",
+  "en": "Other Furniture Types"
+ },
+ "其他类玩具": {
+  "ar": "ألعاب أخرى",
+  "en": "Other Toys"
+ },
+ "其他精细化学品": {
+  "ar": "مواد كيميائية دقيقة أخرى",
+  "en": "Other Fine Chemicals"
+ },
+ "其他纸业": {
+  "ar": "منتجات ورقية أخرى",
+  "en": "Other Paper Products"
+ },
+ "其他纺织、皮革": {
+  "ar": "منسوجات وجلود أخرى",
+  "en": "Other Textiles & Leather"
+ },
+ "其他聚合物": {
+  "ar": "بوليمرات أخرى",
+  "en": "Other Polymers"
+ },
+ "其他能源": {
+  "ar": "طاقة أخرى",
+  "en": "Other Energy"
+ },
+ "其他行业专用设备": {
+  "ar": "معدات صناعية أخرى",
+  "en": "Other Industry Equipment"
+ },
+ "其他袋": {
+  "ar": "حقائب أخرى",
+  "en": "Other Bags"
+ },
+ "其他运动休闲用品": {
+  "ar": "معدات رياضية وترفيهية أخرى",
+  "en": "Other Sports & Leisure"
+ },
+ "其他通信产品": {
+  "ar": "منتجات اتصالات أخرى",
+  "en": "Other Communication Products"
+ },
+ "其他钳工工具": {
+  "ar": "أدوات تركيب أخرى",
+  "en": "Other Fitting Tools"
+ },
+ "兽用器械": {
+  "ar": "أدوات بيطرية",
+  "en": "Veterinary Instruments"
+ },
+ "内燃机": {
+  "ar": "محركات الاحتراق الداخلي",
+  "en": "Internal Combustion Engines"
+ },
+ "内衣": {
+  "ar": "ملابس داخلية",
+  "en": "Underwear"
+ },
+ "内衣加工": {
+  "ar": "تصنيع ملابس داخلية",
+  "en": "Underwear Processing"
+ },
+ "内衣加工定制": {
+  "ar": "تصنيع ملابس داخلية مخصصة",
+  "en": "Custom Underwear Processing"
+ },
+ "内衣礼盒装/套装": {
+  "ar": "مجموعات هدايا ملابس داخلية",
+  "en": "Underwear Gift Sets"
+ },
+ "再生塑料": {
+  "ar": "بلاستيك معاد تدويره",
+  "en": "Recycled Plastics"
+ },
+ "军迷包具": {
+  "ar": "حقائب عسكرية",
+  "en": "Military Bags"
+ },
+ "农业": {
+  "ar": "زراعة",
+  "en": "Agriculture"
+ },
+ "农业包装": {
+  "ar": "تغليف زراعي",
+  "en": "Agricultural Packaging"
+ },
+ "农业机械": {
+  "ar": "آلات زراعية",
+  "en": "Agricultural Machinery"
+ },
+ "农业用具": {
+  "ar": "أدوات زراعية",
+  "en": "Agricultural Tools"
+ },
+ "农业用橡胶制品": {
+  "ar": "منتجات مطاطية زراعية",
+  "en": "Agricultural Rubber Products"
+ },
+ "农产品代理加盟": {
+  "ar": "وكالة منتجات زراعية",
+  "en": "Agricultural Product Agency"
+ },
+ "农作物种子种苗": {
+  "ar": "بذور الشتلات والمحاصيل",
+  "en": "Crop Seeds & Seedlings"
+ },
+ "农副产品加工": {
+  "ar": "معالجة المنتجات الزراعية",
+  "en": "Agricultural Processing"
+ },
+ "农林牧渔项目合作": {
+  "ar": "مشاريع الزراعة والثروة السمكية",
+  "en": "Agri & Fishery Projects"
+ },
+ "农用工具": {
+  "ar": "أدوات الزراعة",
+  "en": "Farm Tools"
+ },
+ "农药制剂": {
+  "ar": "مستحضرات المبيدات",
+  "en": "Pesticide Formulations"
+ },
+ "农药原药": {
+  "ar": "مواد المبيدات الخام",
+  "en": "Pesticide Raw Materials"
+ },
+ "冰鞋、轮滑、滑板": {
+  "ar": "أحذية التزلج والتزلج على العجلات واللوح",
+  "en": "Skates & Skateboards"
+ },
+ "冲床": {
+  "ar": "آلات التثقيب",
+  "en": "Punching Machines"
+ },
+ "冲调饮品": {
+  "ar": "مشروبات سريعة التحضير",
+  "en": "Instant Beverages"
+ },
+ "冶炼加工": {
+  "ar": "الصهر والمعالجة",
+  "en": "Smelting & Processing"
+ },
+ "冶炼设备": {
+  "ar": "معدات الصهر",
+  "en": "Smelting Equipment"
+ },
+ "冶金矿产": {
+  "ar": "المعادن والتعدين",
+  "en": "Metallurgy & Minerals"
+ },
+ "冶金项目合作": {
+  "ar": "مشاريع التعدين",
+  "en": "Metallurgy Projects"
+ },
+ "冷光源": {
+  "ar": "مصادر الضوء البارد",
+  "en": "Cold Light Sources"
+ },
+ "冷却系统": {
+  "ar": "أنظمة التبريد",
+  "en": "Cooling Systems"
+ },
+ "冷轧板卷": {
+  "ar": "لفائف الصلب المدلفن على البارد",
+  "en": "Cold Rolled Coils"
+ },
+ "冷饮": {
+  "ar": "مشروبات باردة",
+  "en": "Cold Drinks"
+ },
+ "减速机、变速机": {
+  "ar": "مخفضات السرعة وعلب التروس",
+  "en": "Reducers & Gearboxes"
+ },
+ "击剑、武术用品": {
+  "ar": "معدات المبارزة والفنون القتالية",
+  "en": "Fencing & Martial Arts"
+ },
+ "刀": {
+  "ar": "سكاكين",
+  "en": "Knives"
+ },
+ "刀具": {
+  "ar": "أدوات القطع",
+  "en": "Cutting Tools"
+ },
+ "刃具": {
+  "ar": "شفرات",
+  "en": "Blades"
+ },
+ "分析仪器": {
+  "ar": "أجهزة التحليل",
+  "en": "Analytical Instruments"
+ },
+ "分离设备": {
+  "ar": "معدات الفصل",
+  "en": "Separation Equipment"
+ },
+ "创意摆件": {
+  "ar": "زينة مبتكرة",
+  "en": "Creative Decorations"
+ },
+ "创意礼品": {
+  "ar": "هدايا مبتكرة",
+  "en": "Creative Gifts"
+ },
+ "创意类毛巾": {
+  "ar": "مناشف مبتكرة",
+  "en": "Creative Towels"
+ },
+ "刨床、插床": {
+  "ar": "آلات التجليخ والتخريم",
+  "en": "Planers & Slotters"
+ },
+ "制冷设备": {
+  "ar": "معدات التبريد",
+  "en": "Refrigeration Equipment"
+ },
+ "制动器": {
+  "ar": "مكابح",
+  "en": "Brakes"
+ },
+ "制动系统": {
+  "ar": "أنظمة المكابح",
+  "en": "Brake Systems"
+ },
+ "制服表演服加工": {
+  "ar": "تصنيع الزي الرسمي والملابس المسرحية",
+  "en": "Uniform & Costume Making"
+ },
+ "制药设备": {
+  "ar": "معدات الأدوية",
+  "en": "Pharmaceutical Equipment"
+ },
+ "制药辅料": {
+  "ar": "مساعدات تصنيع الأدوية",
+  "en": "Pharmaceutical Excipients"
+ },
+ "制鞋机械": {
+  "ar": "آلات صناعة الأحذية",
+  "en": "Shoe Making Machines"
+ },
+ "剪刀": {
+  "ar": "مقصات",
+  "en": "Scissors"
+ },
+ "剪板、折弯": {
+  "ar": "قص وثني",
+  "en": "Shearing & Bending"
+ },
+ "办公、文化": {
+  "ar": "مكتب وثقافة",
+  "en": "Office & Culture"
+ },
+ "办公收纳": {
+  "ar": "تخزين المكتب",
+  "en": "Office Storage"
+ },
+ "办公文教五金": {
+  "ar": "معدات مكتبية",
+  "en": "Office Hardware"
+ },
+ "办公文教用品加工": {
+  "ar": "تصنيع اللوازم المكتبية",
+  "en": "Office Supplies Processing"
+ },
+ "办公用纸": {
+  "ar": "ورق المكتب",
+  "en": "Office Paper"
+ },
+ "办公设备": {
+  "ar": "معدات مكتبية",
+  "en": "Office Equipment"
+ },
+ "功能小包": {
+  "ar": "حقائب صغيرة عملية",
+  "en": "Functional Small Bags"
+ },
+ "功能性面料": {
+  "ar": "أقمشة وظيفية",
+  "en": "Functional Fabrics"
+ },
+ "功能材料": {
+  "ar": "مواد وظيفية",
+  "en": "Functional Materials"
+ },
+ "功能毛巾": {
+  "ar": "مناشف عملية",
+  "en": "Functional Towels"
+ },
+ "加工": {
+  "ar": "تصنيع",
+  "en": "Processing"
+ },
+ "加工中心": {
+  "ar": "مركز تصنيع",
+  "en": "Processing Center"
+ },
+ "加油站设备": {
+  "ar": "معدات محطات الوقود",
+  "en": "Gas Station Equipment"
+ },
+ "动漫/影视/明星周边": {
+  "ar": "منتجات أنمي/أفلام/نجوم",
+  "en": "Anime/Film/Star Merchandise"
+ },
+ "动漫二次元服装": {
+  "ar": "ملابس أنمي وثنائية الأبعاد",
+  "en": "Anime & 2D Clothing"
+ },
+ "动物提取物": {
+  "ar": "مستخلصات حيوانية",
+  "en": "Animal Extracts"
+ },
+ "包装": {
+  "ar": "تغليف",
+  "en": "Packaging"
+ },
+ "包装产品代理加盟": {
+  "ar": "امتياز منتجات التغليف",
+  "en": "Packaging Product Franchise"
+ },
+ "包装产品加工": {
+  "ar": "تصنيع منتجات التغليف",
+  "en": "Packaging Product Processing"
+ },
+ "包装产品定制": {
+  "ar": "منتجات تغليف مخصصة",
+  "en": "Custom Packaging Products"
+ },
+ "包装印刷加工": {
+  "ar": "طباعة وتصنيع التغليف",
+  "en": "Packaging Printing & Processing"
+ },
+ "包装成型机械": {
+  "ar": "آلات تشكيل التغليف",
+  "en": "Packaging Forming Machines"
+ },
+ "包装测试设备": {
+  "ar": "معدات اختبار التغليف",
+  "en": "Packaging Testing Equipment"
+ },
+ "包装用纸": {
+  "ar": "ورق التغليف",
+  "en": "Packaging Paper"
+ },
+ "包装设备": {
+  "ar": "معدات التغليف",
+  "en": "Packaging Equipment"
+ },
+ "包装辅助物": {
+  "ar": "ملحقات التغليف",
+  "en": "Packaging Accessories"
+ },
+ "包装项目合作": {
+  "ar": "شراكة مشاريع التغليف",
+  "en": "Packaging Project Cooperation"
+ },
+ "化妆箱包": {
+  "ar": "حقائب مستحضرات التجميل",
+  "en": "Cosmetic Bags"
+ },
+ "化学纤维": {
+  "ar": "ألياف كيميائية",
+  "en": "Chemical Fibers"
+ },
+ "化学试剂": {
+  "ar": "كواشف كيميائية",
+  "en": "Chemical Reagents"
+ },
+ "化工": {
+  "ar": "الصناعة الكيميائية",
+  "en": "Chemical Industry"
+ },
+ "化工中间体": {
+  "ar": "مواد كيميائية وسيطة",
+  "en": "Chemical Intermediates"
+ },
+ "化工产品加工": {
+  "ar": "تصنيع منتجات كيميائية",
+  "en": "Chemical Product Processing"
+ },
+ "化工原料代理加盟": {
+  "ar": "امتياز مواد خام كيميائية",
+  "en": "Chemical Raw Material Franchise"
+ },
+ "化工实验设备": {
+  "ar": "معدات مختبرات كيميائية",
+  "en": "Chemical Lab Equipment"
+ },
+ "化工废料": {
+  "ar": "نفايات كيميائية",
+  "en": "Chemical Waste"
+ },
+ "化工成型设备": {
+  "ar": "معدات تشكيل كيميائية",
+  "en": "Chemical Molding Equipment"
+ },
+ "化工成套设备": {
+  "ar": "معدات كيميائية متكاملة",
+  "en": "Chemical Complete Equipment"
+ },
+ "化工设备代理加盟": {
+  "ar": "امتياز معدات كيميائية",
+  "en": "Chemical Equipment Franchise"
+ },
+ "化工设备配件": {
+  "ar": "قطع غيار معدات كيميائية",
+  "en": "Chemical Equipment Parts"
+ },
+ "化工项目合作": {
+  "ar": "شراكة مشاريع كيميائية",
+  "en": "Chemical Project Cooperation"
+ },
+ "化纤面料": {
+  "ar": "أقمشة ألياف كيميائية",
+  "en": "Chemical Fiber Fabrics"
+ },
+ "化肥": {
+  "ar": "أسمدة",
+  "en": "Fertilizers"
+ },
+ "匠作工具": {
+  "ar": "أدوات حرفية",
+  "en": "Craft Tools"
+ },
+ "区域代理加盟": {
+  "ar": "امتياز إقليمي",
+  "en": "Regional Franchise"
+ },
+ "医用基材": {
+  "ar": "مواد طبية أساسية",
+  "en": "Medical Base Materials"
+ },
+ "医用塑胶制品": {
+  "ar": "منتجات بلاستيكية طبية",
+  "en": "Medical Plastic Products"
+ },
+ "医用材料": {
+  "ar": "مواد طبية",
+  "en": "Medical Materials"
+ },
+ "医疗器具": {
+  "ar": "أدوات طبية",
+  "en": "Medical Instruments"
+ },
+ "医疗器械代理加盟": {
+  "ar": "وكالة الأجهزة الطبية",
+  "en": "Medical Device Agency"
+ },
+ "医疗器械制造设备": {
+  "ar": "معدات تصنيع الأجهزة الطبية",
+  "en": "Medical Device Manufacturing Equipment"
+ },
+ "医疗器械加工": {
+  "ar": "معالجة الأجهزة الطبية",
+  "en": "Medical Device Processing"
+ },
+ "医疗护理（器械）": {
+  "ar": "معدات الرعاية الطبية",
+  "en": "Medical Care Equipment"
+ },
+ "医药、保养": {
+  "ar": "الأدوية والعناية",
+  "en": "Pharmaceuticals & Care"
+ },
+ "半导体IC/芯片": {
+  "ar": "رقائق/دوائر متكاملة أشباه الموصلات",
+  "en": "Semiconductor IC/Chips"
+ },
+ "半成品饰品配件": {
+  "ar": "إكسسوارات مجوهرات نصف مصنعة",
+  "en": "Semi-finished Jewelry Accessories"
+ },
+ "半身裙": {
+  "ar": "تنانير",
+  "en": "Skirts"
+ },
+ "单质": {
+  "ar": "عناصر",
+  "en": "Elements"
+ },
+ "卧室家具": {
+  "ar": "أثاث غرفة النوم",
+  "en": "Bedroom Furniture"
+ },
+ "卫浴整理用具": {
+  "ar": "منظمات الحمام",
+  "en": "Bathroom Organizers"
+ },
+ "卫浴洁具": {
+  "ar": "تجهيزات الحمام",
+  "en": "Bathroom Fixtures"
+ },
+ "印刷": {
+  "ar": "الطباعة",
+  "en": "Printing"
+ },
+ "印刷加工": {
+  "ar": "خدمات الطباعة",
+  "en": "Printing Services"
+ },
+ "印刷机械专用配件": {
+  "ar": "قطع غيار ماكينات الطباعة",
+  "en": "Printing Machine Parts"
+ },
+ "印刷耗材": {
+  "ar": "مستلزمات الطباعة",
+  "en": "Printing Consumables"
+ },
+ "印刷耗材代理加盟": {
+  "ar": "وكالة مستلزمات الطباعة",
+  "en": "Printing Consumables Agency"
+ },
+ "印刷设备": {
+  "ar": "معدات الطباعة",
+  "en": "Printing Equipment"
+ },
+ "印刷配套设备": {
+  "ar": "معدات دعم الطباعة",
+  "en": "Printing Support Equipment"
+ },
+ "印刷项目合作": {
+  "ar": "شراكة مشاريع الطباعة",
+  "en": "Printing Projects Cooperation"
+ },
+ "印前处理设备": {
+  "ar": "معدات ما قبل الطباعة",
+  "en": "Prepress Equipment"
+ },
+ "印后加工设备": {
+  "ar": "معدات ما بعد الطباعة",
+  "en": "Postpress Equipment"
+ },
+ "印花、扎染布": {
+  "ar": "أقمشة مطبوعة ومربوطة الصبغ",
+  "en": "Printed & Tie-dye Fabrics"
+ },
+ "危险废物回收": {
+  "ar": "إعادة تدوير النفايات الخطرة",
+  "en": "Hazardous Waste Recycling"
+ },
+ "即食豆制品": {
+  "ar": "منتجات الصويا الجاهزة",
+  "en": "Ready-to-eat Soy Products"
+ },
+ "卷板机床": {
+  "ar": "آلات لف الألواح",
+  "en": "Plate Rolling Machines"
+ },
+ "压力仪表": {
+  "ar": "أجهزة قياس الضغط",
+  "en": "Pressure Instruments"
+ },
+ "压缩机械设备": {
+  "ar": "آلات الضغط",
+  "en": "Compression Machinery"
+ },
+ "压缩设备": {
+  "ar": "معدات الضغط",
+  "en": "Compression Equipment"
+ },
+ "压缩设备配件": {
+  "ar": "قطع غيار معدات الضغط",
+  "en": "Compression Equipment Parts"
+ },
+ "原水处理设备": {
+  "ar": "معدات معالجة المياه الخام",
+  "en": "Raw Water Treatment Equipment"
+ },
+ "原煤": {
+  "ar": "فحم خام",
+  "en": "Raw Coal"
+ },
+ "厨卫五金": {
+  "ar": "مستلزمات المطبخ والحمام",
+  "en": "Kitchen & Bath Hardware"
+ },
+ "厨卫清洁剂": {
+  "ar": "منظفات المطبخ والحمام",
+  "en": "Kitchen & Bath Cleaners"
+ },
+ "厨房工具": {
+  "ar": "أدوات المطبخ",
+  "en": "Kitchen Tools"
+ },
+ "厨房整理": {
+  "ar": "تنظيم المطبخ",
+  "en": "Kitchen Organization"
+ },
+ "厨房电器": {
+  "ar": "أجهزة المطبخ",
+  "en": "Kitchen Appliances"
+ },
+ "厨用刀剪具": {
+  "ar": "سكاكين ومقصات المطبخ",
+  "en": "Kitchen Knives & Scissors"
+ },
+ "双肩背包": {
+  "ar": "حقائب الظهر",
+  "en": "Backpacks"
+ },
+ "反应设备": {
+  "ar": "معدات التفاعل",
+  "en": "Reaction Equipment"
+ },
+ "发动系统": {
+  "ar": "أنظمة المحرك",
+  "en": "Engine Systems"
+ },
+ "发电机、发电机组": {
+  "ar": "المولدات ومجموعات المولدات",
+  "en": "Generators & Generator Sets"
+ },
+ "发饰、头饰": {
+  "ar": "إكسسوارات الشعر والقبعات",
+  "en": "Hair Accessories & Headwear"
+ },
+ "变压器": {
+  "ar": "المحولات",
+  "en": "Transformers"
+ },
+ "变送器": {
+  "ar": "المرسلات",
+  "en": "Transmitters"
+ },
+ "变阻器": {
+  "ar": "مقاومات متغيرة",
+  "en": "Rheostats"
+ },
+ "变频器": {
+  "ar": "محولات التردد",
+  "en": "Frequency Converters"
+ },
+ "口腔清洁护理": {
+  "ar": "العناية بالفم",
+  "en": "Oral Care"
+ },
+ "古建筑材料": {
+  "ar": "مواد البناء القديمة",
+  "en": "Ancient Building Materials"
+ },
+ "古董/古玩/收藏": {
+  "ar": "التحف والمقتنيات",
+  "en": "Antiques & Collectibles"
+ },
+ "古风饰品": {
+  "ar": "إكسسوارات الطراز التقليدي",
+  "en": "Traditional Style Accessories"
+ },
+ "台灯夜灯": {
+  "ar": "مصابيح المكتب والليل",
+  "en": "Desk & Night Lamps"
+ },
+ "台球用品": {
+  "ar": "مستلزمات البلياردو",
+  "en": "Billiards Supplies"
+ },
+ "合成/人工珠宝玉石饰品": {
+  "ar": "المجوهرات الاصطناعية",
+  "en": "Synthetic & Artificial Jewelry"
+ },
+ "合成材料助剂": {
+  "ar": "مضافات المواد الصناعية",
+  "en": "Synthetic Material Additives"
+ },
+ "合成树脂": {
+  "ar": "الراتنج الصناعي",
+  "en": "Synthetic Resin"
+ },
+ "合成橡胶": {
+  "ar": "المطاط الصناعي",
+  "en": "Synthetic Rubber"
+ },
+ "合成胶粘剂": {
+  "ar": "اللواصق الصناعية",
+  "en": "Synthetic Adhesives"
+ },
+ "吊顶材料": {
+  "ar": "مواد السقف",
+  "en": "Ceiling Materials"
+ },
+ "后整理工艺": {
+  "ar": "عمليات التشطيب",
+  "en": "Finishing Processes"
+ },
+ "听力防护": {
+  "ar": "حماية السمع",
+  "en": "Hearing Protection"
+ },
+ "吸附剂": {
+  "ar": "الممتزات",
+  "en": "Adsorbents"
+ },
+ "呼吸防护": {
+  "ar": "حماية التنفس",
+  "en": "Respiratory Protection"
+ },
+ "咖啡": {
+  "ar": "قهوة",
+  "en": "Coffee"
+ },
+ "咖啡具": {
+  "ar": "معدات القهوة",
+  "en": "Coffee Equipment"
+ },
+ "唇部彩妆": {
+  "ar": "مكياج الشفاه",
+  "en": "Lip Makeup"
+ },
+ "唇部护理": {
+  "ar": "العناية بالشفاه",
+  "en": "Lip Care"
+ },
+ "商业、办公家具": {
+  "ar": "الأثاث التجاري والمكتبي",
+  "en": "Commercial & Office Furniture"
+ },
+ "商业专用设备": {
+  "ar": "المعدات التجارية",
+  "en": "Commercial Equipment"
+ },
+ "商业照明": {
+  "ar": "الإضاءة التجارية",
+  "en": "Commercial Lighting"
+ },
+ "商务服务": {
+  "ar": "الخدمات التجارية",
+  "en": "Business Services"
+ },
+ "商务礼品": {
+  "ar": "هدايا الأعمال",
+  "en": "Business Gifts"
+ },
+ "商旅服务": {
+  "ar": "خدمات السفر التجاري",
+  "en": "Business Travel Services"
+ },
+ "商用车": {
+  "ar": "المركبات التجارية",
+  "en": "Commercial Vehicles"
+ },
+ "喷涂加工": {
+  "ar": "طلاء بالرش",
+  "en": "Spray Coating"
+ },
+ "园林五金工具": {
+  "ar": "أدوات وحدادة الحدائق",
+  "en": "Garden Hardware & Tools"
+ },
+ "园林植物": {
+  "ar": "نباتات الحدائق",
+  "en": "Garden Plants"
+ },
+ "园林资材": {
+  "ar": "مستلزمات الحدائق",
+  "en": "Garden Supplies"
+ },
+ "围巾/丝巾/防晒衣": {
+  "ar": "أوشحة/أوشحة حريرية/ملابس واقية من الشمس",
+  "en": "Scarves/Silk Scarves/Sun Protection Clothing"
+ },
+ "围巾/帽子/手套 多件套": {
+  "ar": "مجموعات أوشحة/قبعات/قفازات",
+  "en": "Scarves/Hats/Gloves Sets"
+ },
+ "固定电话": {
+  "ar": "هواتف أرضية",
+  "en": "Landline Phones"
+ },
+ "固态乳制品": {
+  "ar": "منتجات ألبان صلبة",
+  "en": "Solid Dairy Products"
+ },
+ "国际民族服装": {
+  "ar": "ملابس عرقية دولية",
+  "en": "International Ethnic Clothing"
+ },
+ "图文印刷": {
+  "ar": "الطباعة والرسومات",
+  "en": "Printing and Graphics"
+ },
+ "圆钢": {
+  "ar": "فولاذ دائري",
+  "en": "Round Steel"
+ },
+ "圣诞用品": {
+  "ar": "مستلزمات عيد الميلاد",
+  "en": "Christmas Supplies"
+ },
+ "地板": {
+  "ar": "الأرضيات",
+  "en": "Flooring"
+ },
+ "地板清洁护理": {
+  "ar": "تنظيف ورعاية الأرضيات",
+  "en": "Floor Cleaning and Care"
+ },
+ "地毯地垫": {
+  "ar": "السجاد والحصائر",
+  "en": "Carpets and Mats"
+ },
+ "地矿勘测设备": {
+  "ar": "معدات المسح الجيولوجي",
+  "en": "Geological Survey Equipment"
+ },
+ "场地铺设器材": {
+  "ar": "معدات تمهيد المواقع",
+  "en": "Site Paving Equipment"
+ },
+ "场效应管(MOSFET)": {
+  "ar": "MOSFET",
+  "en": "MOSFET"
+ },
+ "坚果炒货": {
+  "ar": "مكسرات وبذور محمصة",
+  "en": "Nuts and Roasted Seeds"
+ },
+ "坠落防护": {
+  "ar": "حماية من السقوط",
+  "en": "Fall Protection"
+ },
+ "坯布": {
+  "ar": "قماش خام",
+  "en": "Grey Fabric"
+ },
+ "垂钓用品": {
+  "ar": "معدات الصيد",
+  "en": "Fishing Gear"
+ },
+ "型材": {
+  "ar": "بروفيلات",
+  "en": "Profiles"
+ },
+ "塑料丝、塑料绳": {
+  "ar": "خيوط وحبال بلاستيكية",
+  "en": "Plastic Threads and Ropes"
+ },
+ "塑料加工": {
+  "ar": "تصنيع البلاستيك",
+  "en": "Plastic Processing"
+ },
+ "塑料包装": {
+  "ar": "تغليف بلاستيكي",
+  "en": "Plastic Packaging"
+ },
+ "塑料包装袋": {
+  "ar": "أكياس بلاستيكية",
+  "en": "Plastic Bags"
+ },
+ "塑料合金": {
+  "ar": "سبائك بلاستيكية",
+  "en": "Plastic Alloys"
+ },
+ "塑料异型材": {
+  "ar": "بروفيلات بلاستيكية",
+  "en": "Plastic Profiles"
+ },
+ "塑料机械": {
+  "ar": "آلات البلاستيك",
+  "en": "Plastic Machinery"
+ },
+ "塑料板(卷)": {
+  "ar": "ألواح وبكرات بلاستيكية",
+  "en": "Plastic Sheets and Rolls"
+ },
+ "塑料棒、塑料条": {
+  "ar": "قضبان وأشرطة بلاستيكية",
+  "en": "Plastic Rods and Strips"
+ },
+ "塑料焊条": {
+  "ar": "أعواد لحام بلاستيكية",
+  "en": "Plastic Welding Rods"
+ },
+ "塑料片": {
+  "ar": "أفلام بلاستيكية",
+  "en": "Plastic Films"
+ },
+ "塑料管": {
+  "ar": "أنابيب بلاستيكية",
+  "en": "Plastic Pipes"
+ },
+ "塑料篷布": {
+  "ar": "أغطية بلاستيكية",
+  "en": "Plastic Tarpaulins"
+ },
+ "塑料网": {
+  "ar": "شباك بلاستيكية",
+  "en": "Plastic Nets"
+ },
+ "塑料膜": {
+  "ar": "غشاء بلاستيكي",
+  "en": "Plastic Film"
+ },
+ "塑料薄膜": {
+  "ar": "غشاء بلاستيكي رقيق",
+  "en": "Plastic Thin Film"
+ },
+ "塑胶容器": {
+  "ar": "حاويات بلاستيكية",
+  "en": "Plastic Containers"
+ },
+ "塑胶零件、配件": {
+  "ar": "قطع وإكسسوارات بلاستيكية",
+  "en": "Plastic Parts and Accessories"
+ },
+ "塑身内衣": {
+  "ar": "ملابس داخلية مشدودة",
+  "en": "Shapewear"
+ },
+ "增值服务": {
+  "ar": "خدمات إضافية",
+  "en": "Value-added Services"
+ },
+ "壁饰": {
+  "ar": "ديكور الحائط",
+  "en": "Wall Decor"
+ },
+ "声讯系统": {
+  "ar": "أنظمة الصوت",
+  "en": "Audio Systems"
+ },
+ "复合包装制品": {
+  "ar": "منتجات التعبئة والتغليف المركبة",
+  "en": "Composite Packaging Products"
+ },
+ "复合包装材料": {
+  "ar": "مواد التعبئة والتغليف المركبة",
+  "en": "Composite Packaging Materials"
+ },
+ "复合面料": {
+  "ar": "أقمشة مركبة",
+  "en": "Composite Fabrics"
+ },
+ "夏凉品类": {
+  "ar": "منتجات التبريد الصيفية",
+  "en": "Summer Cooling Products"
+ },
+ "外用液体敷料（医疗器械）": {
+  "ar": "ضمادات سائلة خارجية (أجهزة طبية)",
+  "en": "External Liquid Dressings (Medical Devices)"
+ },
+ "外饰/改装/配件": {
+  "ar": "الزينة الخارجية/التعديل/الإكسسوارات",
+  "en": "Exterior/Modification/Accessories"
+ },
+ "大家电": {
+  "ar": "الأجهزة المنزلية الكبيرة",
+  "en": "Major Appliances"
+ },
+ "大码女装": {
+  "ar": "ملابس نسائية مقاسات كبيرة",
+  "en": "Plus Size Women's Wear"
+ },
+ "大码男装": {
+  "ar": "ملابس رجالية مقاسات كبيرة",
+  "en": "Plus Size Men's Wear"
+ },
+ "天然半宝晶石饰品": {
+  "ar": "مجوهرات الأحجار شبه الكريمة الطبيعية",
+  "en": "Natural Semi-precious Stone Jewelry"
+ },
+ "天然树脂": {
+  "ar": "راتنج طبيعي",
+  "en": "Natural Resin"
+ },
+ "天然橡胶": {
+  "ar": "مطاط طبيعي",
+  "en": "Natural Rubber"
+ },
+ "天然气": {
+  "ar": "غاز طبيعي",
+  "en": "Natural Gas"
+ },
+ "天然纺织原料": {
+  "ar": "مواد خام نسيجية طبيعية",
+  "en": "Natural Textile Raw Materials"
+ },
+ "天然胶粘剂": {
+  "ar": "مواد لاصقة طبيعية",
+  "en": "Natural Adhesives"
+ },
+ "天线": {
+  "ar": "هوائيات",
+  "en": "Antennas"
+ },
+ "太阳能发电系统": {
+  "ar": "أنظمة توليد الطاقة الشمسية",
+  "en": "Solar Power Systems"
+ },
+ "太阳能应用": {
+  "ar": "تطبيقات الطاقة الشمسية",
+  "en": "Solar Applications"
+ },
+ "太阳能设备": {
+  "ar": "معدات الطاقة الشمسية",
+  "en": "Solar Equipment"
+ },
+ "头部防护": {
+  "ar": "حماية الرأس",
+  "en": "Head Protection"
+ },
+ "套件类": {
+  "ar": "مجموعات",
+  "en": "Kits"
+ },
+ "女士POLO衫": {
+  "ar": "قمصان بولو نسائية",
+  "en": "Women's Polo Shirts"
+ },
+ "女士内裤": {
+  "ar": "ملابس داخلية نسائية",
+  "en": "Women's Underwear"
+ },
+ "女士包袋": {
+  "ar": "حقائب نسائية",
+  "en": "Women's Bags"
+ },
+ "女士卫裤": {
+  "ar": "بنطلونات رياضية نسائية",
+  "en": "Women's Sweatpants"
+ },
+ "女士打底": {
+  "ar": "طبقات أساسية نسائية",
+  "en": "Women's Base Layers"
+ },
+ "女士牛仔外套": {
+  "ar": "سترات جينز نسائية",
+  "en": "Women's Denim Jackets"
+ },
+ "女士短裤": {
+  "ar": "شورتات نسائية",
+  "en": "Women's Shorts"
+ },
+ "女士连体裤/衣": {
+  "ar": "جمبسوت وملابس نسائية",
+  "en": "Women's Jumpsuits/Rompers"
+ },
+ "女式T恤": {
+  "ar": "تيشيرتات نسائية",
+  "en": "Women's T-Shirts"
+ },
+ "女式休闲裤": {
+  "ar": "بنطلونات كاجوال نسائية",
+  "en": "Women's Casual Pants"
+ },
+ "女式卫衣、绒衫": {
+  "ar": "سويت شيرت وملابس صوفية نسائية",
+  "en": "Women's Sweatshirts & Fleece"
+ },
+ "女式唐装": {
+  "ar": "ملابس تانغ نسائية",
+  "en": "Women's Tang Suits"
+ },
+ "女式夹克/棒球服": {
+  "ar": "سترات وبالطو نسائية",
+  "en": "Women's Jackets/Baseball Jackets"
+ },
+ "女式打底裤": {
+  "ar": "بنطلونات ضيقة نسائية",
+  "en": "Women's Leggings"
+ },
+ "女式棉衣": {
+  "ar": "ملابس نسائية مبطنة بالقطن",
+  "en": "Women's Cotton-padded Clothes"
+ },
+ "女式毛呢外套": {
+  "ar": "معاطف صوف نسائية",
+  "en": "Women's Wool Coats"
+ },
+ "女式毛衣": {
+  "ar": "كنزات نسائية",
+  "en": "Women's Sweaters"
+ },
+ "女式牛仔裤": {
+  "ar": "جينز نسائي",
+  "en": "Women's Jeans"
+ },
+ "女式皮衣": {
+  "ar": "سترات جلدية نسائية",
+  "en": "Women's Leather Jackets"
+ },
+ "女式羊绒外套": {
+  "ar": "معاطف كشمير نسائية",
+  "en": "Women's Cashmere Coats"
+ },
+ "女式羽绒服": {
+  "ar": "سترات نسائية مبطنة بالريش",
+  "en": "Women's Down Jackets"
+ },
+ "女式职业套装": {
+  "ar": "ملابس عمل نسائية",
+  "en": "Women's Workwear"
+ },
+ "女式衬衫": {
+  "ar": "قمصان نسائية",
+  "en": "Women's Shirts"
+ },
+ "女式针织衫": {
+  "ar": "ملابس محبوكة نسائية",
+  "en": "Women's Knitwear"
+ },
+ "女式防晒衣、防晒服": {
+  "ar": "ملابس نسائية للحماية من الشمس",
+  "en": "Women's Sun Protection Clothing"
+ },
+ "女式风衣": {
+  "ar": "معاطف نسائية",
+  "en": "Women's Trench Coats"
+ },
+ "女式马甲": {
+  "ar": "صدريات نسائية",
+  "en": "Women's Vests"
+ },
+ "女装": {
+  "ar": "ملابس نسائية",
+  "en": "Women's Clothing"
+ },
+ "女装加工": {
+  "ar": "تصنيع الملابس النسائية",
+  "en": "Women's Clothing Manufacturing"
+ },
+ "女装加工定制": {
+  "ar": "تصنيع ملابس نسائية حسب الطلب",
+  "en": "Custom Women's Clothing Manufacturing"
+ },
+ "女装杂款": {
+  "ar": "ملابس نسائية متنوعة",
+  "en": "Women's Clothing Miscellaneous"
+ },
+ "女鞋": {
+  "ar": "أحذية نسائية",
+  "en": "Women's Shoes"
+ },
+ "娃娃及娃娃配件": {
+  "ar": "دمى وإكسسوارات الدمى",
+  "en": "Dolls & Accessories"
+ },
+ "娱乐休闲产品代理加盟": {
+  "ar": "امتياز منتجات الترفيه والاستجمام",
+  "en": "Entertainment & Leisure Franchise"
+ },
+ "娱乐休闲产品加工": {
+  "ar": "تصنيع منتجات الترفيه والاستجمام",
+  "en": "Entertainment & Leisure Product Manufacturing"
+ },
+ "婚庆家纺": {
+  "ar": "منسوجات منزلية للزفاف",
+  "en": "Wedding Home Textiles"
+ },
+ "婚庆用品": {
+  "ar": "مستلزمات الزفاف",
+  "en": "Wedding Supplies"
+ },
+ "婚纱/礼服/旗袍": {
+  "ar": "فساتين زفاف / فساتين سهرة / تشيباو",
+  "en": "Wedding Dresses / Gowns / Qipao"
+ },
+ "婴儿玩具": {
+  "ar": "ألعاب أطفال",
+  "en": "Baby Toys"
+ },
+ "婴儿礼盒": {
+  "ar": "مجموعات هدايا للأطفال",
+  "en": "Baby Gift Sets"
+ },
+ "婴幼儿寝居/服饰": {
+  "ar": "مفروشات وملابس أطفال",
+  "en": "Baby Bedding & Clothing"
+ },
+ "婴幼儿辅食": {
+  "ar": "مكملات غذائية للأطفال",
+  "en": "Baby Food Supplements"
+ },
+ "婴幼儿配方粉": {
+  "ar": "حليب أطفال مجفف",
+  "en": "Infant Formula"
+ },
+ "婴幼儿零食": {
+  "ar": "وجبات خفيفة للأطفال",
+  "en": "Baby Snacks"
+ },
+ "婴童家纺": {
+  "ar": "منسوجات منزلية للأطفال",
+  "en": "Baby & Toddler Home Textiles"
+ },
+ "孕妇装": {
+  "ar": "ملابس حوامل",
+  "en": "Maternity Wear"
+ },
+ "学习文具": {
+  "ar": "أدوات مكتبية مدرسية",
+  "en": "School Stationery"
+ },
+ "学习类电子产品": {
+  "ar": "أجهزة إلكترونية تعليمية",
+  "en": "Educational Electronics"
+ },
+ "学生书包": {
+  "ar": "حقائب ظهر للطلاب",
+  "en": "Student Backpacks"
+ },
+ "安全/应急/自驾": {
+  "ar": "السلامة / الطوارئ / القيادة",
+  "en": "Safety / Emergency / Driving"
+ },
+ "安全、防护": {
+  "ar": "السلامة والحماية",
+  "en": "Safety & Protection"
+ },
+ "安全标识": {
+  "ar": "لافتات السلامة",
+  "en": "Safety Signs"
+ },
+ "安全检查设备": {
+  "ar": "معدات فحص السلامة",
+  "en": "Safety Inspection Equipment"
+ },
+ "安全网": {
+  "ar": "شباك السلامة",
+  "en": "Safety Nets"
+ },
+ "安全防护产品项目合作": {
+  "ar": "شراكات منتجات الحماية والسلامة",
+  "en": "Safety Protection Product Partnerships"
+ },
+ "安全防护加工合作": {
+  "ar": "شراكات تصنيع منتجات الحماية والسلامة",
+  "en": "Safety Protection Manufacturing Partnerships"
+ },
+ "安防监控设备": {
+  "ar": "الأمن والمراقبة",
+  "en": "Security & Surveillance"
+ },
+ "宗教用品": {
+  "ar": "الأدوات الدينية",
+  "en": "Religious Items"
+ },
+ "定制家具": {
+  "ar": "الأثاث المخصص",
+  "en": "Custom Furniture"
+ },
+ "定制箱包皮具": {
+  "ar": "الحقائب والجلود المخصصة",
+  "en": "Custom Bags & Leather"
+ },
+ "实验仪器装置": {
+  "ar": "أجهزة المختبر",
+  "en": "Lab Instruments"
+ },
+ "实验室器皿": {
+  "ar": "أدوات المختبر الزجاجية",
+  "en": "Lab Glassware"
+ },
+ "实验室用品": {
+  "ar": "مستلزمات المختبر",
+  "en": "Lab Supplies"
+ },
+ "宠物保健品": {
+  "ar": "منتجات صحة الحيوانات الأليفة",
+  "en": "Pet Health Products"
+ },
+ "宠物医药": {
+  "ar": "أدوية الحيوانات الأليفة",
+  "en": "Pet Medicine"
+ },
+ "宠物及园艺": {
+  "ar": "الحيوانات الأليفة والبستنة",
+  "en": "Pets & Gardening"
+ },
+ "宠物智能设备": {
+  "ar": "أجهزة ذكية للحيوانات الأليفة",
+  "en": "Pet Smart Devices"
+ },
+ "宠物服饰、配饰": {
+  "ar": "ملابس وإكسسوارات الحيوانات الأليفة",
+  "en": "Pet Apparel & Accessories"
+ },
+ "宠物活体": {
+  "ar": "الحيوانات الأليفة الحية",
+  "en": "Live Pets"
+ },
+ "客厅家具": {
+  "ar": "أثاث غرفة المعيشة",
+  "en": "Living Room Furniture"
+ },
+ "室内安全检测": {
+  "ar": "اختبار السلامة الداخلية",
+  "en": "Indoor Safety Testing"
+ },
+ "室外照明灯具": {
+  "ar": "إضاءة خارجية",
+  "en": "Outdoor Lighting"
+ },
+ "家具五金、配件": {
+  "ar": "قطع غيار وأجهزة الأثاث",
+  "en": "Furniture Hardware & Parts"
+ },
+ "家务清洁用具": {
+  "ar": "أدوات تنظيف المنزل",
+  "en": "Household Cleaning Tools"
+ },
+ "家居智能": {
+  "ar": "المنزل الذكي",
+  "en": "Smart Home"
+ },
+ "家居清洁护理": {
+  "ar": "العناية بتنظيف المنزل",
+  "en": "Home Cleaning Care"
+ },
+ "家居用品加工": {
+  "ar": "تصنيع مستلزمات المنزل",
+  "en": "Home Goods Processing"
+ },
+ "家居用品项目合作": {
+  "ar": "شراكات مستلزمات المنزل",
+  "en": "Home Goods Partnerships"
+ },
+ "家居软饰加工定制": {
+  "ar": "تخصيص الأثاث الناعم",
+  "en": "Custom Soft Furnishings"
+ },
+ "家居鞋": {
+  "ar": "أحذية المنزل",
+  "en": "Home Shoes"
+ },
+ "家用医疗电器（器械）": {
+  "ar": "أجهزة طبية منزلية",
+  "en": "Home Medical Devices"
+ },
+ "家用电器": {
+  "ar": "الأجهزة المنزلية",
+  "en": "Home Appliances"
+ },
+ "家用电器加工": {
+  "ar": "تصنيع الأجهزة المنزلية",
+  "en": "Appliance Manufacturing"
+ },
+ "家电制造设备": {
+  "ar": "معدات تصنيع الأجهزة",
+  "en": "Appliance Manufacturing Equipment"
+ },
+ "家电项目合作": {
+  "ar": "شراكات الأجهزة المنزلية",
+  "en": "Appliance Partnerships"
+ },
+ "家纺家饰": {
+  "ar": "المنسوجات والديكور المنزلي",
+  "en": "Home Textiles & Decor"
+ },
+ "家纺家饰加工": {
+  "ar": "تصنيع المنسوجات والديكور",
+  "en": "Textiles & Decor Processing"
+ },
+ "家装建材": {
+  "ar": "مواد تجديد المنزل",
+  "en": "Home Renovation Materials"
+ },
+ "密封件": {
+  "ar": "قطع الختم",
+  "en": "Sealing Parts"
+ },
+ "对讲通信": {
+  "ar": "الاتصال الداخلي",
+  "en": "Intercom & Communication"
+ },
+ "寻呼机": {
+  "ar": "أجهزة النداء",
+  "en": "Pagers"
+ },
+ "射击、射箭用品": {
+  "ar": "معدات الرماية والسهام",
+  "en": "Shooting & Archery"
+ },
+ "小型机床": {
+  "ar": "آلات صغيرة",
+  "en": "Small Machine Tools"
+ },
+ "小宠及用品": {
+  "ar": "الحيوانات الصغيرة ومستلزماتها",
+  "en": "Small Pets & Supplies"
+ },
+ "小背心/吊带/抹胸": {
+  "ar": "القمصان الداخلية والبلوزات",
+  "en": "Tank Tops & Camis"
+ },
+ "小西装": {
+  "ar": "السترات",
+  "en": "Blazers"
+ },
+ "少数民族服饰": {
+  "ar": "ملابس عرقية",
+  "en": "Ethnic Clothing"
+ },
+ "居家布艺": {
+  "ar": "أقمشة منزلية",
+  "en": "Home Textiles"
+ },
+ "居家日用": {
+  "ar": "الاستخدام اليومي المنزلي",
+  "en": "Home Daily Use"
+ },
+ "居家日用品": {
+  "ar": "اللوازم المنزلية اليومية",
+  "en": "Home Daily Necessities"
+ },
+ "屏显器件": {
+  "ar": "أجهزة العرض",
+  "en": "Display Devices"
+ },
+ "展示用品": {
+  "ar": "مستلزمات العرض",
+  "en": "Display Supplies"
+ },
+ "展览会信息": {
+  "ar": "معلومات المعارض",
+  "en": "Exhibition Info"
+ },
+ "展览服务": {
+  "ar": "خدمات المعارض",
+  "en": "Exhibition Services"
+ },
+ "山地、野营用品": {
+  "ar": "معدات الجبال والتخييم",
+  "en": "Mountain & Camping Gear"
+ },
+ "嵌入式系统开发工具": {
+  "ar": "أدوات تطوير الأنظمة المدمجة",
+  "en": "Embedded System Dev Tools"
+ },
+ "工业制品代理加盟": {
+  "ar": "وكالة المنتجات الصناعية",
+  "en": "Industrial Product Agency"
+ },
+ "工业加湿器": {
+  "ar": "مرطبات صناعية",
+  "en": "Industrial Humidifiers"
+ },
+ "工业包装": {
+  "ar": "التغليف الصناعي",
+  "en": "Industrial Packaging"
+ },
+ "工业及商用清洁": {
+  "ar": "التنظيف الصناعي والتجاري",
+  "en": "Industrial & Commercial Cleaning"
+ },
+ "工业机器人": {
+  "ar": "الروبوتات الصناعية",
+  "en": "Industrial Robots"
+ },
+ "工业气体": {
+  "ar": "الغازات الصناعية",
+  "en": "Industrial Gases"
+ },
+ "工业润滑油": {
+  "ar": "زيوت التشحيم الصناعية",
+  "en": "Industrial Lubricants"
+ },
+ "工业用动植物油": {
+  "ar": "زيوت صناعية نباتية وحيوانية",
+  "en": "Industrial Oils"
+ },
+ "工业用橡胶制品": {
+  "ar": "منتجات مطاطية صناعية",
+  "en": "Industrial Rubber Products"
+ },
+ "工业用清洗剂": {
+  "ar": "منظفات صناعية",
+  "en": "Industrial Cleaners"
+ },
+ "工业用纸": {
+  "ar": "ورق صناعي",
+  "en": "Industrial Paper"
+ },
+ "工业管道及配件": {
+  "ar": "أنابيب ومستلزمات صناعية",
+  "en": "Industrial Pipes & Fittings"
+ },
+ "工业计时器": {
+  "ar": "مؤقتات صناعية",
+  "en": "Industrial Timers"
+ },
+ "工业输送带?": {
+  "ar": "أحزمة ناقلة صناعية",
+  "en": "Industrial Conveyor Belts"
+ },
+ "工业通讯": {
+  "ar": "الاتصالات الصناعية",
+  "en": "Industrial Communications"
+ },
+ "工作/工装制服": {
+  "ar": "ملابس العمل والزي الرسمي",
+  "en": "Workwear & Uniforms"
+ },
+ "工具刷": {
+  "ar": "فُرش الأدوات",
+  "en": "Tool Brushes"
+ },
+ "工具柜": {
+  "ar": "خزائن الأدوات",
+  "en": "Tool Cabinets"
+ },
+ "工具箱包": {
+  "ar": "صناديق وحقائب الأدوات",
+  "en": "Tool Boxes & Bags"
+ },
+ "工具耗材": {
+  "ar": "مستهلكات الأدوات",
+  "en": "Tool Consumables"
+ },
+ "工农业用塑料制品": {
+  "ar": "منتجات بلاستيكية زراعية وصناعية",
+  "en": "Agro-Industrial Plastics"
+ },
+ "工商服务": {
+  "ar": "خدمات الأعمال",
+  "en": "Business Services"
+ },
+ "工控系统及装备": {
+  "ar": "أنظمة ومعدات التحكم الصناعية",
+  "en": "Industrial Control Systems"
+ },
+ "工程塑料": {
+  "ar": "بلاستيك هندسي",
+  "en": "Engineering Plastics"
+ },
+ "工程承包": {
+  "ar": "مقاولات هندسية",
+  "en": "Engineering Contracting"
+ },
+ "工程机械、建筑机械": {
+  "ar": "آلات البناء والهندسة",
+  "en": "Construction Machinery"
+ },
+ "工程测绘仪器": {
+  "ar": "أجهزة المسح الهندسي",
+  "en": "Surveying Instruments"
+ },
+ "工艺品": {
+  "ar": "الحرف اليدوية",
+  "en": "Handicrafts"
+ },
+ "工艺品加工": {
+  "ar": "تصنيع الحرف اليدوية",
+  "en": "Handicraft Processing"
+ },
+ "工艺品配件": {
+  "ar": "إكسسوارات الحرف اليدوية",
+  "en": "Handicraft Accessories"
+ },
+ "工艺摆件": {
+  "ar": "زينة الحرف اليدوية",
+  "en": "Craft Decorations"
+ },
+ "工艺礼品五金": {
+  "ar": "هدايا الحرف والأدوات المعدنية",
+  "en": "Craft Gifts & Hardware"
+ },
+ "工艺礼品加工设备": {
+  "ar": "معدات تصنيع هدايا الحرف",
+  "en": "Craft Gift Processing Equipment"
+ },
+ "工装、制服": {
+  "ar": "ملابس العمل والزي الرسمي",
+  "en": "Workwear & Uniforms"
+ },
+ "巧克力": {
+  "ar": "شوكولاتة",
+  "en": "Chocolate"
+ },
+ "市场调研": {
+  "ar": "أبحاث السوق",
+  "en": "Market Research"
+ },
+ "布类包装": {
+  "ar": "تغليف الأقمشة",
+  "en": "Fabric Packaging"
+ },
+ "布线产品": {
+  "ar": "منتجات التوصيل الكهربائي",
+  "en": "Wiring Products"
+ },
+ "带钢": {
+  "ar": "فولاذ شريطي",
+  "en": "Strip Steel"
+ },
+ "帽子/头巾": {
+  "ar": "قبعات وأوشحة الرأس",
+  "en": "Hats & Headscarves"
+ },
+ "干果原料": {
+  "ar": "مكونات المكسرات المجففة",
+  "en": "Dried Nut Ingredients"
+ },
+ "干燥设备": {
+  "ar": "معدات التجفيف",
+  "en": "Drying Equipment"
+ },
+ "平板电脑配件": {
+  "ar": "ملحقات الأجهزة اللوحية",
+  "en": "Tablet Accessories"
+ },
+ "广告、展览器材": {
+  "ar": "معدات الإعلان والمعارض",
+  "en": "Advertising & Exhibition Equipment"
+ },
+ "广告服务": {
+  "ar": "خدمات الإعلان",
+  "en": "Advertising Services"
+ },
+ "广告衫": {
+  "ar": "قمصان ترويجية",
+  "en": "Promotional Shirts"
+ },
+ "床上用品加工定制": {
+  "ar": "تصنيع مفروشات مخصصة",
+  "en": "Custom Bedding Processing"
+ },
+ "床垫床褥": {
+  "ar": "مراتب ومفروشات",
+  "en": "Mattresses & Bedding"
+ },
+ "库存/二手电脑": {
+  "ar": "أجهزة كمبيوتر مستعملة ومخزون",
+  "en": "Stock & Used Computers"
+ },
+ "库存、二手安防产品": {
+  "ar": "منتجات أمنية مستعملة ومخزون",
+  "en": "Stock & Used Security Products"
+ },
+ "库存五金、工具": {
+  "ar": "أدوات ومعدات مخزون",
+  "en": "Stock Hardware & Tools"
+ },
+ "库存交通工具": {
+  "ar": "مركبات مخزون",
+  "en": "Stock Vehicles"
+ },
+ "库存产品代理加盟": {
+  "ar": "وكالات منتجات المخزون",
+  "en": "Stock Product Agencies"
+ },
+ "库存仪器仪表": {
+  "ar": "أجهزة ومقاييس مخزون",
+  "en": "Stock Instruments & Meters"
+ },
+ "库存体育运动产品": {
+  "ar": "منتجات رياضية مخزون",
+  "en": "Stock Sports Products"
+ },
+ "库存农产品": {
+  "ar": "منتجات زراعية مخزون",
+  "en": "Stock Agricultural Products"
+ },
+ "库存化工原料": {
+  "ar": "مواد كيميائية خام مخزون",
+  "en": "Stock Chemical Raw Materials"
+ },
+ "库存化工设备": {
+  "ar": "معدات كيميائية مخزون",
+  "en": "Stock Chemical Equipment"
+ },
+ "库存娱乐休闲产品": {
+  "ar": "منتجات ترفيهية مخزون",
+  "en": "Stock Entertainment Products"
+ },
+ "库存汽摩配件": {
+  "ar": "قطع غيار سيارات ودراجات نارية مخزون",
+  "en": "Stock Auto & Motorcycle Parts"
+ },
+ "库存照明器材": {
+  "ar": "معدات إضاءة مخزون",
+  "en": "Stock Lighting Equipment"
+ },
+ "库存玩具": {
+  "ar": "ألعاب مخزون",
+  "en": "Stock Toys"
+ },
+ "库存电子元器件、材料": {
+  "ar": "مكونات إلكترونية ومواد مخزون",
+  "en": "Stock Electronic Components & Materials"
+ },
+ "库存电工电气产品": {
+  "ar": "منتجات كهربائية مخزون",
+  "en": "Stock Electrical Products"
+ },
+ "库存皮革及制品": {
+  "ar": "جلود ومنتجات مخزون",
+  "en": "Stock Leather & Products"
+ },
+ "库存精细化学品": {
+  "ar": "مواد كيميائية دقيقة مخزون",
+  "en": "Stock Fine Chemicals"
+ },
+ "库存纺织品": {
+  "ar": "منسوجات مخزون",
+  "en": "Stock Textiles"
+ },
+ "库存设备及工业用品": {
+  "ar": "معدات ولوازم صناعية مخزون",
+  "en": "Stock Equipment & Industrial Supplies"
+ },
+ "库存通信器材": {
+  "ar": "معدات اتصالات مخزون",
+  "en": "Stock Communication Equipment"
+ },
+ "库存通讯产品": {
+  "ar": "منتجات اتصالات مخزون",
+  "en": "Stock Communication Products"
+ },
+ "库存金属材料": {
+  "ar": "مخزون المعادن",
+  "en": "Metal Stock"
+ },
+ "废塑料": {
+  "ar": "نفايات البلاستيك",
+  "en": "Waste Plastic"
+ },
+ "废油": {
+  "ar": "نفايات الزيت",
+  "en": "Waste Oil"
+ },
+ "废电子电器": {
+  "ar": "نفايات الأجهزة الإلكترونية",
+  "en": "Waste Electronics"
+ },
+ "废纸": {
+  "ar": "نفايات الورق",
+  "en": "Waste Paper"
+ },
+ "废金属": {
+  "ar": "نفايات المعادن",
+  "en": "Waste Metal"
+ },
+ "座垫脚垫": {
+  "ar": "وسائد وسجاد",
+  "en": "Cushions & Mats"
+ },
+ "建材": {
+  "ar": "مواد البناء",
+  "en": "Building Materials"
+ },
+ "建材加工": {
+  "ar": "معالجة مواد البناء",
+  "en": "Building Material Processing"
+ },
+ "建材生产加工机械": {
+  "ar": "آلات تصنيع مواد البناء",
+  "en": "Building Material Machinery"
+ },
+ "建筑、建材": {
+  "ar": "الإنشاءات ومواد البناء",
+  "en": "Construction & Building"
+ },
+ "建筑用粘合剂": {
+  "ar": "مواد لاصقة للبناء",
+  "en": "Construction Adhesives"
+ },
+ "建筑用精细化学品": {
+  "ar": "مواد كيميائية للبناء",
+  "en": "Construction Chemicals"
+ },
+ "建筑项目合作": {
+  "ar": "مشاريع البناء",
+  "en": "Construction Projects"
+ },
+ "开关": {
+  "ar": "مفاتيح",
+  "en": "Switches"
+ },
+ "开关元件": {
+  "ar": "مكونات المفاتيح",
+  "en": "Switch Components"
+ },
+ "开采、选矿设备": {
+  "ar": "معدات التعدين",
+  "en": "Mining Equipment"
+ },
+ "弹簧": {
+  "ar": "نوابض",
+  "en": "Springs"
+ },
+ "影音导航": {
+  "ar": "الصوت والملاحة",
+  "en": "Audio & Navigation"
+ },
+ "影音电器": {
+  "ar": "أجهزة صوتية",
+  "en": "Audio Electronics"
+ },
+ "性保健品加工": {
+  "ar": "تصنيع منتجات الصحة الجنسية",
+  "en": "Sexual Health Products Processing"
+ },
+ "性感内衣": {
+  "ar": "الملابس الداخلية المثيرة",
+  "en": "Lingerie"
+ },
+ "情侣服装": {
+  "ar": "ملابس الأزواج",
+  "en": "Couple Clothing"
+ },
+ "情侣装/亲子装加工": {
+  "ar": "تصنيع ملابس الأزواج والأطفال",
+  "en": "Couple & Parent-Child Wear Processing"
+ },
+ "情侣装/情侣服": {
+  "ar": "ملابس الأزواج",
+  "en": "Couple Wear"
+ },
+ "成人/女性护理": {
+  "ar": "رعاية البالغين والنساء",
+  "en": "Adult & Female Care"
+ },
+ "成人奶粉": {
+  "ar": "حليب بودرة للبالغين",
+  "en": "Adult Milk Powder"
+ },
+ "成人用品": {
+  "ar": "منتجات للكبار",
+  "en": "Adult Products"
+ },
+ "成套家具": {
+  "ar": "مجموعات الأثاث",
+  "en": "Furniture Sets"
+ },
+ "户外服装": {
+  "ar": "ملابس خارجية",
+  "en": "Outdoor Clothing"
+ },
+ "户外眼镜": {
+  "ar": "نظارات خارجية",
+  "en": "Outdoor Glasses"
+ },
+ "户外鞋": {
+  "ar": "أحذية خارجية",
+  "en": "Outdoor Shoes"
+ },
+ "手动工具": {
+  "ar": "أدوات يدوية",
+  "en": "Hand Tools"
+ },
+ "手动扳手": {
+  "ar": "مفاتيح يدوية",
+  "en": "Manual Wrenches"
+ },
+ "手动螺丝刀": {
+  "ar": "مفكات يدوية",
+  "en": "Manual Screwdrivers"
+ },
+ "手套/袖套": {
+  "ar": "قفازات وأكمام",
+  "en": "Gloves & Sleeves"
+ },
+ "手工锯及配件": {
+  "ar": "مناشير يدوية وملحقاتها",
+  "en": "Hand Saws & Accessories"
+ },
+ "手机包": {
+  "ar": "أغطية الهواتف",
+  "en": "Phone Cases"
+ },
+ "手机号码/套餐/增值业务": {
+  "ar": "أرقام الهاتف والباقات",
+  "en": "Phone Numbers & Plans"
+ },
+ "手机通讯": {
+  "ar": "الاتصالات المحمولة",
+  "en": "Mobile Communication"
+ },
+ "手机配件": {
+  "ar": "ملحقات الجوال",
+  "en": "Mobile Accessories"
+ },
+ "手机饰品": {
+  "ar": "زينة الجوال",
+  "en": "Mobile Decorations"
+ },
+ "手账": {
+  "ar": "دفاتر التخطيط",
+  "en": "Planners"
+ },
+ "手部防护": {
+  "ar": "حماية اليد",
+  "en": "Hand Protection"
+ },
+ "手饰": {
+  "ar": "مجوهرات اليد",
+  "en": "Hand Jewelry"
+ },
+ "打气筒": {
+  "ar": "مضخات هواء",
+  "en": "Air Pumps"
+ },
+ "打火机及烟具": {
+  "ar": "ولاعات وأدوات تدخين",
+  "en": "Lighters & Smoking"
+ },
+ "托盘": {
+  "ar": "صواني",
+  "en": "Trays"
+ },
+ "技术合作": {
+  "ar": "التعاون التقني",
+  "en": "Technical Cooperation"
+ },
+ "报警器": {
+  "ar": "أجهزة الإنذار",
+  "en": "Alarms"
+ },
+ "拉床": {
+  "ar": "آلات التثقيب",
+  "en": "Broaching Machines"
+ },
+ "招标、投标": {
+  "ar": "المناقصات",
+  "en": "Bidding"
+ },
+ "招聘职位": {
+  "ar": "وظائف",
+  "en": "Job Listings"
+ },
+ "拳击、搏击运动": {
+  "ar": "الملاكمة والفنون القتالية",
+  "en": "Boxing & Fighting"
+ },
+ "指示灯具": {
+  "ar": "أضواء الإشارة",
+  "en": "Indicator Lights"
+ },
+ "按摩保健": {
+  "ar": "التدليك والصحة",
+  "en": "Massage & Health"
+ },
+ "挡风、遮阳、防雨工具": {
+  "ar": "حماية من الرياح والشمس والمطر",
+  "en": "Wind, Sun & Rain Protection"
+ },
+ "换热、制冷空调设备": {
+  "ar": "معدات التبريد وتبادل الحرارة",
+  "en": "Heat Exchange & AC"
+ },
+ "排球用品": {
+  "ar": "معدات الكرة الطائرة",
+  "en": "Volleyball Gear"
+ },
+ "接入设备": {
+  "ar": "أجهزة الوصول",
+  "en": "Access Devices"
+ },
+ "接续设备": {
+  "ar": "أجهزة التوصيل",
+  "en": "Connection Devices"
+ },
+ "插头": {
+  "ar": "المقابس",
+  "en": "Plugs"
+ },
+ "插座": {
+  "ar": "المقابس الكهربائية",
+  "en": "Sockets"
+ },
+ "摄影摄像及配件": {
+  "ar": "معدات التصوير والفيديو",
+  "en": "Photo & Video Gear"
+ },
+ "摄影摄像服务": {
+  "ar": "خدمات التصوير والفيديو",
+  "en": "Photo & Video Services"
+ },
+ "摩托车": {
+  "ar": "دراجات نارية",
+  "en": "Motorcycles"
+ },
+ "摩托车配附件": {
+  "ar": "ملحقات الدراجات النارية",
+  "en": "Motorcycle Accessories"
+ },
+ "播出、前端设备": {
+  "ar": "معدات البث والواجهة",
+  "en": "Broadcast & Front-end"
+ },
+ "收纳清洁用具": {
+  "ar": "أدوات التخزين والتنظيف",
+  "en": "Storage & Cleaning"
+ },
+ "收纳防尘": {
+  "ar": "تخزين مضاد للغبار",
+  "en": "Dustproof Storage"
+ },
+ "改性塑料": {
+  "ar": "البلاستيك المعدل",
+  "en": "Modified Plastics"
+ },
+ "救生器材": {
+  "ar": "معدات الإنقاذ",
+  "en": "Life-saving Equipment"
+ },
+ "教学模型、器材": {
+  "ar": "نماذج وأدوات تعليمية",
+  "en": "Teaching Models & Tools"
+ },
+ "教育培训": {
+  "ar": "التعليم والتدريب",
+  "en": "Education & Training"
+ },
+ "数控机床": {
+  "ar": "آلات التحكم الرقمي",
+  "en": "CNC Machines"
+ },
+ "数码、电脑": {
+  "ar": "الرقمية وأجهزة الكمبيوتر",
+  "en": "Digital & Computers"
+ },
+ "数码产品": {
+  "ar": "المنتجات الرقمية",
+  "en": "Digital Products"
+ },
+ "数码包": {
+  "ar": "حقائب رقمية",
+  "en": "Digital Bags"
+ },
+ "数码家电包装": {
+  "ar": "تغليف الأجهزة الرقمية",
+  "en": "Digital Appliance Packaging"
+ },
+ "数码电脑加工": {
+  "ar": "معالجة الكمبيوتر الرقمية",
+  "en": "Digital Computer Processing"
+ },
+ "数码配件": {
+  "ar": "إكسسوارات رقمية",
+  "en": "Digital Accessories"
+ },
+ "整流器": {
+  "ar": "مقوم",
+  "en": "Rectifiers"
+ },
+ "整熨洗涤设备": {
+  "ar": "معدات الكي والغسيل",
+  "en": "Ironing & Washing Equipment"
+ },
+ "整理用具": {
+  "ar": "أدوات التنظيم",
+  "en": "Organizing Tools"
+ },
+ "整车": {
+  "ar": "مركبات كاملة",
+  "en": "Complete Vehicles"
+ },
+ "文化、印刷用纸": {
+  "ar": "ورق ثقافي وطباعة",
+  "en": "Cultural & Printing Paper"
+ },
+ "文化用品": {
+  "ar": "لوازم ثقافية",
+  "en": "Cultural Supplies"
+ },
+ "文教用橡胶制品": {
+  "ar": "منتجات مطاطية تعليمية",
+  "en": "Rubber Educational Products"
+ },
+ "文胸": {
+  "ar": "صدريات",
+  "en": "Bras"
+ },
+ "新奇特玩具": {
+  "ar": "ألعاب مبتكرة",
+  "en": "Novelty Toys"
+ },
+ "新能源": {
+  "ar": "طاقة جديدة",
+  "en": "New Energy"
+ },
+ "方便速食": {
+  "ar": "طعام سريع مريح",
+  "en": "Convenient Fast Food"
+ },
+ "旅游项目合作": {
+  "ar": "تعاون سياحي",
+  "en": "Tourism Cooperation"
+ },
+ "旅行包、旅行袋": {
+  "ar": "حقائب سفر",
+  "en": "Travel Bags"
+ },
+ "旅行箱": {
+  "ar": "حقائب سفر بعجلات",
+  "en": "Suitcases"
+ },
+ "无主灯照明": {
+  "ar": "إضاءة مدمجة",
+  "en": "Recessed Lighting"
+ },
+ "无害化处理设备": {
+  "ar": "معدات المعالجة الآمنة",
+  "en": "Harmless Treatment Equipment"
+ },
+ "无损检测仪器": {
+  "ar": "أجهزة الفحص غير المدمرة",
+  "en": "Non-destructive Testing"
+ },
+ "无机盐": {
+  "ar": "أملاح غير عضوية",
+  "en": "Inorganic Salts"
+ },
+ "无机碱": {
+  "ar": "قلويات غير عضوية",
+  "en": "Inorganic Alkalis"
+ },
+ "无机胶粘剂": {
+  "ar": "مواد لاصقة غير عضوية",
+  "en": "Inorganic Adhesives"
+ },
+ "无机酸": {
+  "ar": "أحماض غير عضوية",
+  "en": "Inorganic Acids"
+ },
+ "无机非金属材料": {
+  "ar": "مواد غير معدنية غير عضوية",
+  "en": "Inorganic Non-metallic Materials"
+ },
+ "无机颜料/填料": {
+  "ar": "أصباغ ومواد حشو غير عضوية",
+  "en": "Inorganic Pigments & Fillers"
+ },
+ "无源元件": {
+  "ar": "مكونات سلبية",
+  "en": "Passive Components"
+ },
+ "无纺布": {
+  "ar": "نسيج غير منسوج",
+  "en": "Non-woven Fabric"
+ },
+ "无线微波设备": {
+  "ar": "معدات الميكروويف اللاسلكية",
+  "en": "Wireless Microwave Equipment"
+ },
+ "日用五金": {
+  "ar": "أدوات يدوية يومية",
+  "en": "Daily Hardware"
+ },
+ "日用包装": {
+  "ar": "تغليف يومي",
+  "en": "Daily Packaging"
+ },
+ "日用餐厨饮具": {
+  "ar": "أدوات مائدة يومية",
+  "en": "Daily Tableware"
+ },
+ "时尚休闲套装": {
+  "ar": "طقم كاجوال عصري",
+  "en": "Fashion Casual Sets"
+ },
+ "时尚口红包": {
+  "ar": "حقائب شفاه عصرية",
+  "en": "Fashion Lip Bags"
+ },
+ "春节用品": {
+  "ar": "مستلزمات عيد الربيع",
+  "en": "Spring Festival Supplies"
+ },
+ "显示仪表": {
+  "ar": "أجهزة عرض",
+  "en": "Display Instruments"
+ },
+ "普通膳食营养补充剂": {
+  "ar": "مكملات غذائية عامة",
+  "en": "General Dietary Supplements"
+ },
+ "景观工程": {
+  "ar": "هندسة المناظر الطبيعية",
+  "en": "Landscape Engineering"
+ },
+ "晶体管": {
+  "ar": "ترانزستورات",
+  "en": "Transistors"
+ },
+ "晶闸管(可控硅)": {
+  "ar": "ثايرستور (SCR)",
+  "en": "Thyristors (SCR)"
+ },
+ "智慧包装": {
+  "ar": "تغليف ذكي",
+  "en": "Smart Packaging"
+ },
+ "智能交通": {
+  "ar": "النقل الذكي",
+  "en": "Intelligent Transportation"
+ },
+ "智能卡": {
+  "ar": "بطاقات ذكية",
+  "en": "Smart Cards"
+ },
+ "智能家居系统": {
+  "ar": "أنظمة المنزل الذكي",
+  "en": "Smart Home Systems"
+ },
+ "智能设备": {
+  "ar": "أجهزة ذكية",
+  "en": "Smart Devices"
+ },
+ "月子帽、妈咪包": {
+  "ar": "قبعات الأمومة وحقائب",
+  "en": "Maternity Hats & Bags"
+ },
+ "有机玻璃制品（亚克力）": {
+  "ar": "منتجات الأكريليك",
+  "en": "Acrylic Products"
+ },
+ "有机颜料": {
+  "ar": "أصباغ عضوية",
+  "en": "Organic Pigments"
+ },
+ "有线光缆设备": {
+  "ar": "معدات الكابلات البصرية السلكية",
+  "en": "Wired Optical Cable Equipment"
+ },
+ "有线线缆设备": {
+  "ar": "معدات الكابلات السلكية",
+  "en": "Wired Cable Equipment"
+ },
+ "有色金属": {
+  "ar": "معادن غير حديدية",
+  "en": "Non-Ferrous Metals"
+ },
+ "有色金属合金": {
+  "ar": "سبائك المعادن غير الحديدية",
+  "en": "Non-Ferrous Metal Alloys"
+ },
+ "有色金属矿产": {
+  "ar": "معادن المعادن غير الحديدية",
+  "en": "Non-Ferrous Metal Minerals"
+ },
+ "服务商品": {
+  "ar": "منتجات الخدمة",
+  "en": "Service Products"
+ },
+ "服务市场": {
+  "ar": "سوق الخدمات",
+  "en": "Service Market"
+ },
+ "服务项目合作": {
+  "ar": "تعاون مشاريع الخدمة",
+  "en": "Service Project Cooperation"
+ },
+ "服装加工旧": {
+  "ar": "معالجة الملابس المستعملة",
+  "en": "Used Garment Processing"
+ },
+ "服装展示道具": {
+  "ar": "أدوات عرض الملابس",
+  "en": "Clothing Display Props"
+ },
+ "服装机械设备": {
+  "ar": "آلات الملابس",
+  "en": "Garment Machinery"
+ },
+ "服装项目合作": {
+  "ar": "تعاون مشاريع الملابس",
+  "en": "Garment Project Cooperation"
+ },
+ "服饰加工": {
+  "ar": "معالجة الإكسسوارات",
+  "en": "Accessories Processing"
+ },
+ "服饰箱包五金": {
+  "ar": "إكسسوارات وقطع حقائب",
+  "en": "Accessories & Bag Hardware"
+ },
+ "服饰配件": {
+  "ar": "إكسسوارات",
+  "en": "Accessories"
+ },
+ "服饰配件、饰品": {
+  "ar": "إكسسوارات ومجوهرات",
+  "en": "Accessories & Jewelry"
+ },
+ "服饰配件加工": {
+  "ar": "معالجة الإكسسوارات",
+  "en": "Accessories Processing"
+ },
+ "服饰配件定制": {
+  "ar": "إكسسوارات مخصصة",
+  "en": "Custom Accessories"
+ },
+ "服饰项目合作": {
+  "ar": "تعاون مشاريع الإكسسوارات",
+  "en": "Accessories Project Cooperation"
+ },
+ "木工机床": {
+  "ar": "آلات النجارة",
+  "en": "Woodworking Machine Tools"
+ },
+ "木工机械": {
+  "ar": "آلات النجارة",
+  "en": "Woodworking Machinery"
+ },
+ "木材加工": {
+  "ar": "معالجة الخشب",
+  "en": "Wood Processing"
+ },
+ "木质包装容器": {
+  "ar": "تغليف خشبي",
+  "en": "Wooden Packaging"
+ },
+ "木质材料": {
+  "ar": "مواد خشبية",
+  "en": "Wood Materials"
+ },
+ "机加工刀具": {
+  "ar": "أدوات التشغيل",
+  "en": "Machining Tools"
+ },
+ "机床": {
+  "ar": "آلات",
+  "en": "Machine Tools"
+ },
+ "机床附件": {
+  "ar": "ملحقات الآلات",
+  "en": "Machine Tool Accessories"
+ },
+ "机械五金加工": {
+  "ar": "معالجة الأجهزة الميكانيكية",
+  "en": "Mechanical Hardware Processing"
+ },
+ "机械及行业设备": {
+  "ar": "آلات ومعدات صناعية",
+  "en": "Machinery & Industry Equipment"
+ },
+ "机械量仪表": {
+  "ar": "أجهزة قياس ميكانيكية",
+  "en": "Mechanical Measuring Instruments"
+ },
+ "机械项目合作": {
+  "ar": "تعاون مشاريع الماكينات",
+  "en": "Machinery Project Cooperation"
+ },
+ "杂环化合物": {
+  "ar": "مركبات حلقية غير متجانسة",
+  "en": "Heterocyclic Compounds"
+ },
+ "材料加工设备": {
+  "ar": "معدات معالجة المواد",
+  "en": "Material Processing Equipment"
+ },
+ "极限运动用品": {
+  "ar": "معدات الرياضات الخطرة",
+  "en": "Extreme Sports Gear"
+ },
+ "枕芯类": {
+  "ar": "أنوية الوسائد",
+  "en": "Pillow Cores"
+ },
+ "林业及园林业副产品": {
+  "ar": "منتجات فرعية للغابات والبستنة",
+  "en": "Forestry & Gardening Byproducts"
+ },
+ "果冻布丁": {
+  "ar": "جيلاتين وبودينغ",
+  "en": "Jelly & Pudding"
+ },
+ "果干蜜饯": {
+  "ar": "فواكه مجففة ومعلبة",
+  "en": "Dried Fruits & Candied Fruits"
+ },
+ "果树": {
+  "ar": "أشجار الفاكهة",
+  "en": "Fruit Trees"
+ },
+ "果酱": {
+  "ar": "مربى",
+  "en": "Jam"
+ },
+ "染料": {
+  "ar": "أصباغ",
+  "en": "Dyes"
+ },
+ "标签、标牌": {
+  "ar": "ملصقات ولافتات",
+  "en": "Labels & Signs"
+ },
+ "校园服装": {
+  "ar": "زي المدرسة",
+  "en": "School Uniforms"
+ },
+ "梯类": {
+  "ar": "سلالم",
+  "en": "Ladders"
+ },
+ "检测认证": {
+  "ar": "اختبار وشهادات",
+  "en": "Testing & Certification"
+ },
+ "棉类面料": {
+  "ar": "أقمشة قطنية",
+  "en": "Cotton Fabrics"
+ },
+ "棋牌、休闲运动": {
+  "ar": "ألعاب الطاولة والرياضات الترفيهية",
+  "en": "Board & Leisure Sports"
+ },
+ "棒垒球、曲棍球用品": {
+  "ar": "معدات البيسبول والهوكي",
+  "en": "Baseball & Hockey Gear"
+ },
+ "植物提取物": {
+  "ar": "مستخلصات نباتية",
+  "en": "Plant Extracts"
+ },
+ "植物生长调节剂": {
+  "ar": "منظمات نمو النبات",
+  "en": "Plant Growth Regulators"
+ },
+ "楼宇对讲设备": {
+  "ar": "أنظمة الاتصال الداخلي",
+  "en": "Intercom Systems"
+ },
+ "模具": {
+  "ar": "قوالب",
+  "en": "Molds"
+ },
+ "模具标准件": {
+  "ar": "قطع قوالب قياسية",
+  "en": "Mold Standard Parts"
+ },
+ "模型、手板": {
+  "ar": "نماذج ونماذج أولية",
+  "en": "Models & Prototypes"
+ },
+ "模型玩具": {
+  "ar": "ألعاب النماذج",
+  "en": "Model Toys"
+ },
+ "橄榄球、壁球、手球": {
+  "ar": "رجبي، سكواش وهاندبول",
+  "en": "Rugby, Squash & Handball"
+ },
+ "橡塑": {
+  "ar": "المطاط والبلاستيك",
+  "en": "Rubber & Plastics"
+ },
+ "橡塑专用仪器仪表": {
+  "ar": "أجهزة المطاط والبلاستيك",
+  "en": "Rubber & Plastic Instruments"
+ },
+ "橡塑水带": {
+  "ar": "خراطيم المطاط والبلاستيك",
+  "en": "Rubber & Plastic Hoses"
+ },
+ "橡皮布": {
+  "ar": "قماش مطاطي",
+  "en": "Rubberized Fabric"
+ },
+ "橡胶加工": {
+  "ar": "تصنيع المطاط",
+  "en": "Rubber Processing"
+ },
+ "橡胶密封制品": {
+  "ar": "أختام مطاطية",
+  "en": "Rubber Seals"
+ },
+ "橡胶带": {
+  "ar": "أحزمة مطاطية",
+  "en": "Rubber Belts"
+ },
+ "橡胶机械": {
+  "ar": "آلات المطاط",
+  "en": "Rubber Machinery"
+ },
+ "橡胶板": {
+  "ar": "ألواح مطاطية",
+  "en": "Rubber Sheets"
+ },
+ "橡胶棒": {
+  "ar": "قضبان مطاطية",
+  "en": "Rubber Rods"
+ },
+ "橡胶气囊": {
+  "ar": "أكياس هوائية مطاطية",
+  "en": "Rubber Airbags"
+ },
+ "橡胶片": {
+  "ar": "شرائح مطاطية",
+  "en": "Rubber Sheets"
+ },
+ "橡胶管": {
+  "ar": "أنابيب مطاطية",
+  "en": "Rubber Tubes"
+ },
+ "正版动漫形象": {
+  "ar": "شخصيات أنمي أصلية",
+  "en": "Official Anime Characters"
+ },
+ "母婴电器": {
+  "ar": "أجهزة للأم والطفل",
+  "en": "Mother & Baby Appliances"
+ },
+ "母料": {
+  "ar": "ماستر باتش",
+  "en": "Masterbatch"
+ },
+ "毛巾、巾类加工定制": {
+  "ar": "تصنيع مناشف حسب الطلب",
+  "en": "Towel Custom Processing"
+ },
+ "毛巾、面巾": {
+  "ar": "مناشف ومناشف وجه",
+  "en": "Towels & Face Towels"
+ },
+ "毛毡": {
+  "ar": "لباد",
+  "en": "Felt"
+ },
+ "毛纺面料": {
+  "ar": "أقمشة صوفية",
+  "en": "Wool Fabrics"
+ },
+ "毛绒/布艺公仔玩具": {
+  "ar": "دمى محشوة وأقمشة",
+  "en": "Plush & Fabric Toys"
+ },
+ "毯类": {
+  "ar": "بطانيات",
+  "en": "Blankets"
+ },
+ "民族乐器": {
+  "ar": "آلات موسيقية تقليدية",
+  "en": "Ethnic Instruments"
+ },
+ "民用无人机": {
+  "ar": "طائرات بدون طيار مدنية",
+  "en": "Civil Drones"
+ },
+ "民间工艺品": {
+  "ar": "حرف يدوية شعبية",
+  "en": "Folk Crafts"
+ },
+ "气体放电灯": {
+  "ar": "مصابيح تفريغ الغاز",
+  "en": "Gas Discharge Lamps"
+ },
+ "气体检测仪": {
+  "ar": "أجهزة كشف الغاز",
+  "en": "Gas Detectors"
+ },
+ "气动元件": {
+  "ar": "مكونات هوائية",
+  "en": "Pneumatic Components"
+ },
+ "气动工具": {
+  "ar": "أدوات هوائية",
+  "en": "Pneumatic Tools"
+ },
+ "气氛、布置用品": {
+  "ar": "أدوات تزيين وأجواء",
+  "en": "Atmosphere & Decoration"
+ },
+ "气象仪器": {
+  "ar": "أجهزة الأرصاد الجوية",
+  "en": "Meteorological Instruments"
+ },
+ "氢能源": {
+  "ar": "طاقة الهيدروجين",
+  "en": "Hydrogen Energy"
+ },
+ "氧化物": {
+  "ar": "أكاسيد",
+  "en": "Oxides"
+ },
+ "水、饮料": {
+  "ar": "مياه ومشروبات",
+  "en": "Water & Beverages"
+ },
+ "水产海鲜": {
+  "ar": "مأكولات بحرية",
+  "en": "Seafood"
+ },
+ "水产种苗": {
+  "ar": "شتلات الاستزراع المائي",
+  "en": "Aquaculture Seedlings"
+ },
+ "水产零食": {
+  "ar": "وجبات خفيفة بحرية",
+  "en": "Seafood Snacks"
+ },
+ "水力能源": {
+  "ar": "الطاقة الكهرومائية",
+  "en": "Hydropower"
+ },
+ "水处理化学品": {
+  "ar": "مواد كيميائية لمعالجة المياه",
+  "en": "Water Treatment Chemicals"
+ },
+ "水族世界": {
+  "ar": "مستلزمات الأحواض المائية",
+  "en": "Aquarium Supplies"
+ },
+ "水暖五金": {
+  "ar": "معدات السباكة",
+  "en": "Plumbing Hardware"
+ },
+ "水果": {
+  "ar": "فواكه",
+  "en": "Fruits"
+ },
+ "水泥制品": {
+  "ar": "منتجات الأسمنت",
+  "en": "Cement Products"
+ },
+ "汉服": {
+  "ar": "ملابس هانفو",
+  "en": "Hanfu Clothing"
+ },
+ "污水处理设备": {
+  "ar": "معدات معالجة مياه الصرف",
+  "en": "Wastewater Treatment"
+ },
+ "汽摩产品制造设备": {
+  "ar": "معدات تصنيع السيارات والدراجات",
+  "en": "Automotive Manufacturing Equipment"
+ },
+ "汽摩及配件": {
+  "ar": "السيارات وقطع الغيار",
+  "en": "Automotive & Parts"
+ },
+ "汽摩及配件代理加盟": {
+  "ar": "وكالات قطع غيار السيارات",
+  "en": "Automotive Parts Franchise"
+ },
+ "汽摩及配件项目合作": {
+  "ar": "شراكات قطع غيار السيارات",
+  "en": "Automotive Parts Partnerships"
+ },
+ "汽摩检测设备": {
+  "ar": "معدات فحص السيارات",
+  "en": "Automotive Testing Equipment"
+ },
+ "汽摩配件加工": {
+  "ar": "تصنيع قطع غيار السيارات",
+  "en": "Automotive Parts Processing"
+ },
+ "汽车内饰改装": {
+  "ar": "تعديل داخلية السيارات",
+  "en": "Car Interior Modification"
+ },
+ "汽车内饰用品": {
+  "ar": "إكسسوارات داخلية للسيارات",
+  "en": "Car Interior Accessories"
+ },
+ "汽车用品": {
+  "ar": "إكسسوارات السيارات",
+  "en": "Car Accessories"
+ },
+ "汽车用塑胶制品": {
+  "ar": "منتجات بلاستيكية للسيارات",
+  "en": "Car Plastic Products"
+ },
+ "汽车维修设备": {
+  "ar": "معدات صيانة السيارات",
+  "en": "Car Repair Equipment"
+ },
+ "汽车配件": {
+  "ar": "قطع غيار السيارات",
+  "en": "Car Parts"
+ },
+ "沥青": {
+  "ar": "أسفلت",
+  "en": "Asphalt"
+ },
+ "油墨": {
+  "ar": "حبر",
+  "en": "Ink"
+ },
+ "沼气设备": {
+  "ar": "معدات الغاز الحيوي",
+  "en": "Biogas Equipment"
+ },
+ "泡沫塑料": {
+  "ar": "لدائن رغوية",
+  "en": "Foam Plastics"
+ },
+ "泵": {
+  "ar": "مضخات",
+  "en": "Pumps"
+ },
+ "洗眼器": {
+  "ar": "محطات غسل العين",
+  "en": "Eyewash Stations"
+ },
+ "洗车工具": {
+  "ar": "أدوات غسيل السيارات",
+  "en": "Car Wash Tools"
+ },
+ "洛丽塔Lolita": {
+  "ar": "Lolita",
+  "en": "Lolita"
+ },
+ "流量仪表": {
+  "ar": "عدادات التدفق",
+  "en": "Flow Meters"
+ },
+ "测量工具": {
+  "ar": "أدوات القياس",
+  "en": "Measuring Tools"
+ },
+ "浴巾、浴袍、浴裙、沙滩巾": {
+  "ar": "مناشف وأردية الاستحمام",
+  "en": "Bath Towels & Robes"
+ },
+ "海绵": {
+  "ar": "إسفنج",
+  "en": "Sponges"
+ },
+ "涂料、油漆": {
+  "ar": "دهانات وطلاءات",
+  "en": "Paints & Coatings"
+ },
+ "涂料乳液及成膜物质": {
+  "ar": "مستحلبات الطلاء",
+  "en": "Paint Emulsions"
+ },
+ "涂料助剂": {
+  "ar": "مضافات الطلاء",
+  "en": "Paint Additives"
+ },
+ "涂装设备": {
+  "ar": "معدات الطلاء",
+  "en": "Coating Equipment"
+ },
+ "涂镀": {
+  "ar": "طلاء وتغليف",
+  "en": "Coating & Plating"
+ },
+ "消毒抑菌用品": {
+  "ar": "مطهرات ومضادات بكتيريا",
+  "en": "Disinfection & Antibacterial"
+ },
+ "消毒防腐药剂": {
+  "ar": "مطهرات ومواد حافظة",
+  "en": "Disinfectants & Preservatives"
+ },
+ "消防设备": {
+  "ar": "معدات مكافحة الحرائق",
+  "en": "Firefighting Equipment"
+ },
+ "消音降噪设备": {
+  "ar": "معدات خفض الضوضاء",
+  "en": "Noise Reduction Equipment"
+ },
+ "涉水运动用品": {
+  "ar": "معدات الرياضات المائية",
+  "en": "Water Sports Gear"
+ },
+ "液体乳": {
+  "ar": "حليب سائل",
+  "en": "Liquid Milk"
+ },
+ "液压工具": {
+  "ar": "أدوات هيدروليكية",
+  "en": "Hydraulic Tools"
+ },
+ "液压机械": {
+  "ar": "آلات هيدروليكية",
+  "en": "Hydraulic Machinery"
+ },
+ "液压系统": {
+  "ar": "أنظمة هيدروليكية",
+  "en": "Hydraulic Systems"
+ },
+ "混合设备": {
+  "ar": "معدات الخلط",
+  "en": "Mixing Equipment"
+ },
+ "混纺、交织类面料": {
+  "ar": "أقمشة مخلوطة",
+  "en": "Blended Fabrics"
+ },
+ "温湿度仪表": {
+  "ar": "أجهزة قياس الحرارة والرطوبة",
+  "en": "Temperature & Humidity Meters"
+ },
+ "游泳用品": {
+  "ar": "معدات السباحة",
+  "en": "Swimming Gear"
+ },
+ "游艺设施": {
+  "ar": "مرافق الترفيه",
+  "en": "Amusement Facilities"
+ },
+ "滑雪用品": {
+  "ar": "معدات التزلج",
+  "en": "Ski Gear"
+ },
+ "滤波器": {
+  "ar": "مرشحات",
+  "en": "Filters"
+ },
+ "激光加工设备": {
+  "ar": "معدات المعالجة بالليزر",
+  "en": "Laser Processing Equipment"
+ },
+ "火工产品": {
+  "ar": "منتجات نارية",
+  "en": "Pyrotechnics"
+ },
+ "灯具灯饰": {
+  "ar": "تركيبات الإضاءة",
+  "en": "Lighting Fixtures"
+ },
+ "灯具配附件": {
+  "ar": "ملحقات الإضاءة",
+  "en": "Lighting Accessories"
+ },
+ "灯饰照明": {
+  "ar": "إضاءة",
+  "en": "Lighting"
+ },
+ "炉料": {
+  "ar": "مواد الفرن",
+  "en": "Furnace Materials"
+ },
+ "烃类": {
+  "ar": "هيدروكربونات",
+  "en": "Hydrocarbons"
+ },
+ "烘焙半成品/小吃半成品": {
+  "ar": "منتجات مخبوزة ونصف جاهزة",
+  "en": "Baking & Snack Semi-finished"
+ },
+ "烘焙原辅料": {
+  "ar": "مكونات الخبز",
+  "en": "Baking Ingredients"
+ },
+ "烘焙用具": {
+  "ar": "أدوات الخبز",
+  "en": "Baking Tools"
+ },
+ "烧烤用具": {
+  "ar": "أدوات الشواء",
+  "en": "BBQ Tools"
+ },
+ "烫金、烫印材料": {
+  "ar": "مواد الطباعة الساخنة",
+  "en": "Hot Stamping Materials"
+ },
+ "热塑性弹性体": {
+  "ar": "الإيلاستومرات الحرارية",
+  "en": "Thermoplastic Elastomers"
+ },
+ "热轧板卷": {
+  "ar": "لفائف الصلب المدلفن على الساخن",
+  "en": "Hot Rolled Coils"
+ },
+ "焊接、切割器材与配件": {
+  "ar": "معدات اللحام والقطع",
+  "en": "Welding and Cutting Equipment"
+ },
+ "焊接材料与附件": {
+  "ar": "مواد وإكسسوارات اللحام",
+  "en": "Welding Materials and Accessories"
+ },
+ "焊接消耗品与材料": {
+  "ar": "مواد استهلاكية للحام",
+  "en": "Welding Consumables"
+ },
+ "焊接辅机": {
+  "ar": "آلات مساعدة للحام",
+  "en": "Welding Auxiliary Machines"
+ },
+ "煤制品": {
+  "ar": "منتجات الفحم",
+  "en": "Coal Products"
+ },
+ "煤焦化产品": {
+  "ar": "منتجات تقطير الفحم",
+  "en": "Coal Coking Products"
+ },
+ "煤矿设备": {
+  "ar": "معدات تعدين الفحم",
+  "en": "Coal Mining Equipment"
+ },
+ "照明加工": {
+  "ar": "معالجة الإضاءة",
+  "en": "Lighting Processing"
+ },
+ "照明器材项目合作": {
+  "ar": "شراكات معدات الإضاءة",
+  "en": "Lighting Equipment Partnerships"
+ },
+ "照明电筒": {
+  "ar": "مصابيح يدوية",
+  "en": "Flashlights"
+ },
+ "燃气设备": {
+  "ar": "معدات الغاز",
+  "en": "Gas Equipment"
+ },
+ "版材": {
+  "ar": "مواد الألواح",
+  "en": "Plate Materials"
+ },
+ "物位仪表": {
+  "ar": "أجهزة قياس المستوى",
+  "en": "Level Instruments"
+ },
+ "物流包装": {
+  "ar": "تغليف اللوجستيات",
+  "en": "Logistics Packaging"
+ },
+ "物流服务": {
+  "ar": "خدمات اللوجستيات",
+  "en": "Logistics Services"
+ },
+ "物流辅助器材": {
+  "ar": "ملحقات اللوجستيات",
+  "en": "Logistics Accessories"
+ },
+ "物联网IOT": {
+  "ar": "إنترنت الأشياء",
+  "en": "IoT"
+ },
+ "特殊用途膳食营养补充剂": {
+  "ar": "مكملات غذائية خاصة",
+  "en": "Special Dietary Supplements"
+ },
+ "特种养殖动物": {
+  "ar": "حيوانات التربية الخاصة",
+  "en": "Special Breeding Animals"
+ },
+ "特种塑料": {
+  "ar": "بلاستيك خاص",
+  "en": "Specialty Plastics"
+ },
+ "特许经营": {
+  "ar": "الامتياز التجاري",
+  "en": "Franchising"
+ },
+ "独立光源": {
+  "ar": "مصادر ضوء مستقلة",
+  "en": "Independent Light Sources"
+ },
+ "猫/狗主粮": {
+  "ar": "طعام القطط/الكلاب",
+  "en": "Cat/Dog Food"
+ },
+ "猫/狗美容清洁用品": {
+  "ar": "منتجات تنظيف وتجميل القطط/الكلاب",
+  "en": "Cat/Dog Grooming"
+ },
+ "猫/狗零食": {
+  "ar": "وجبات خفيفة للقطط/الكلاب",
+  "en": "Cat/Dog Snacks"
+ },
+ "猫狗用品": {
+  "ar": "مستلزمات القطط والكلاب",
+  "en": "Cat and Dog Supplies"
+ },
+ "玩具": {
+  "ar": "ألعاب",
+  "en": "Toys"
+ },
+ "玩具代理加盟": {
+  "ar": "امتياز ألعاب",
+  "en": "Toy Franchise"
+ },
+ "玩具加工定制": {
+  "ar": "تخصيص الألعاب",
+  "en": "Toy Customization"
+ },
+ "玩具加工设备": {
+  "ar": "معدات تصنيع الألعاب",
+  "en": "Toy Manufacturing Equipment"
+ },
+ "玩具设计加工": {
+  "ar": "تصميم ومعالجة الألعاب",
+  "en": "Toy Design and Processing"
+ },
+ "玩具配件": {
+  "ar": "إكسسوارات الألعاب",
+  "en": "Toy Accessories"
+ },
+ "玩具项目合作": {
+  "ar": "شراكات الألعاب",
+  "en": "Toy Partnerships"
+ },
+ "环保": {
+  "ar": "حماية البيئة",
+  "en": "Environmental Protection"
+ },
+ "环保设备代理加盟": {
+  "ar": "وكالة معدات البيئة",
+  "en": "Environmental Equipment Agency"
+ },
+ "环保设备加工": {
+  "ar": "معالجة معدات البيئة",
+  "en": "Environmental Equipment Processing"
+ },
+ "环保项目合作": {
+  "ar": "تعاون مشاريع البيئة",
+  "en": "Environmental Project Cooperation"
+ },
+ "环境检测仪器": {
+  "ar": "أجهزة اختبار البيئة",
+  "en": "Environmental Testing Instruments"
+ },
+ "玻璃": {
+  "ar": "زجاج",
+  "en": "Glass"
+ },
+ "玻璃制品": {
+  "ar": "منتجات الزجاج",
+  "en": "Glass Products"
+ },
+ "玻璃加工": {
+  "ar": "معالجة الزجاج",
+  "en": "Glass Processing"
+ },
+ "玻璃包装": {
+  "ar": "تغليف الزجاج",
+  "en": "Glass Packaging"
+ },
+ "玻璃机械": {
+  "ar": "آلات الزجاج",
+  "en": "Glass Machinery"
+ },
+ "玻璃纤维": {
+  "ar": "ألياف زجاجية",
+  "en": "Glass Fiber"
+ },
+ "珠宝饰品": {
+  "ar": "مجوهرات",
+  "en": "Jewelry"
+ },
+ "球类配套器材": {
+  "ar": "معدات رياضات الكرة",
+  "en": "Ball Sports Equipment"
+ },
+ "瑜伽/健身服": {
+  "ar": "ملابس اليوغا واللياقة",
+  "en": "Yoga & Fitness Wear"
+ },
+ "瑜伽用品": {
+  "ar": "مستلزمات اليوغا",
+  "en": "Yoga Supplies"
+ },
+ "瓷砖": {
+  "ar": "بلاط",
+  "en": "Tiles"
+ },
+ "生产线": {
+  "ar": "خطوط الإنتاج",
+  "en": "Production Lines"
+ },
+ "生命科学": {
+  "ar": "علوم الحياة",
+  "en": "Life Sciences"
+ },
+ "生命科学仪器": {
+  "ar": "أجهزة علوم الحياة",
+  "en": "Life Science Instruments"
+ },
+ "生活口罩、耳罩": {
+  "ar": "أقنعة وغطاءات الأذن",
+  "en": "Masks & Ear Covers"
+ },
+ "生活日用橡胶制品": {
+  "ar": "منتجات مطاطية يومية",
+  "en": "Daily Rubber Products"
+ },
+ "生活电器": {
+  "ar": "أجهزة منزلية",
+  "en": "Home Appliances"
+ },
+ "生物化工": {
+  "ar": "الصناعة الكيميائية الحيوية",
+  "en": "Biochemical Industry"
+ },
+ "生物能源": {
+  "ar": "الطاقة الحيوية",
+  "en": "Bioenergy"
+ },
+ "生物识别技术设备": {
+  "ar": "معدات القياسات الحيوية",
+  "en": "Biometric Equipment"
+ },
+ "生物降解塑料": {
+  "ar": "بلاستيك قابل للتحلل",
+  "en": "Biodegradable Plastics"
+ },
+ "田径用品": {
+  "ar": "معدات ألعاب القوى",
+  "en": "Athletics Equipment"
+ },
+ "电光源材料": {
+  "ar": "مواد الإضاءة الكهربائية",
+  "en": "Electric Light Materials"
+ },
+ "电力金具": {
+  "ar": "ملحقات كهربائية",
+  "en": "Electrical Fittings"
+ },
+ "电动/遥控玩具": {
+  "ar": "ألعاب كهربائية وتحكم عن بعد",
+  "en": "Electric & Remote Toys"
+ },
+ "电动工具": {
+  "ar": "أدوات كهربائية",
+  "en": "Power Tools"
+ },
+ "电动机": {
+  "ar": "محركات كهربائية",
+  "en": "Electric Motors"
+ },
+ "电动车": {
+  "ar": "مركبات كهربائية",
+  "en": "Electric Vehicles"
+ },
+ "电动车控制器": {
+  "ar": "وحدات تحكم المركبات الكهربائية",
+  "en": "EV Controllers"
+ },
+ "电动车配件": {
+  "ar": "ملحقات المركبات الكهربائية",
+  "en": "EV Accessories"
+ },
+ "电子/发光玩具": {
+  "ar": "ألعاب إلكترونية ومضيئة",
+  "en": "Electronic & Light Toys"
+ },
+ "电子产品制造设备": {
+  "ar": "معدات تصنيع الإلكترونيات",
+  "en": "Electronics Manufacturing Equipment"
+ },
+ "电子代理加盟": {
+  "ar": "وكالة إلكترونيات",
+  "en": "Electronics Agency"
+ },
+ "电子元器件": {
+  "ar": "مكونات إلكترونية",
+  "en": "Electronic Components"
+ },
+ "电子工业用助剂": {
+  "ar": "مضافات صناعة الإلكترونيات",
+  "en": "Electronic Industry Additives"
+ },
+ "电子测量仪器": {
+  "ar": "أجهزة قياس إلكترونية",
+  "en": "Electronic Measuring Instruments"
+ },
+ "电子焊接工具": {
+  "ar": "أدوات اللحام الإلكترونية",
+  "en": "Electronic Welding Tools"
+ },
+ "电子用塑胶制品": {
+  "ar": "منتجات بلاستيكية إلكترونية",
+  "en": "Electronic Plastic Products"
+ },
+ "电子项目合作": {
+  "ar": "تعاون مشاريع إلكترونية",
+  "en": "Electronic Project Cooperation"
+ },
+ "电容器": {
+  "ar": "مكثفات",
+  "en": "Capacitors"
+ },
+ "电工仪器仪表": {
+  "ar": "أجهزة كهربائية",
+  "en": "Electrical Instruments"
+ },
+ "电工电器成套设备": {
+  "ar": "معدات كهربائية متكاملة",
+  "en": "Electrical Equipment Sets"
+ },
+ "电工电气": {
+  "ar": "الهندسة الكهربائية",
+  "en": "Electrical Engineering"
+ },
+ "电工电气产品代理加盟": {
+  "ar": "وكالة منتجات كهربائية",
+  "en": "Electrical Product Agency"
+ },
+ "电工电气产品加工": {
+  "ar": "تصنيع منتجات كهربائية",
+  "en": "Electrical Product Processing"
+ },
+ "电工电气辅材": {
+  "ar": "ملحقات كهربائية",
+  "en": "Electrical Accessories"
+ },
+ "电工电气项目合作": {
+  "ar": "تعاون مشاريع كهربائية",
+  "en": "Electrical Project Cooperation"
+ },
+ "电气控制方案": {
+  "ar": "حلول التحكم الكهربائية",
+  "en": "Electrical Control Solutions"
+ },
+ "电池": {
+  "ar": "بطاريات",
+  "en": "Batteries"
+ },
+ "电源": {
+  "ar": "مزودات الطاقة",
+  "en": "Power Supplies"
+ },
+ "电源、点火系统": {
+  "ar": "أنظمة الطاقة والإشعال",
+  "en": "Power & Ignition Systems"
+ },
+ "电源模块": {
+  "ar": "وحدات الطاقة",
+  "en": "Power Modules"
+ },
+ "电火花、线切割": {
+  "ar": "قطع بالشرارة والأسلاك",
+  "en": "Spark & Wire Cutting"
+ },
+ "电热设备": {
+  "ar": "معدات التدفئة الكهربائية",
+  "en": "Electric Heating Equipment"
+ },
+ "电焊、切割设备": {
+  "ar": "معدات اللحام والقطع",
+  "en": "Welding & Cutting Equipment"
+ },
+ "电磁铁": {
+  "ar": "كهرومغناطيسات",
+  "en": "Electromagnets"
+ },
+ "电线、电缆": {
+  "ar": "أسلاك وكابلات",
+  "en": "Wires & Cables"
+ },
+ "电脑产品制造设备": {
+  "ar": "معدات تصنيع الحواسيب",
+  "en": "Computer Manufacturing Equipment"
+ },
+ "电脑包包": {
+  "ar": "حقائب الكمبيوتر",
+  "en": "Computer Bags"
+ },
+ "电脑外设产品": {
+  "ar": "ملحقات الكمبيوتر",
+  "en": "Computer Peripherals"
+ },
+ "电脑整机": {
+  "ar": "أجهزة الكمبيوتر الكاملة",
+  "en": "Complete Computers"
+ },
+ "电脑硬件及配件": {
+  "ar": "مكونات وملحقات الكمبيوتر",
+  "en": "Computer Hardware & Accessories"
+ },
+ "电脑项目合作": {
+  "ar": "تعاون مشاريع الكمبيوتر",
+  "en": "Computer Project Cooperation"
+ },
+ "电话机配附件": {
+  "ar": "ملحقات الهاتف",
+  "en": "Telephone Accessories"
+ },
+ "电路保护": {
+  "ar": "حماية الدوائر",
+  "en": "Circuit Protection"
+ },
+ "电路板/线路板": {
+  "ar": "لوحات الدوائر",
+  "en": "Circuit Boards"
+ },
+ "男士内裤": {
+  "ar": "ملابس داخلية رجالية",
+  "en": "Men's Underwear"
+ },
+ "男士包袋": {
+  "ar": "حقائب رجالية",
+  "en": "Men's Bags"
+ },
+ "男士护肤": {
+  "ar": "عناية البشرة للرجال",
+  "en": "Men's Skincare"
+ },
+ "男式Polo衫": {
+  "ar": "قمصان بولو رجالية",
+  "en": "Men's Polo Shirts"
+ },
+ "男式T恤": {
+  "ar": "تيشيرتات رجالية",
+  "en": "Men's T-Shirts"
+ },
+ "男式休闲裤": {
+  "ar": "سراويل رجالية كاجوال",
+  "en": "Men's Casual Pants"
+ },
+ "男式休闲运动套装": {
+  "ar": "ملابس رياضية رجالية كاجوال",
+  "en": "Men's Casual Sportswear"
+ },
+ "男式加绒裤": {
+  "ar": "سراويل مبطنة رجالية",
+  "en": "Men's Fleece Pants"
+ },
+ "男式卫衣": {
+  "ar": "سويت شيرت رجالي",
+  "en": "Men's Sweatshirts"
+ },
+ "男式卫裤": {
+  "ar": "سراويل رياضية رجالية",
+  "en": "Men's Sweatpants"
+ },
+ "男式大衣": {
+  "ar": "معاطف رجالية",
+  "en": "Men's Coats"
+ },
+ "男式夹克": {
+  "ar": "سترات رجالية",
+  "en": "Men's Jackets"
+ },
+ "男式打底衫": {
+  "ar": "قمصان داخلية رجالية",
+  "en": "Men's Base Layer Shirts"
+ },
+ "男式棉服": {
+  "ar": "ملابس مبطنة بالقطن رجالية",
+  "en": "Men's Cotton-Padded Clothes"
+ },
+ "男式棉裤": {
+  "ar": "سراويل قطنية رجالية",
+  "en": "Men's Cotton Pants"
+ },
+ "男式棒球服": {
+  "ar": "جاكيتات بيسبول رجالية",
+  "en": "Men's Baseball Jackets"
+ },
+ "男式毛衫": {
+  "ar": "كنزات رجالية",
+  "en": "Men's Sweaters"
+ },
+ "男式民族服装": {
+  "ar": "ملابس عرقية رجالية",
+  "en": "Men's Ethnic Wear"
+ },
+ "男式沙滩裤": {
+  "ar": "شورتات شاطئ رجالية",
+  "en": "Men's Beach Shorts"
+ },
+ "男式牛仔裤": {
+  "ar": "جينز رجالي",
+  "en": "Men's Jeans"
+ },
+ "男式皮衣": {
+  "ar": "جاكيتات جلدية رجالية",
+  "en": "Men's Leather Jackets"
+ },
+ "男式皮裤": {
+  "ar": "سراويل جلدية رجالية",
+  "en": "Men's Leather Pants"
+ },
+ "男式短裤": {
+  "ar": "شورتات رجالية",
+  "en": "Men's Shorts"
+ },
+ "男式羽绒服": {
+  "ar": "جاكيتات داون رجالية",
+  "en": "Men's Down Jackets"
+ },
+ "男式羽绒裤": {
+  "ar": "سراويل داون رجالية",
+  "en": "Men's Down Pants"
+ },
+ "男式背心": {
+  "ar": "صدريات رجالية",
+  "en": "Men's Vests"
+ },
+ "男式衬衫": {
+  "ar": "قمصان رجالية",
+  "en": "Men's Shirts"
+ },
+ "男式西装": {
+  "ar": "بدل رجالية",
+  "en": "Men's Suits"
+ },
+ "男式西裤": {
+  "ar": "سراويل رسمية رجالية",
+  "en": "Men's Dress Pants"
+ },
+ "男式防晒衣、皮肤衣": {
+  "ar": "ملابس واقية من الشمس للرجال",
+  "en": "Men's Sun Protection & Skin Jackets"
+ },
+ "男式风衣": {
+  "ar": "معاطف ترنش رجالية",
+  "en": "Men's Trench Coats"
+ },
+ "男式马甲": {
+  "ar": "صدريات رجالية",
+  "en": "Men's Waistcoats"
+ },
+ "男性护理": {
+  "ar": "عناية الرجال",
+  "en": "Men's Grooming"
+ },
+ "男装": {
+  "ar": "ملابس رجالية",
+  "en": "Men's Clothing"
+ },
+ "男装加工定制": {
+  "ar": "تفصيل ملابس رجالية",
+  "en": "Men's Clothing Customization"
+ },
+ "男装杂款包": {
+  "ar": "ملابس رجالية مختلطة",
+  "en": "Men's Clothing Mixed Lots"
+ },
+ "男鞋": {
+  "ar": "أحذية رجالية",
+  "en": "Men's Shoes"
+ },
+ "畜牧业副产品": {
+  "ar": "منتجات ثانوية من الثروة الحيوانية",
+  "en": "Livestock By-products"
+ },
+ "畜禽用药": {
+  "ar": "أدوية بيطرية",
+  "en": "Veterinary Medicine"
+ },
+ "畜禽种苗": {
+  "ar": "تربية الثروة الحيوانية والدواجن",
+  "en": "Livestock & Poultry Breeding"
+ },
+ "登山、攀岩、攀冰用品": {
+  "ar": "معدات تسلق الجبال والتسلق على الصخور والجليد",
+  "en": "Mountaineering, Climbing & Ice Climbing Gear"
+ },
+ "白炽灯": {
+  "ar": "مصابيح متوهجة",
+  "en": "Incandescent Lamps"
+ },
+ "皮草": {
+  "ar": "ملابس فرو",
+  "en": "Fur Clothing"
+ },
+ "皮革": {
+  "ar": "جلد",
+  "en": "Leather"
+ },
+ "皮革加工": {
+  "ar": "معالجة الجلد",
+  "en": "Leather Processing"
+ },
+ "皮革加工设备": {
+  "ar": "معدات معالجة الجلد",
+  "en": "Leather Processing Equipment"
+ },
+ "皮革化学品": {
+  "ar": "مواد كيميائية للجلد",
+  "en": "Leather Chemicals"
+ },
+ "皮革废料": {
+  "ar": "نفايات الجلد",
+  "en": "Leather Waste"
+ },
+ "盆栽、盆景": {
+  "ar": "نباتات مزروعة وبونساي",
+  "en": "Potted Plants & Bonsai"
+ },
+ "益智、科教玩具": {
+  "ar": "ألعاب تعليمية وألغاز",
+  "en": "Educational & Puzzle Toys"
+ },
+ "监控传输设备": {
+  "ar": "معدات نقل المراقبة",
+  "en": "Surveillance Transmission"
+ },
+ "监控记录设备": {
+  "ar": "معدات تسجيل المراقبة",
+  "en": "Surveillance Recording"
+ },
+ "直播设备及配件": {
+  "ar": "معدات البث المباشر وملحقاتها",
+  "en": "Live Streaming Equipment"
+ },
+ "眼部彩妆": {
+  "ar": "مكياج العيون",
+  "en": "Eye Makeup"
+ },
+ "眼部护理": {
+  "ar": "عناية العيون",
+  "en": "Eye Care"
+ },
+ "眼部防护": {
+  "ar": "حماية العيون",
+  "en": "Eye Protection"
+ },
+ "眼镜及配件": {
+  "ar": "نظارات وملحقاتها",
+  "en": "Glasses & Accessories"
+ },
+ "睡衣、家居服、睡袍、浴袍": {
+  "ar": "ملابس نوم وبيجامات وأرواب",
+  "en": "Sleepwear & Robes"
+ },
+ "短信系统": {
+  "ar": "أنظمة الرسائل النصية",
+  "en": "SMS Systems"
+ },
+ "石材加工": {
+  "ar": "معالجة الأحجار",
+  "en": "Stone Processing"
+ },
+ "石材石料": {
+  "ar": "مواد حجرية",
+  "en": "Stone Materials"
+ },
+ "石油产品添加剂": {
+  "ar": "مضافات المنتجات النفطية",
+  "en": "Petroleum Additives"
+ },
+ "石油焦": {
+  "ar": "فحم نفطي",
+  "en": "Petroleum Coke"
+ },
+ "石油燃料": {
+  "ar": "وقود نفطي",
+  "en": "Petroleum Fuel"
+ },
+ "石油蜡": {
+  "ar": "شمع نفطي",
+  "en": "Petroleum Wax"
+ },
+ "石油设备": {
+  "ar": "معدات نفطية",
+  "en": "Petroleum Equipment"
+ },
+ "矿业装卸设备": {
+  "ar": "معدات تحميل التعدين",
+  "en": "Mining Loading Equipment"
+ },
+ "矿业输送设备": {
+  "ar": "معدات نقل التعدين",
+  "en": "Mining Conveying Equipment"
+ },
+ "矿业项目合作": {
+  "ar": "شراكة مشاريع التعدين",
+  "en": "Mining Project Cooperation"
+ },
+ "矿山施工设备": {
+  "ar": "معدات إنشاءات التعدين",
+  "en": "Mining Construction Equipment"
+ },
+ "矿物代理加盟": {
+  "ar": "وكالة ومعارض المعادن",
+  "en": "Mineral Agency & Franchise"
+ },
+ "矿物原药材": {
+  "ar": "مواد خام معدنية",
+  "en": "Mineral Raw Materials"
+ },
+ "砜": {
+  "ar": "سلفونات",
+  "en": "Sulfones"
+ },
+ "硅钢": {
+  "ar": "فولاذ السيليكون",
+  "en": "Silicon Steel"
+ },
+ "碳水化合物": {
+  "ar": "كربوهيدرات",
+  "en": "Carbohydrates"
+ },
+ "碳纤维": {
+  "ar": "ألياف الكربون",
+  "en": "Carbon Fiber"
+ },
+ "磁性材料": {
+  "ar": "مواد مغناطيسية",
+  "en": "Magnetic Materials"
+ },
+ "磨具、磨料": {
+  "ar": "أدوات كشط وصنفرة",
+  "en": "Abrasives & Grinding Tools"
+ },
+ "磨床": {
+  "ar": "آلات الطحن",
+  "en": "Grinding Machines"
+ },
+ "磺酸": {
+  "ar": "أحماض السلفونيك",
+  "en": "Sulfonic Acids"
+ },
+ "磺酸衍生物": {
+  "ar": "مشتقات السلفونيك",
+  "en": "Sulfonic Derivatives"
+ },
+ "礼品包装": {
+  "ar": "تغليف الهدايا",
+  "en": "Gift Packaging"
+ },
+ "祭祀/殡葬用品": {
+  "ar": "مستلزمات الطقوس والجنازات",
+  "en": "Ritual & Funeral Supplies"
+ },
+ "禅茶服/禅舞服": {
+  "ar": "ملابس الزن للشاي والرقص",
+  "en": "Zen Tea & Dance Wear"
+ },
+ "离合器": {
+  "ar": "قوابض",
+  "en": "Clutches"
+ },
+ "秋衣秋裤": {
+  "ar": "ملابس داخلية حرارية",
+  "en": "Thermal Underwear"
+ },
+ "种子、种苗及种球": {
+  "ar": "بذور وغراس وزهور",
+  "en": "Seeds & Seedlings"
+ },
+ "租赁服务": {
+  "ar": "خدمات التأجير",
+  "en": "Rental Services"
+ },
+ "秤": {
+  "ar": "موازين",
+  "en": "Scales"
+ },
+ "积木拼插类玩具": {
+  "ar": "ألعاب تركيب المكعبات",
+  "en": "Building Block Toys"
+ },
+ "空气净化设备": {
+  "ar": "أجهزة تنقية الهواء",
+  "en": "Air Purifiers"
+ },
+ "空气处理化学品": {
+  "ar": "مواد كيميائية لمعالجة الهواء",
+  "en": "Air Treatment Chemicals"
+ },
+ "穿刺饰品": {
+  "ar": "مجوهرات ثقب",
+  "en": "Piercing Jewelry"
+ },
+ "窗帘加工定制": {
+  "ar": "تفصيل الستائر",
+  "en": "Curtain Customization"
+ },
+ "窗帘门帘及配件": {
+  "ar": "الستائر وملحقاتها",
+  "en": "Curtains & Accessories"
+ },
+ "窗帘面料": {
+  "ar": "أقمشة الستائر",
+  "en": "Curtain Fabrics"
+ },
+ "童T恤": {
+  "ar": "تيشيرتات أطفال",
+  "en": "Kids T-Shirts"
+ },
+ "童卫衣": {
+  "ar": "سويت شيرت أطفال",
+  "en": "Kids Sweatshirts"
+ },
+ "童外套/夹克/大衣": {
+  "ar": "جاكيتات ومعاطف أطفال",
+  "en": "Kids Jackets & Coats"
+ },
+ "童套装": {
+  "ar": "طقم أطفال",
+  "en": "Kids Sets"
+ },
+ "童家居服": {
+  "ar": "ملابس منزلية للأطفال",
+  "en": "Kids Loungewear"
+ },
+ "童打底衫": {
+  "ar": "قمصان داخلية للأطفال",
+  "en": "Kids Undershirts"
+ },
+ "童打底裤": {
+  "ar": "سراويل ضيقة للأطفال",
+  "en": "Kids Leggings"
+ },
+ "童旗袍/唐装/民族服装": {
+  "ar": "ملابس تقليدية للأطفال",
+  "en": "Kids Traditional Clothes"
+ },
+ "童旗袍/唐装/民族服装（停用": {
+  "ar": "ملابس تقليدية للأطفال (متوقف)",
+  "en": "Kids Traditional Clothes (Discontinued)"
+ },
+ "童棉袄/棉服": {
+  "ar": "سترات قطنية للأطفال",
+  "en": "Kids Cotton Jackets"
+ },
+ "童毛衣": {
+  "ar": "كنزات أطفال",
+  "en": "Kids Sweaters"
+ },
+ "童牛仔服": {
+  "ar": "ملابس جينز للأطفال",
+  "en": "Kids Denim"
+ },
+ "童皮衣（停用）": {
+  "ar": "سترات جلدية للأطفال (متوقف)",
+  "en": "Kids Leather Jackets (Discontinued)"
+ },
+ "童羽绒服/羽绒内胆": {
+  "ar": "معاطف أطفال محشوة بالريش",
+  "en": "Kids Down Jackets"
+ },
+ "童背心/吊带衫": {
+  "ar": "صدريات وتوبات أطفال",
+  "en": "Kids Vests & Tank Tops"
+ },
+ "童衬衫": {
+  "ar": "قمصان أطفال",
+  "en": "Kids Shirts"
+ },
+ "童装": {
+  "ar": "ملابس أطفال",
+  "en": "Kids Clothing"
+ },
+ "童装加工": {
+  "ar": "تصنيع ملابس أطفال",
+  "en": "Kids Clothing Processing"
+ },
+ "童装加工定制": {
+  "ar": "تفصيل ملابس أطفال",
+  "en": "Kids Clothing Customization"
+ },
+ "童装杂款包": {
+  "ar": "مجموعات ملابس أطفال مختلطة",
+  "en": "Kids Clothing Mixed Lots"
+ },
+ "童裙": {
+  "ar": "تنانير أطفال",
+  "en": "Kids Skirts"
+ },
+ "童裤": {
+  "ar": "سراويل أطفال",
+  "en": "Kids Pants"
+ },
+ "童车、背带": {
+  "ar": "عربات وحمالات أطفال",
+  "en": "Kids Strollers & Carriers"
+ },
+ "童针织衫": {
+  "ar": "ملابس محبوكة للأطفال",
+  "en": "Kids Knitwear"
+ },
+ "童鞋、婴儿鞋": {
+  "ar": "أحذية أطفال ورضع",
+  "en": "Kids & Baby Shoes"
+ },
+ "童马甲": {
+  "ar": "صدريات أطفال",
+  "en": "Kids Vests"
+ },
+ "竹木加工": {
+  "ar": "معالجة الخيزران والخشب",
+  "en": "Bamboo & Wood Processing"
+ },
+ "笔记本电脑配件": {
+  "ar": "ملحقات الكمبيوتر المحمول",
+  "en": "Laptop Accessories"
+ },
+ "简易家具": {
+  "ar": "أثاث بسيط",
+  "en": "Simple Furniture"
+ },
+ "管件": {
+  "ar": "وصلات أنابيب",
+  "en": "Pipe Fittings"
+ },
+ "管材": {
+  "ar": "أنابيب",
+  "en": "Pipes"
+ },
+ "管道工具": {
+  "ar": "أدوات الأنابيب",
+  "en": "Pipeline Tools"
+ },
+ "管道系统": {
+  "ar": "أنظمة الأنابيب",
+  "en": "Pipeline Systems"
+ },
+ "箱包皮具": {
+  "ar": "حقائب ومنتجات جلدية",
+  "en": "Bags & Leather Goods"
+ },
+ "箱包皮具加工": {
+  "ar": "تصنيع الحقائب والجلود",
+  "en": "Bag & Leather Processing"
+ },
+ "箱包配件": {
+  "ar": "إكسسوارات الحقائب",
+  "en": "Bag Accessories"
+ },
+ "篮球用品": {
+  "ar": "معدات كرة السلة",
+  "en": "Basketball Gear"
+ },
+ "篷房": {
+  "ar": "خيام ومظلات",
+  "en": "Tents & Canopies"
+ },
+ "米面淀粉类": {
+  "ar": "الأرز والدقيق والنشا",
+  "en": "Rice, Flour & Starch"
+ },
+ "粉碎设备": {
+  "ar": "معدات التكسير",
+  "en": "Crushing Equipment"
+ },
+ "精油芳疗": {
+  "ar": "الزيوت العطرية والعلاج بالروائح",
+  "en": "Essential Oils & Aromatherapy"
+ },
+ "精细化学品代理加盟": {
+  "ar": "وكالة المواد الكيميائية الدقيقة",
+  "en": "Fine Chemicals Agency"
+ },
+ "精细化学品加工": {
+  "ar": "معالجة المواد الكيميائية الدقيقة",
+  "en": "Fine Chemicals Processing"
+ },
+ "精细化工项目合作": {
+  "ar": "مشاريع المواد الكيميائية الدقيقة",
+  "en": "Fine Chemical Projects"
+ },
+ "糕点点心": {
+  "ar": "المعجنات والوجبات الخفيفة",
+  "en": "Pastries & Snacks"
+ },
+ "糖果": {
+  "ar": "الحلويات",
+  "en": "Candy & Sweets"
+ },
+ "索具": {
+  "ar": "معدات الرفع",
+  "en": "Rigging Equipment"
+ },
+ "紧固件、连接件": {
+  "ar": "المثبتات والموصلات",
+  "en": "Fasteners & Connectors"
+ },
+ "纱线": {
+  "ar": "الخيوط",
+  "en": "Yarn"
+ },
+ "纸加工": {
+  "ar": "معالجة الورق",
+  "en": "Paper Processing"
+ },
+ "纸加工机械": {
+  "ar": "آلات معالجة الورق",
+  "en": "Paper Processing Machinery"
+ },
+ "纸及纸品代理加盟": {
+  "ar": "وكالة منتجات الورق",
+  "en": "Paper Products Agency"
+ },
+ "纸及纸品项目合作": {
+  "ar": "مشاريع منتجات الورق",
+  "en": "Paper Products Projects"
+ },
+ "纸品加工": {
+  "ar": "معالجة منتجات الورق",
+  "en": "Paper Products Processing"
+ },
+ "纸品本册": {
+  "ar": "دفاتر الورق",
+  "en": "Paper Notebooks"
+ },
+ "纸品湿巾": {
+  "ar": "مناديل ورقية مبللة",
+  "en": "Paper Wet Wipes"
+ },
+ "纸浆": {
+  "ar": "العجينة الورقية",
+  "en": "Pulp"
+ },
+ "纸类包装容器": {
+  "ar": "تغليف ورقي",
+  "en": "Paper Packaging"
+ },
+ "纹绣用品": {
+  "ar": "مستلزمات الوشم والتطريز",
+  "en": "Tattoo & Embroidery Supplies"
+ },
+ "纺织、皮革": {
+  "ar": "المنسوجات والجلود",
+  "en": "Textiles & Leather"
+ },
+ "纺织、皮革制品代理加盟": {
+  "ar": "وكالة المنسوجات والجلود",
+  "en": "Textiles & Leather Agency"
+ },
+ "纺织加工": {
+  "ar": "معالجة المنسوجات",
+  "en": "Textile Processing"
+ },
+ "纺织原材料加工定制": {
+  "ar": "تخصيص المواد الخام للمنسوجات",
+  "en": "Textile Raw Materials Custom"
+ },
+ "纺织品加工": {
+  "ar": "معالجة منتجات المنسوجات",
+  "en": "Textile Products Processing"
+ },
+ "纺织废料": {
+  "ar": "نفايات المنسوجات",
+  "en": "Textile Waste"
+ },
+ "纺织染整助剂": {
+  "ar": "مساعدات صباغة وتشطيب المنسوجات",
+  "en": "Textile Dyeing & Finishing Aids"
+ },
+ "纺织皮革相关项目合作": {
+  "ar": "مشاريع المنسوجات والجلود",
+  "en": "Textile & Leather Projects"
+ },
+ "纺织设备和器材": {
+  "ar": "معدات المنسوجات",
+  "en": "Textile Equipment"
+ },
+ "纺织辅料": {
+  "ar": "إكسسوارات المنسوجات",
+  "en": "Textile Accessories"
+ },
+ "线材": {
+  "ar": "مواد الأسلاك",
+  "en": "Wire Materials"
+ },
+ "组合工具": {
+  "ar": "أدوات متعددة",
+  "en": "Combination Tools"
+ },
+ "组合机床": {
+  "ar": "آلات مدمجة",
+  "en": "Combination Machine Tools"
+ },
+ "结晶设备": {
+  "ar": "معدات التبلور",
+  "en": "Crystallization Equipment"
+ },
+ "绝缘材料": {
+  "ar": "مواد العزل",
+  "en": "Insulation Materials"
+ },
+ "绣花布": {
+  "ar": "قماش مطرز",
+  "en": "Embroidered Fabric"
+ },
+ "继电器(电子)": {
+  "ar": "المرحلات (إلكترونيات)",
+  "en": "Relays (Electronics)"
+ },
+ "绳索、扎带": {
+  "ar": "حبال وربطات",
+  "en": "Ropes & Ties"
+ },
+ "维修及安装服务": {
+  "ar": "خدمات الصيانة والتركيب",
+  "en": "Repair & Installation Services"
+ },
+ "维修设备": {
+  "ar": "معدات الصيانة",
+  "en": "Maintenance Equipment"
+ },
+ "维护工具": {
+  "ar": "أدوات الصيانة",
+  "en": "Maintenance Tools"
+ },
+ "绿色环保包装": {
+  "ar": "تغليف صديق للبيئة",
+  "en": "Eco-friendly Packaging"
+ },
+ "编辑制作设备": {
+  "ar": "معدات التحرير والإنتاج",
+  "en": "Editing & Production Equipment"
+ },
+ "罐头食品": {
+  "ar": "أطعمة معلبة",
+  "en": "Canned Food"
+ },
+ "网络设备": {
+  "ar": "معدات الشبكات",
+  "en": "Network Equipment"
+ },
+ "美发产品": {
+  "ar": "منتجات العناية بالشعر",
+  "en": "Hair Care Products"
+ },
+ "美妆工具": {
+  "ar": "أدوات التجميل",
+  "en": "Beauty Tools"
+ },
+ "美妆日化加工": {
+  "ar": "معالجة مستحضرات التجميل والكيماويات اليومية",
+  "en": "Beauty & Daily Chemical Processing"
+ },
+ "美妆日化包装": {
+  "ar": "تغليف مستحضرات التجميل والكيماويات اليومية",
+  "en": "Beauty & Daily Chemical Packaging"
+ },
+ "美容代理加盟": {
+  "ar": "وكالات وفرنشايز التجميل",
+  "en": "Beauty Franchise & Agency"
+ },
+ "美容仪器": {
+  "ar": "أجهزة التجميل",
+  "en": "Beauty Devices"
+ },
+ "美容养护": {
+  "ar": "العناية بالجمال",
+  "en": "Beauty Care"
+ },
+ "美容护肤/彩妆": {
+  "ar": "العناية بالبشرة والمكياج",
+  "en": "Skincare & Makeup"
+ },
+ "美术、书法、绘图用品": {
+  "ar": "لوازم الفن والخط والرسم",
+  "en": "Art, Calligraphy & Drawing Supplies"
+ },
+ "美甲产品": {
+  "ar": "منتجات الأظافر",
+  "en": "Nail Products"
+ },
+ "羧酸": {
+  "ar": "الأحماض الكربوكسيلية",
+  "en": "Carboxylic Acids"
+ },
+ "羧酸衍生物": {
+  "ar": "مشتقات الأحماض الكربوكسيلية",
+  "en": "Carboxylic Acid Derivatives"
+ },
+ "羽毛球、网球用品": {
+  "ar": "مستلزمات الريشة والتنس",
+  "en": "Badminton & Tennis Supplies"
+ },
+ "翻译服务": {
+  "ar": "خدمات الترجمة",
+  "en": "Translation Services"
+ },
+ "耗材": {
+  "ar": "المستهلكات",
+  "en": "Consumables"
+ },
+ "耳饰": {
+  "ar": "أقراط",
+  "en": "Earrings"
+ },
+ "聚会/魔术/演出用品": {
+  "ar": "مستلزمات الحفلات والسحر والعروض",
+  "en": "Party, Magic & Performance Supplies"
+ },
+ "肉禽类": {
+  "ar": "اللحوم والدواجن",
+  "en": "Meat & Poultry"
+ },
+ "肉类零食": {
+  "ar": "وجبات خفيفة من اللحوم",
+  "en": "Meat Snacks"
+ },
+ "背包床、床中床": {
+  "ar": "أسرة الظهر والأسرة الصغيرة",
+  "en": "Backpack Beds & Crib Beds"
+ },
+ "背心、裹胸、抹胸、冰丝袖套": {
+  "ar": "السترات والصدريات والأكمام",
+  "en": "Vests, Bandeaus & Sleeves"
+ },
+ "背景墙": {
+  "ar": "جدران خلفية",
+  "en": "Feature Walls"
+ },
+ "背饰": {
+  "ar": "إكسسوارات الظهر",
+  "en": "Back Accessories"
+ },
+ "胶带": {
+  "ar": "شريط لاصق",
+  "en": "Adhesive Tape"
+ },
+ "胸垫、胸贴、肩带、吊袜带": {
+  "ar": "حشوات الصدر، الأحزمة، ورباط الجوارب",
+  "en": "Bra Pads, Straps & Garters"
+ },
+ "胸饰": {
+  "ar": "إكسسوارات الصدر",
+  "en": "Chest Accessories"
+ },
+ "胺": {
+  "ar": "الأمينات",
+  "en": "Amines"
+ },
+ "能源": {
+  "ar": "الطاقة",
+  "en": "Energy"
+ },
+ "能源产品代理加盟": {
+  "ar": "وكالات وفرنشايز منتجات الطاقة",
+  "en": "Energy Product Franchise & Agency"
+ },
+ "能源产品加工": {
+  "ar": "معالجة منتجات الطاقة",
+  "en": "Energy Product Processing"
+ },
+ "能源项目合作": {
+  "ar": "تعاون مشاريع الطاقة",
+  "en": "Energy Project Cooperation"
+ },
+ "脚轮": {
+  "ar": "عجلات دوارة",
+  "en": "Caster Wheels"
+ },
+ "脚饰脐饰及其他饰品": {
+  "ar": "إكسسوارات القدم والسرة وغيرها",
+  "en": "Foot, Navel & Other Accessories"
+ },
+ "腈": {
+  "ar": "أكريلونيتريل",
+  "en": "Acrylonitrile"
+ },
+ "腰带/腰链/腰封": {
+  "ar": "أحزمة، سلاسل الخصر وكورسيهات",
+  "en": "Belts, Waist Chains & Corsets"
+ },
+ "腰部饰品": {
+  "ar": "إكسسوارات الخصر",
+  "en": "Waist Accessories"
+ },
+ "自动化仪器设备": {
+  "ar": "أجهزة ومعدات الأتمتة",
+  "en": "Automation Instruments & Equipment"
+ },
+ "自然灾害防护": {
+  "ar": "حماية من الكوارث الطبيعية",
+  "en": "Disaster Protection"
+ },
+ "舞台表演服": {
+  "ar": "أزياء الأداء المسرحي",
+  "en": "Stage Performance Costumes"
+ },
+ "舞台设备": {
+  "ar": "معدات المسرح",
+  "en": "Stage Equipment"
+ },
+ "舞蹈、戏剧用品": {
+  "ar": "مستلزمات الرقص والمسرح",
+  "en": "Dance & Drama Supplies"
+ },
+ "航道设施": {
+  "ar": "مرافق الممرات المائية",
+  "en": "Waterway Facilities"
+ },
+ "船用五金配件": {
+  "ar": "ملحقات الأجهزة البحرية",
+  "en": "Marine Hardware Accessories"
+ },
+ "船舶": {
+  "ar": "سفن",
+  "en": "Ships"
+ },
+ "船舶专用配件": {
+  "ar": "ملحقات خاصة بالسفن",
+  "en": "Ship-Specific Accessories"
+ },
+ "色标、色卡": {
+  "ar": "بطاقات وأدلة الألوان",
+  "en": "Color Labels & Swatches"
+ },
+ "色织、提花布": {
+  "ar": "أقمشة مصبوغة ومحبوكة",
+  "en": "Yarn-Dyed & Jacquard Fabrics"
+ },
+ "色谱仪": {
+  "ar": "أجهزة الكروماتوغرافيا",
+  "en": "Chromatographs"
+ },
+ "艺术类箱包": {
+  "ar": "حقائب وصناديق فنية",
+  "en": "Artistic Bags & Cases"
+ },
+ "节庆用品": {
+  "ar": "مستلزمات الاحتفالات",
+  "en": "Festival Supplies"
+ },
+ "节能环保材料": {
+  "ar": "مواد توفير الطاقة والبيئة",
+  "en": "Energy-Saving & Eco Materials"
+ },
+ "节能设备": {
+  "ar": "معدات توفير الطاقة",
+  "en": "Energy-Saving Equipment"
+ },
+ "花卉": {
+  "ar": "زهور",
+  "en": "Flowers"
+ },
+ "花盆、花瓶": {
+  "ar": "أواني وزهور",
+  "en": "Flower Pots & Vases"
+ },
+ "苹果专用配件": {
+  "ar": "ملحقات أبل",
+  "en": "Apple Accessories"
+ },
+ "茶具": {
+  "ar": "أطقم الشاي",
+  "en": "Tea Sets"
+ },
+ "茶叶": {
+  "ar": "شاي",
+  "en": "Tea Leaves"
+ },
+ "药食同源": {
+  "ar": "طبي وطعام",
+  "en": "Medicinal & Edible"
+ },
+ "菌菇干货": {
+  "ar": "فطر مجفف",
+  "en": "Dried Mushrooms"
+ },
+ "蔬菜": {
+  "ar": "خضروات",
+  "en": "Vegetables"
+ },
+ "蕾丝衫、雪纺衫": {
+  "ar": "بلوزات دانتيل وشيفون",
+  "en": "Lace & Chiffon Tops"
+ },
+ "蛋制品": {
+  "ar": "منتجات البيض",
+  "en": "Egg Products"
+ },
+ "蜂产品": {
+  "ar": "منتجات النحل",
+  "en": "Bee Products"
+ },
+ "螺纹加工机床": {
+  "ar": "آلات معالجة الخيوط",
+  "en": "Thread Processing Machines"
+ },
+ "螺纹钢": {
+  "ar": "حديد التسليح",
+  "en": "Rebar Steel"
+ },
+ "行政用品": {
+  "ar": "مستلزمات مكتبية",
+  "en": "Office Supplies"
+ },
+ "行走系统": {
+  "ar": "أنظمة الحركة",
+  "en": "Mobility Systems"
+ },
+ "衡器": {
+  "ar": "أجهزة الوزن",
+  "en": "Weighing Instruments"
+ },
+ "衣物晾晒洗护用具": {
+  "ar": "أدوات الغسيل والتجفيف",
+  "en": "Laundry & Drying Tools"
+ },
+ "衣物清洁护理": {
+  "ar": "العناية بالملابس",
+  "en": "Clothing Care"
+ },
+ "衣饰": {
+  "ar": "ملابس وإكسسوارات",
+  "en": "Clothing & Accessories"
+ },
+ "表": {
+  "ar": "ساعات",
+  "en": "Watches"
+ },
+ "表面活性剂": {
+  "ar": "عاملات سطحية",
+  "en": "Surfactants"
+ },
+ "袜子": {
+  "ar": "جوارب",
+  "en": "Socks"
+ },
+ "被芯类": {
+  "ar": "لحافات وحشوات",
+  "en": "Quilts & Fillings"
+ },
+ "裁判、计时、计步用具": {
+  "ar": "أدوات التحكيم والقياس والعداد",
+  "en": "Referee, Timing & Pedometer Tools"
+ },
+ "装修及工程": {
+  "ar": "التجديد والهندسة",
+  "en": "Renovation & Engineering"
+ },
+ "装订、胶粘、桌面用品": {
+  "ar": "التجليد والمواد اللاصقة ولوازم المكتب",
+  "en": "Binding, Adhesives & Desktop Supplies"
+ },
+ "装饰建材": {
+  "ar": "مواد البناء الزخرفية",
+  "en": "Decorative Building Materials"
+ },
+ "装饰框架": {
+  "ar": "إطارات زخرفية",
+  "en": "Decorative Frames"
+ },
+ "装饰画、挂画": {
+  "ar": "لوحات زخرفية ومعلقة",
+  "en": "Decorative & Hanging Paintings"
+ },
+ "装饰线板": {
+  "ar": "قوالب زخرفية",
+  "en": "Decorative Molding"
+ },
+ "西洋乐器": {
+  "ar": "آلات موسيقية غربية",
+  "en": "Western Musical Instruments"
+ },
+ "计数器": {
+  "ar": "عدادات",
+  "en": "Counters"
+ },
+ "计量标准器具": {
+  "ar": "أدوات القياس المعيارية",
+  "en": "Measuring Standards"
+ },
+ "记录仪": {
+  "ar": "مسجلات",
+  "en": "Recorders"
+ },
+ "设施及施工材料": {
+  "ar": "المرافق ومواد البناء",
+  "en": "Facilities & Construction Materials"
+ },
+ "设计服务": {
+  "ar": "خدمات التصميم",
+  "en": "Design Services"
+ },
+ "试验机": {
+  "ar": "آلات الاختبار",
+  "en": "Testing Machines"
+ },
+ "试验箱及气候环境设备": {
+  "ar": "حاضنات الاختبار ومعدات المناخ",
+  "en": "Test Chambers & Climate Equipment"
+ },
+ "调味品": {
+  "ar": "توابل",
+  "en": "Seasonings"
+ },
+ "豆制品": {
+  "ar": "منتجات الفول",
+  "en": "Bean Products"
+ },
+ "财务服务": {
+  "ar": "الخدمات المالية",
+  "en": "Financial Services"
+ },
+ "财务用品": {
+  "ar": "مستلزمات مالية",
+  "en": "Financial Supplies"
+ },
+ "贴饰": {
+  "ar": "ملصقات وزخارف",
+  "en": "Decals & Stickers"
+ },
+ "起重装卸设备": {
+  "ar": "معدات الرفع والمناولة",
+  "en": "Lifting & Handling Equipment"
+ },
+ "足球用品": {
+  "ar": "مستلزمات كرة القدم",
+  "en": "Football Supplies"
+ },
+ "足部防护": {
+  "ar": "حماية القدم",
+  "en": "Foot Protection"
+ },
+ "身体彩绘": {
+  "ar": "رسم الجسم",
+  "en": "Body Painting"
+ },
+ "身体护理": {
+  "ar": "العناية بالجسم",
+  "en": "Body Care"
+ },
+ "身体清洁": {
+  "ar": "تنظيف الجسم",
+  "en": "Body Cleansing"
+ },
+ "身体防护": {
+  "ar": "حماية الجسم",
+  "en": "Body Protection"
+ },
+ "车床": {
+  "ar": "مخارط",
+  "en": "Lathes"
+ },
+ "车灯": {
+  "ar": "أضواء السيارات",
+  "en": "Car Lights"
+ },
+ "车用仪表": {
+  "ar": "أجهزة السيارات",
+  "en": "Car Instruments"
+ },
+ "车用润滑油": {
+  "ar": "زيوت تشحيم السيارات",
+  "en": "Car Lubricants"
+ },
+ "车身及附件": {
+  "ar": "هيكل السيارة والملحقات",
+  "en": "Car Body & Accessories"
+ },
+ "车载电器": {
+  "ar": "إلكترونيات السيارات",
+  "en": "Car Electronics"
+ },
+ "车间设备": {
+  "ar": "معدات الورشة",
+  "en": "Workshop Equipment"
+ },
+ "轨道交通设备器材": {
+  "ar": "معدات النقل السككي",
+  "en": "Rail Transit Equipment"
+ },
+ "转向系统": {
+  "ar": "أنظمة التوجيه",
+  "en": "Steering Systems"
+ },
+ "转让": {
+  "ar": "نقل",
+  "en": "Transfer"
+ },
+ "轮胎": {
+  "ar": "إطارات",
+  "en": "Tires"
+ },
+ "软件": {
+  "ar": "برمجيات",
+  "en": "Software"
+ },
+ "软件开发": {
+  "ar": "تطوير البرمجيات",
+  "en": "Software Development"
+ },
+ "软梯、逃生梯": {
+  "ar": "سلالم ناعمة وسلالم هروب",
+  "en": "Soft Ladders & Escape Ladders"
+ },
+ "轴承及附属件": {
+  "ar": "محامل وملحقاتها",
+  "en": "Bearings & Accessories"
+ },
+ "轻薄材质内衣": {
+  "ar": "ملابس داخلية خفيفة",
+  "en": "Lightweight Underwear"
+ },
+ "辅料加工定制": {
+  "ar": "تخصيص الإكسسوارات",
+  "en": "Accessory Customization"
+ },
+ "输送设备": {
+  "ar": "معدات النقل",
+  "en": "Conveying Equipment"
+ },
+ "过家家玩具": {
+  "ar": "ألعاب التظاهر",
+  "en": "Pretend Play Toys"
+ },
+ "过氧化物": {
+  "ar": "بيروكسيدات",
+  "en": "Peroxides"
+ },
+ "过滤材料": {
+  "ar": "مواد الترشيح",
+  "en": "Filter Materials"
+ },
+ "过滤耗材": {
+  "ar": "مستهلكات الترشيح",
+  "en": "Filter Consumables"
+ },
+ "过滤设备": {
+  "ar": "معدات الترشيح",
+  "en": "Filtration Equipment"
+ },
+ "运动、休闲、传统玩具": {
+  "ar": "ألعاب رياضية وترفيهية وتقليدية",
+  "en": "Sports, Leisure & Traditional Toys"
+ },
+ "运动、武术、球服": {
+  "ar": "ملابس رياضية وفنون قتالية وفرق",
+  "en": "Sports, Martial Arts & Teamwear"
+ },
+ "运动休闲服装": {
+  "ar": "ملابس رياضية كاجوال",
+  "en": "Sports Casual Wear"
+ },
+ "运动包": {
+  "ar": "حقائب رياضية",
+  "en": "Sports Bags"
+ },
+ "运动户外": {
+  "ar": "رياضة ونشاطات خارجية",
+  "en": "Sports & Outdoors"
+ },
+ "运动户外加工": {
+  "ar": "تصنيع رياضي وخارجي",
+  "en": "Sports & Outdoor Manufacturing"
+ },
+ "运动户外辅助用品": {
+  "ar": "إكسسوارات رياضية وخارجية",
+  "en": "Sports & Outdoor Accessories"
+ },
+ "运动护具": {
+  "ar": "معدات الحماية الرياضية",
+  "en": "Sports Protective Gear"
+ },
+ "运动服饰加工定制": {
+  "ar": "تخصيص الملابس الرياضية",
+  "en": "Sportswear Customization"
+ },
+ "运动装备加工定制": {
+  "ar": "تخصيص معدات الرياضة",
+  "en": "Sports Equipment Customization"
+ },
+ "运动鞋": {
+  "ar": "أحذية رياضية",
+  "en": "Sports Shoes"
+ },
+ "运输搬运设备": {
+  "ar": "معدات النقل والمناولة",
+  "en": "Transport & Handling Equipment"
+ },
+ "进出口代理": {
+  "ar": "وكلاء الاستيراد والتصدير",
+  "en": "Import & Export Agents"
+ },
+ "进口机床": {
+  "ar": "آلات مخرطة مستوردة",
+  "en": "Imported Machine Tools"
+ },
+ "连接器": {
+  "ar": "موصلات",
+  "en": "Connectors"
+ },
+ "连接器/互联器件": {
+  "ar": "موصلات وأجهزة الربط",
+  "en": "Connectors & Interconnects"
+ },
+ "连衣裙": {
+  "ar": "فساتين",
+  "en": "Dresses"
+ },
+ "连身衣、爬服": {
+  "ar": "رومبرز وملابس أطفال",
+  "en": "Rompers & Onesies"
+ },
+ "适老工具": {
+  "ar": "أدوات لكبار السن",
+  "en": "Elderly Aids"
+ },
+ "选矿药剂及冶炼助剂": {
+  "ar": "مواد كيميائية للتعدين والصهر",
+  "en": "Mining & Smelting Chemicals"
+ },
+ "通信产品": {
+  "ar": "منتجات الاتصالات",
+  "en": "Communication Products"
+ },
+ "通信器材代理加盟": {
+  "ar": "وكلاء معدات الاتصالات",
+  "en": "Communication Equipment Agents"
+ },
+ "通信线缆": {
+  "ar": "كابلات الاتصالات",
+  "en": "Communication Cables"
+ },
+ "通用五金配件": {
+  "ar": "ملحقات الأجهزة العامة",
+  "en": "General Hardware Accessories"
+ },
+ "通用塑料": {
+  "ar": "بلاستيك عام",
+  "en": "General Plastics"
+ },
+ "通用输送设备": {
+  "ar": "معدات النقل العامة",
+  "en": "Conveyor Equipment"
+ },
+ "通讯产品代理加盟": {
+  "ar": "وكالة منتجات الاتصالات",
+  "en": "Communication Products Agency"
+ },
+ "通讯产品加工": {
+  "ar": "معالجة منتجات الاتصالات",
+  "en": "Communication Products Processing"
+ },
+ "通讯服务": {
+  "ar": "خدمات الاتصالات",
+  "en": "Communication Services"
+ },
+ "速冻食品": {
+  "ar": "الأطعمة المجمدة",
+  "en": "Frozen Foods"
+ },
+ "造纸助剂": {
+  "ar": "مضافات صناعة الورق",
+  "en": "Paper Making Additives"
+ },
+ "造纸设备及配件": {
+  "ar": "معدات صناعة الورق وملحقاتها",
+  "en": "Paper Making Equipment"
+ },
+ "邮票/钱币/纪念币": {
+  "ar": "طوابع/عملات/تذكارية",
+  "en": "Stamps/Coins/Commemoratives"
+ },
+ "配电输电设备": {
+  "ar": "معدات توزيع ونقل الطاقة",
+  "en": "Power Distribution Equipment"
+ },
+ "酒具": {
+  "ar": "أدوات الشراب",
+  "en": "Barware"
+ },
+ "酒店布草": {
+  "ar": "مفروشات الفنادق",
+  "en": "Hotel Linens"
+ },
+ "酒店用品": {
+  "ar": "مستلزمات الفنادق",
+  "en": "Hotel Supplies"
+ },
+ "酒店设备": {
+  "ar": "معدات الفنادق",
+  "en": "Hotel Equipment"
+ },
+ "酒水饮料包装": {
+  "ar": "تغليف المشروبات",
+  "en": "Beverage Packaging"
+ },
+ "酒类": {
+  "ar": "المشروبات الكحولية",
+  "en": "Alcoholic Beverages"
+ },
+ "酚类": {
+  "ar": "الفينولات",
+  "en": "Phenols"
+ },
+ "酮": {
+  "ar": "الكيتونات",
+  "en": "Ketones"
+ },
+ "酶制剂、酵素制剂": {
+  "ar": "مستحضرات الإنزيمات",
+  "en": "Enzyme Preparations"
+ },
+ "醇类": {
+  "ar": "الكحولات",
+  "en": "Alcohols"
+ },
+ "醌类": {
+  "ar": "الكينونات",
+  "en": "Quinones"
+ },
+ "醚": {
+  "ar": "الإيثرات",
+  "en": "Ethers"
+ },
+ "醛": {
+  "ar": "الألدهيدات",
+  "en": "Aldehydes"
+ },
+ "重氮化合物": {
+  "ar": "المركبات الديازونية",
+  "en": "Diazo Compounds"
+ },
+ "量具": {
+  "ar": "أدوات القياس",
+  "en": "Measuring Tools"
+ },
+ "金属丝、绳": {
+  "ar": "أسلاك وحبال معدنية",
+  "en": "Metal Wires and Ropes"
+ },
+ "金属加工助剂": {
+  "ar": "مضافات معالجة المعادن",
+  "en": "Metal Processing Additives"
+ },
+ "金属加工材": {
+  "ar": "مواد معالجة المعادن",
+  "en": "Metal Processing Materials"
+ },
+ "金属包装容器": {
+  "ar": "حاويات تغليف معدنية",
+  "en": "Metal Packaging Containers"
+ },
+ "金属成型设备": {
+  "ar": "معدات تشكيل المعادن",
+  "en": "Metal Forming Equipment"
+ },
+ "金属材料代理加盟": {
+  "ar": "وكالة مواد معدنية",
+  "en": "Metal Materials Agency"
+ },
+ "金属粉末": {
+  "ar": "مساحيق معدنية",
+  "en": "Metal Powders"
+ },
+ "金属网": {
+  "ar": "شبكات معدنية",
+  "en": "Metal Mesh"
+ },
+ "金融专用设备": {
+  "ar": "معدات مالية",
+  "en": "Financial Equipment"
+ },
+ "针织面料": {
+  "ar": "أقمشة محبوكة",
+  "en": "Knitted Fabrics"
+ },
+ "钟": {
+  "ar": "ساعات",
+  "en": "Clocks"
+ },
+ "钢铁": {
+  "ar": "فولاذ",
+  "en": "Steel"
+ },
+ "钥匙配饰": {
+  "ar": "إكسسوارات المفاتيح",
+  "en": "Key Accessories"
+ },
+ "钱包": {
+  "ar": "محافظ",
+  "en": "Wallets"
+ },
+ "钳工工作台": {
+  "ar": "منضدة عمل الفتير",
+  "en": "Fitter Workbench"
+ },
+ "钳工工具": {
+  "ar": "أدوات الفتير",
+  "en": "Fitter Tools"
+ },
+ "钳类工具": {
+  "ar": "أدوات كماشة",
+  "en": "Pliers & Tools"
+ },
+ "钻床": {
+  "ar": "آلات الحفر",
+  "en": "Drilling Machines"
+ },
+ "铁合金": {
+  "ar": "سبائك الحديد",
+  "en": "Ferroalloys"
+ },
+ "铆接设备": {
+  "ar": "معدات التثبيت",
+  "en": "Riveting Equipment"
+ },
+ "铣床": {
+  "ar": "آلات الطحن",
+  "en": "Milling Machines"
+ },
+ "铸造及热处理设备": {
+  "ar": "معدات الصب والمعالجة الحرارية",
+  "en": "Casting & Heat Treatment Equipment"
+ },
+ "铸造机床": {
+  "ar": "آلات الصب",
+  "en": "Casting Machine Tools"
+ },
+ "锁具": {
+  "ar": "أقفال",
+  "en": "Locks"
+ },
+ "锅、炉及配件": {
+  "ar": "أواني، أفران وملحقاتها",
+  "en": "Pots, Furnaces & Accessories"
+ },
+ "锅、煲": {
+  "ar": "أواني الطهي",
+  "en": "Pots & Cookware"
+ },
+ "锉、刨": {
+  "ar": "مبردات ومكاشط",
+  "en": "Files & Planes"
+ },
+ "锌铝镁": {
+  "ar": "الزنك، الألمنيوم والمغنيسيوم",
+  "en": "Zinc, Aluminum & Magnesium"
+ },
+ "锯": {
+  "ar": "مناشير",
+  "en": "Saws"
+ },
+ "锯床": {
+  "ar": "آلات النشر",
+  "en": "Sawing Machines"
+ },
+ "锻压机床": {
+  "ar": "آلات التشكيل بالطرق",
+  "en": "Forging Machine Tools"
+ },
+ "镗床": {
+  "ar": "آلات الثقب",
+  "en": "Boring Machines"
+ },
+ "门、窗": {
+  "ar": "الأبواب والنوافذ",
+  "en": "Doors & Windows"
+ },
+ "门禁考勤器材及系统": {
+  "ar": "أنظمة التحكم في الدخول والحضور",
+  "en": "Access Control & Attendance Systems"
+ },
+ "门窗五金": {
+  "ar": "مستلزمات الأبواب والنوافذ",
+  "en": "Door & Window Hardware"
+ },
+ "门窗加工": {
+  "ar": "تصنيع الأبواب والنوافذ",
+  "en": "Door & Window Processing"
+ },
+ "阀用电磁铁（新）": {
+  "ar": "ملفات صمامات كهربائية (جديدة)",
+  "en": "Valve Solenoids (New)"
+ },
+ "阀门": {
+  "ar": "صمامات",
+  "en": "Valves"
+ },
+ "防伪技术产品": {
+  "ar": "منتجات مكافحة التزييف",
+  "en": "Anti-Counterfeit Products"
+ },
+ "防爆器材": {
+  "ar": "معدات مقاومة الانفجار",
+  "en": "Explosion-Proof Equipment"
+ },
+ "防爆工具": {
+  "ar": "أدوات مقاومة الانفجار",
+  "en": "Explosion-Proof Tools"
+ },
+ "防盗报警设备": {
+  "ar": "أنظمة إنذار ضد السرقة",
+  "en": "Anti-Theft Alarm Systems"
+ },
+ "防身护具": {
+  "ar": "معدات الحماية الشخصية",
+  "en": "Personal Protection Gear"
+ },
+ "防雷电设备": {
+  "ar": "معدات الحماية من الصواعق",
+  "en": "Lightning Protection Equipment"
+ },
+ "防静电产品": {
+  "ar": "منتجات مضادة للكهرباء الساكنة",
+  "en": "Anti-Static Products"
+ },
+ "除臭芳香用品": {
+  "ar": "منتجات إزالة الروائح والعطور",
+  "en": "Deodorizing & Fragrance Products"
+ },
+ "陶瓷加工": {
+  "ar": "معالجة السيراميك",
+  "en": "Ceramic Processing"
+ },
+ "陶瓷包装容器": {
+  "ar": "حاويات تغليف السيراميك",
+  "en": "Ceramic Packaging Containers"
+ },
+ "陶瓷生产加工机械": {
+  "ar": "آلات إنتاج السيراميك",
+  "en": "Ceramic Production Machinery"
+ },
+ "集装整理设备": {
+  "ar": "معدات التعبئة والفرز",
+  "en": "Packaging & Sorting Equipment"
+ },
+ "非机动车": {
+  "ar": "مركبات غير آلية",
+  "en": "Non-Motor Vehicles"
+ },
+ "非金属矿产": {
+  "ar": "معادن غير معدنية",
+  "en": "Non-Metallic Minerals"
+ },
+ "非金属矿物制品": {
+  "ar": "منتجات المعادن غير المعدنية",
+  "en": "Non-Metallic Mineral Products"
+ },
+ "面料加工定制": {
+  "ar": "معالجة وتخصيص الأقمشة",
+  "en": "Fabric Processing & Customization"
+ },
+ "面膜、面膜粉": {
+  "ar": "أقنعة الوجه ومساحيق الوجه",
+  "en": "Face Masks & Powders"
+ },
+ "面部彩妆": {
+  "ar": "مكياج الوجه",
+  "en": "Facial Makeup"
+ },
+ "面部护理": {
+  "ar": "عناية الوجه",
+  "en": "Facial Care"
+ },
+ "面部精华": {
+  "ar": "سيروم الوجه",
+  "en": "Facial Serums"
+ },
+ "面部防护": {
+  "ar": "حماية الوجه",
+  "en": "Facial Protection"
+ },
+ "鞋": {
+  "ar": "أحذية",
+  "en": "Shoes"
+ },
+ "鞋服包装": {
+  "ar": "تغليف الأحذية والملابس",
+  "en": "Shoe & Apparel Packaging"
+ },
+ "鞋材": {
+  "ar": "مواد الأحذية",
+  "en": "Shoe Materials"
+ },
+ "鞋材、鞋件加工": {
+  "ar": "معالجة مواد وأجزاء الأحذية",
+  "en": "Shoe Materials & Parts Processing"
+ },
+ "鞋配件": {
+  "ar": "إكسسوارات الأحذية",
+  "en": "Shoe Accessories"
+ },
+ "音像制品": {
+  "ar": "منتجات الصوت والفيديو",
+  "en": "Audio & Video Products"
+ },
+ "音像制品加工": {
+  "ar": "معالجة الصوت والفيديو",
+  "en": "Audio & Video Processing"
+ },
+ "音频器件": {
+  "ar": "أجهزة الصوت",
+  "en": "Audio Devices"
+ },
+ "顶篷材料": {
+  "ar": "مواد المظلات",
+  "en": "Canopy Materials"
+ },
+ "项饰": {
+  "ar": "إكسسوارات الرقبة",
+  "en": "Neck Accessories"
+ },
+ "预制菜/半成品菜": {
+  "ar": "أطباق جاهزة ونصف جاهزة",
+  "en": "Prepared & Semi-finished Dishes"
+ },
+ "领部配件": {
+  "ar": "إكسسوارات الياقة",
+  "en": "Collar Accessories"
+ },
+ "频率元件": {
+  "ar": "مكونات التردد",
+  "en": "Frequency Components"
+ },
+ "风机、排风设备": {
+  "ar": "مراوح ومعدات التهوية",
+  "en": "Fans & Ventilation"
+ },
+ "风电产品": {
+  "ar": "منتجات طاقة الرياح",
+  "en": "Wind Power Products"
+ },
+ "飞机及配件": {
+  "ar": "طائرات وقطع غيار",
+  "en": "Aircraft & Parts"
+ },
+ "食品、饮料加工及餐饮行业设备": {
+  "ar": "معدات تجهيز الطعام والشراب والضيافة",
+  "en": "Food & Beverage Processing Equipment"
+ },
+ "食品储运设备": {
+  "ar": "معدات تخزين ونقل الطعام",
+  "en": "Food Storage & Transport"
+ },
+ "食品包装": {
+  "ar": "تغليف الطعام",
+  "en": "Food Packaging"
+ },
+ "食品添加剂": {
+  "ar": "مواد مضافة للطعام",
+  "en": "Food Additives"
+ },
+ "食品酒水": {
+  "ar": "طعام ومشروبات",
+  "en": "Food & Beverages"
+ },
+ "食品饮料代理加盟": {
+  "ar": "وكالات ومنح امتياز الطعام والشراب",
+  "en": "Food & Beverage Franchises"
+ },
+ "食品饮料加工": {
+  "ar": "تجهيز الطعام والشراب",
+  "en": "Food & Beverage Processing"
+ },
+ "食品饮料项目合作": {
+  "ar": "شراكات مشاريع الطعام والشراب",
+  "en": "Food & Beverage Partnerships"
+ },
+ "食用油": {
+  "ar": "زيوت صالحة للأكل",
+  "en": "Edible Oils"
+ },
+ "餐具": {
+  "ar": "أدوات المائدة",
+  "en": "Tableware"
+ },
+ "餐厅家具": {
+  "ar": "أثاث المطاعم",
+  "en": "Restaurant Furniture"
+ },
+ "餐饮生鲜": {
+  "ar": "أطعمة طازجة والتموين",
+  "en": "Fresh Food & Catering"
+ },
+ "饮水用具": {
+  "ar": "مستلزمات الشرب",
+  "en": "Drinking Supplies"
+ },
+ "饰品保养鉴定": {
+  "ar": "العناية بالمجوهرات والتقييم",
+  "en": "Jewelry Care & Appraisal"
+ },
+ "饰品加工": {
+  "ar": "تصنيع المجوهرات",
+  "en": "Jewelry Processing"
+ },
+ "饰品包装": {
+  "ar": "تغليف المجوهرات",
+  "en": "Jewelry Packaging"
+ },
+ "饰品定制": {
+  "ar": "مجوهرات مخصصة",
+  "en": "Custom Jewelry"
+ },
+ "饰品展示架": {
+  "ar": "حوامل عرض المجوهرات",
+  "en": "Jewelry Displays"
+ },
+ "饰品挂饰": {
+  "ar": "تعليقات المجوهرات",
+  "en": "Jewelry Charms"
+ },
+ "饰品配件": {
+  "ar": "إكسسوارات المجوهرات",
+  "en": "Jewelry Accessories"
+ },
+ "饲料": {
+  "ar": "علف الحيوانات",
+  "en": "Animal Feed"
+ },
+ "饲料添加剂": {
+  "ar": "مضافات الأعلاف",
+  "en": "Feed Additives"
+ },
+ "饼干膨化": {
+  "ar": "بسكويت ومنتجات منفوشة",
+  "en": "Snacks & Puffing"
+ },
+ "首饰套装": {
+  "ar": "مجموعات المجوهرات",
+  "en": "Jewelry Sets"
+ },
+ "香料、香精": {
+  "ar": "توابل وعطور",
+  "en": "Spices & Essences"
+ },
+ "香水": {
+  "ar": "عطور",
+  "en": "Perfumes"
+ },
+ "马术用品": {
+  "ar": "مستلزمات الفروسية",
+  "en": "Equestrian Supplies"
+ },
+ "驱虫防蚊灭鼠杀虫用品": {
+  "ar": "مبيدات الحشرات والقوارض",
+  "en": "Pest Control"
+ },
+ "骑行整车": {
+  "ar": "دراجات",
+  "en": "Bicycles"
+ },
+ "骑行服配": {
+  "ar": "ملابس وإكسسوارات ركوب الدراجات",
+  "en": "Cycling Apparel & Accessories"
+ },
+ "骑行零件": {
+  "ar": "قطع غيار الدراجات",
+  "en": "Cycling Parts"
+ },
+ "高压电器": {
+  "ar": "معدات كهربائية عالية الجهد",
+  "en": "High Voltage Electrical"
+ },
+ "高尔夫用品": {
+  "ar": "مستلزمات الغولف",
+  "en": "Golf Supplies"
+ },
+ "鲜蛋类": {
+  "ar": "بيض طازج",
+  "en": "Fresh Eggs"
+ },
+ "麻类面料": {
+  "ar": "أقمشة القنب",
+  "en": "Hemp Fabrics"
+ },
+ "黑色金属": {
+  "ar": "معادن حديدية",
+  "en": "Ferrous Metals"
+ },
+ "黑色金属矿产": {
+  "ar": "خامات المعادن الحديدية",
+  "en": "Ferrous Metal Ores"
+ },
+ "齿轮加工机床": {
+  "ar": "آلات تصنيع التروس",
+  "en": "Gear Processing Machines"
+ }
+}

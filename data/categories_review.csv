@@ -1,0 +1,12 @@
+﻿id,parent_id,depth,name_zh,name_en,name_ar,path_zh,is_leaf,state,reason,matched
+2,,1,食品酒水,Food & Beverages,طعام ومشروبات,食品酒水,False,review,alcohol,酒
+66,,1,医药、保养,Pharmaceuticals & Care,الأدوية والعناية,医药、保养,False,review,medicine,药
+201164002,2,2,药食同源,Medicinal & Edible,طبي وطعام,食品酒水 > 药食同源,False,review,medicine,药
+125270017,122916001,2,宠物医药,Pet Medicine,أدوية الحيوانات الأليفة,宠物及园艺 > 宠物医药,False,review,medicine,药
+3168800002761,59,2,刀,Knives,سكاكين,五金、工具 > 刀,False,review,weapons,刀
+3168800014398,8,2,农药原药,Pesticide Raw Materials,مواد المبيدات الخام,化工 > 农药原药,False,review,medicine,药
+3168800010782,8,2,农药制剂,Pesticide Formulations,مستحضرات المبيدات,化工 > 农药制剂,False,review,medicine,药
+3168800014870,8,2,选矿药剂及冶炼助剂,Mining & Smelting Chemicals,مواد كيميائية للتعدين والصهر,化工 > 选矿药剂及冶炼助剂,True,review,medicine,药
+10532,66,2,矿物原药材,Mineral Raw Materials,مواد خام معدنية,医药、保养 > 矿物原药材,True,review,medicine,药
+157,66,2,消毒防腐药剂,Disinfectants & Preservatives,مطهرات ومواد حافظة,医药、保养 > 消毒防腐药剂,True,review,medicine,药
+1614,66,2,畜禽用药,Veterinary Medicine,أدوية بيطرية,医药、保养 > 畜禽用药,True,review,medicine,药
