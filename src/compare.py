@@ -55,6 +55,20 @@ PLATFORM_DOMAINS = {
 # 100, rank 3 scores 96, rank 4 falls under the 95 threshold on its own.
 VISUAL_DECAY_PER_RANK = Decimal("2")
 
+# How closely the WORDS have to agree, separately from the picture.
+#
+# Defaults to the client's own 95, and measurement says that number almost never
+# fires: on a real Saudi shopping response for one boiler, the best-scoring
+# Amazon listing for the same product reached 75. Marketplace titles are simply
+# not written like ours - "20L/30L/40L Commercial Catering Urn" against
+# "Commercial Stainless Steel Electric Water Boiler 30L 3000W".
+#
+# It is a separate number from MATCH_THRESHOLD because the two guard different
+# things. The picture establishes identity; the words are only here to catch the
+# case where one photo sells two sizes, and the specification veto below does
+# most of that work already. Lowering this does not loosen the picture.
+TEXT_THRESHOLD = Decimal(os.environ.get("KDX_TEXT_MATCH_MIN", str(MATCH_THRESHOLD)))
+
 # Marketing filler that inflates title overlap without saying anything about
 # which product this is.
 STOPWORDS = {
@@ -129,6 +143,11 @@ def match_score(our_title: str, their_title: str, rank: int) -> Decimal:
 # Parsing a result
 # --------------------------------------------------------------------------
 
+def slugify(text: str) -> str:
+    """Filename for a recorded response, from the URL or title that produced it."""
+    return re.sub(r"[^a-z0-9]+", "_", str(text).lower()).strip("_")
+
+
 def platform_of(link: str, source_name: str = "") -> str | None:
     haystack = f"{urllib.parse.urlparse(link or '').netloc} {source_name}".lower()
     for platform in COMPARISON_PLATFORMS:
@@ -171,9 +190,17 @@ def sar_price(raw) -> Decimal | None:
     return value if value > 0 else None
 
 
-def hits_from_results(results: list, our_title: str, variant_sku: str = "") -> list:
-    """Turn one provider response into CompetitorHits, keeping only real matches."""
-    hits = []
+def identity_matches(results: list, our_title: str) -> list:
+    """
+    The results that are the same product: right platform, picture and words
+    agreeing at the threshold. Priced or not.
+
+    Kept separate from pricing because measurement on the client's own SerpApi
+    key showed the two are not the same question. Of 60 real visual matches for
+    one product, 3 carried a price. Dropping the other 57 at this point would
+    throw away the identity we just paid to establish.
+    """
+    found = []
     for rank, result in enumerate(results or [], start=1):
         if not isinstance(result, dict):
             continue
@@ -181,14 +208,71 @@ def hits_from_results(results: list, our_title: str, variant_sku: str = "") -> l
         platform = platform_of(link, str(result.get("source") or result.get("seller") or ""))
         if platform is None:
             continue
-        price = sar_price(result.get("price"))
-        if price is None:
+        # Two separate bars, which is the same conjunctive rule as before: at
+        # the default both are 95, so "picture >= 95 and words >= 95" is exactly
+        # "min(picture, words) >= 95". Splitting them lets the words bar be
+        # lowered - the client's call - without loosening the picture at all.
+        if text_score(our_title, str(result.get("title") or "")) < TEXT_THRESHOLD:
             continue
-        score = match_score(our_title, str(result.get("title") or ""), rank)
+        score = visual_score(rank)
         if score < MATCH_THRESHOLD:
             continue
+        found.append({"platform": platform, "score": score, "link": link,
+                      "title": str(result.get("title") or ""),
+                      "price": sar_price(result.get("price"))})
+    return found
+
+
+def hits_from_results(results: list, our_title: str, variant_sku: str = "") -> list:
+    """Turn one provider response into CompetitorHits, keeping only priced matches."""
+    return [CompetitorHit(platform=match["platform"], price_sar=match["price"],
+                          match_score=match["score"], url=match["link"],
+                          matched_variant=variant_sku)
+            for match in identity_matches(results, our_title)
+            if match["price"] is not None]
+
+
+def prices_from_shopping(matches: list, rows: list, our_title: str,
+                         variant_sku: str = "") -> list:
+    """
+    Put a price on matches the image search identified but did not price.
+
+    A shopping row is only allowed to price a match when it is on a platform
+    the PICTURE already matched and its own title agrees with ours. Both
+    conditions, not either: without the first, a shopping row for some other
+    shop would price our product; without the second, the cheapest unrelated
+    listing on the right platform would.
+    """
+    unpriced = [match for match in matches if match["price"] is None]
+    if not unpriced:
+        return []
+    identified = {match["platform"] for match in unpriced}
+    by_platform = {match["platform"]: match for match in unpriced}
+
+    hits = []
+    for row in rows or []:
+        if not isinstance(row, dict):
+            continue
+        platform = platform_of(str(row.get("product_link") or row.get("link") or ""),
+                               str(row.get("source") or ""))
+        if platform not in identified:
+            continue
+        # Only the price STRING is read, because only it states the currency.
+        # extracted_price is a bare number: trusting it would quietly turn a
+        # 99 dollar rival into a 99 riyal one, which is the single mistake this
+        # module exists to prevent.
+        price = sar_price(row.get("price"))
+        if price is None:
+            continue
+        words = text_score(our_title, str(row.get("title") or ""))
+        if words < TEXT_THRESHOLD:
+            continue
+        # The score stays the picture's, which is what established identity.
+        # The words were a gate, not a contribution.
+        score = by_platform[platform]["score"]
         hits.append(CompetitorHit(platform=platform, price_sar=price, match_score=score,
-                                  url=link, matched_variant=variant_sku))
+                                  url=str(row.get("product_link") or row.get("link") or ""),
+                                  matched_variant=variant_sku))
     return hits
 
 
@@ -227,6 +311,57 @@ class LensProvider:
         return payload.get("visual_matches") or []
 
 
+class ShoppingProvider:
+    """
+    Prices, through SerpApi's google_shopping engine.
+
+    Exists because of a measurement, not a preference. On the client's key,
+    google_lens priced 3 of 60 results for one product; google_shopping priced
+    40 of 40 for the same product, every one of them in SAR because the region
+    is Saudi. Lens answers "who else sells this"; shopping answers "for how
+    much". The comparison needs both.
+    """
+
+    ENDPOINT = "https://serpapi.com/search.json"
+
+    def __init__(self, api_key: str = "", timeout: int = 40):
+        self.api_key = api_key or os.environ.get("KDX_SERPAPI_KEY", "")
+        self.timeout = timeout
+        if not self.api_key:
+            raise CompareError("KDX_SERPAPI_KEY is not set")
+
+    def search_by_title(self, title: str) -> list:
+        query = urllib.parse.urlencode({
+            "engine": "google_shopping",
+            "q": title,
+            "gl": "sa",
+            "hl": "en",
+            "location": "Saudi Arabia",
+            "api_key": self.api_key,
+        })
+        with urllib.request.urlopen(f"{self.ENDPOINT}?{query}", timeout=self.timeout) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+        if payload.get("error"):
+            raise CompareError(str(payload["error"]))
+        return payload.get("shopping_results") or []
+
+
+class FixtureShoppingProvider:
+    """Recorded shopping responses, so the join can be tested without a key."""
+
+    def __init__(self, directory: str | None = None):
+        self.directory = directory or os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "samples", "shopping")
+
+    def search_by_title(self, title: str) -> list:
+        path = os.path.join(self.directory, f"{slugify(title)}.json")
+        if not os.path.exists(path):
+            return []
+        with open(path, encoding="utf-8") as handle:
+            payload = json.load(handle)
+        return payload.get("shopping_results", payload) if isinstance(payload, dict) else payload
+
+
 class FixtureProvider:
     """Recorded search responses, so the scoring can be proved without a key."""
 
@@ -235,8 +370,7 @@ class FixtureProvider:
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "samples", "lens")
 
     def search_by_image(self, image_url: str) -> list:
-        name = re.sub(r"[^a-z0-9]+", "_", image_url.lower()).strip("_")
-        path = os.path.join(self.directory, f"{name}.json")
+        path = os.path.join(self.directory, f"{slugify(image_url)}.json")
         if not os.path.exists(path):
             return []
         with open(path, encoding="utf-8") as handle:
@@ -254,7 +388,8 @@ def build_provider():
 # The stage
 # --------------------------------------------------------------------------
 
-def hits_for_product(provider, product, title_en: str, max_images_per_variant: int = 1) -> dict:
+def hits_for_product(provider, product, title_en: str, max_images_per_variant: int = 1,
+                     shopping=None) -> dict:
     """
     Search each variant by its own photo and return {sku_id: [CompetitorHit]}.
 
@@ -268,6 +403,7 @@ def hits_for_product(provider, product, title_en: str, max_images_per_variant: i
     """
     hits: dict = {}
     searched: dict = {}
+    shopping_rows = None            # fetched at most once per product, not per variant
     for variant in getattr(product, "variants", []) or []:
         images = (variant.attributes or {}).get("images") or []
         if isinstance(images, str):
@@ -275,6 +411,37 @@ def hits_for_product(provider, product, title_en: str, max_images_per_variant: i
         for image in images[:max_images_per_variant]:
             if image not in searched:
                 searched[image] = provider.search_by_image(image)
-            hits.setdefault(variant.sku_id, []).extend(
-                hits_from_results(searched[image], title_en, variant.sku_id))
+
+            matches = identity_matches(searched[image], title_en)
+            found = [CompetitorHit(platform=m["platform"], price_sar=m["price"],
+                                   match_score=m["score"], url=m["link"],
+                                   matched_variant=variant.sku_id)
+                     for m in matches if m["price"] is not None]
+
+            # Only ask for prices when the picture already found one of the five
+            # and none of them quoted a price. No identity, no second search -
+            # that is the difference between one call a product and two.
+            if shopping is not None and any(m["price"] is None for m in matches):
+                if shopping_rows is None:
+                    shopping_rows = shopping.search_by_title(title_en)
+                found.extend(prices_from_shopping(matches, shopping_rows, title_en,
+                                                  variant.sku_id))
+
+            hits.setdefault(variant.sku_id, []).extend(found)
     return hits
+
+
+def build_shopping_provider():
+    """
+    KDX_SHOPPING: lens-priced only (off), recorded (fixture), or live (on).
+
+    Defaults to on, because measurement showed image search alone prices about
+    one match in twenty - which would leave nearly every product on margin
+    pricing while looking like it had been compared.
+    """
+    choice = os.environ.get("KDX_SHOPPING", "on").strip().lower()
+    if choice == "off":
+        return None
+    if choice == "fixture":
+        return FixtureShoppingProvider()
+    return ShoppingProvider()

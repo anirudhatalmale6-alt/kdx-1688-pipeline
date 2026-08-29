@@ -52,6 +52,12 @@ COMPARISON_PLATFORMS = ["Temu", "SHEIN", "AliExpress", "Amazon", "Noon"]
 
 # Mains specification the client accepts for anything electrical.
 REQUIRED_VOLTAGE = re.compile(r"\b220\s*v\b", re.IGNORECASE)
+# Chargers and adapters almost never print "220V". They print a range -
+# "100-240V 50/60Hz" - which runs on Saudi mains perfectly. Reading only the
+# literal 220 would reject the whole accessory aisle for saying it too well.
+# Not \b before the first number: listings write "AC100-240V", and a word
+# boundary between "C" and "1" does not exist.
+VOLTAGE_RANGE = re.compile(r"(?<!\d)(\d{2,3})\s*[-~–—到至]\s*(\d{2,3})\s*v\b", re.IGNORECASE)
 # Any frequency at all, versus one we can sell. The pair is what lets "not
 # stated" be told apart from "stated and unsuitable".
 ANY_FREQUENCY = re.compile(r"\b\d{2,3}\s*(?:/\s*\d{2,3}\s*)?hz\b", re.IGNORECASE)
@@ -167,6 +173,23 @@ def is_electrical(product: Product) -> bool:
     return bool(ELECTRICAL_HINTS.search(product.searchable_text()))
 
 
+def runs_on_220(text: str) -> bool:
+    """
+    True when the listing says the product works on Saudi mains.
+
+    Client, 29 August: "the accepted one is 220V only, we do not need 110V".
+    So 110V alone is refused. But a product that states a range covering 220 -
+    100-240V, 110~220V - does run on 220V, and refusing it would throw away
+    most chargers and adapters, which is the opposite of what he asked for.
+    """
+    if REQUIRED_VOLTAGE.search(text):
+        return True
+    for low, high in VOLTAGE_RANGE.findall(text):
+        if int(low) <= 220 <= int(high):
+            return True
+    return False
+
+
 def has_accepted_mains_spec(product: Product) -> bool:
     """
     Client rule, as he revised it on 29 August: 220V is required, a stated
@@ -183,7 +206,7 @@ def has_accepted_mains_spec(product: Product) -> bool:
     would be treated as the same thing.
     """
     text = product.searchable_text()
-    if not REQUIRED_VOLTAGE.search(text):
+    if not runs_on_220(text):
         return False
     if ANY_FREQUENCY.search(text):
         return bool(ACCEPTED_FREQUENCY.search(text))

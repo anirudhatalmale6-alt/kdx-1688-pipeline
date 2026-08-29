@@ -127,11 +127,14 @@ def to_kdx_variants(results: list, terms: dict) -> list:
 
 class Pipeline:
     def __init__(self, *, source, provider, engine, budget=None, audit_log=None,
+                 shopping=None,
                  kdx=None, translate: bool = True, dry_run: bool = True,
                  points_per_offer: int = 1, enricher=None, term_translator=None,
                  categories=None):
         self.source = source
         self.provider = provider
+        # Prices, when the image search finds the product but not its price.
+        self.shopping = shopping
         self.engine = engine
         self.budget = budget
         self.audit_log = audit_log
@@ -231,7 +234,8 @@ class Pipeline:
         # it was, rather than running a search that is guaranteed to find
         # nothing.
         compared = not enriched.get("_untranslated")
-        hits = (compare.hits_for_product(self.provider, product, enriched.get("name_en", ""))
+        hits = (compare.hits_for_product(self.provider, product,
+                                         enriched.get("name_en", ""), shopping=self.shopping)
                 if compared else {})
 
         results = self.engine.evaluate(product, hits)
@@ -314,6 +318,7 @@ def build(*, dry_run: bool = True, translate: bool | None = None, cny_to_sar=Non
         source=source_module.build_source(),
         categories=categories,
         provider=compare.build_provider(),
+        shopping=compare.build_shopping_provider(),
         engine=rules.Engine(cny_to_sar=cny_to_sar),
         budget=budget_module.PointBudget(),
         audit_log=audit_module.AuditLog(),

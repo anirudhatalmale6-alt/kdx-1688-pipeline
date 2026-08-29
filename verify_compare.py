@@ -19,6 +19,7 @@ against something we are not selling.
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from decimal import Decimal
@@ -33,6 +34,9 @@ passed = failed = 0
 
 BOILER_IMAGE = "https://cbu01.alicdn.com/img/ibank/boiler-1.jpg"
 OUR_TITLE = "Commercial Stainless Steel Electric Water Boiler 30L 3000W"
+# The image behind the recorded live google_lens response.
+SKIRT_IMAGE = ("https://image.uniqlo.com/UQ/ST3/us/imagesgoods/470922"
+               "/feature/usgoods_470922_feature1.jpg")
 
 
 def check(label: str, condition: bool, detail: str = "") -> None:
@@ -159,6 +163,135 @@ def main() -> int:
           fallback.decision == rules.Decision.REJECT
           and fallback.audit.reason_code == "heavy_and_unmatched",
           f"{fallback.decision} / {fallback.audit.reason_code}")
+
+    print("10. the recorded LIVE responses, and what they actually contain")
+    # Both files are real SerpApi responses on the client's own key, kept so
+    # these numbers can be re-checked rather than taken on trust.
+    lens_file = os.path.join(HERE, "samples", "lens", compare.slugify(SKIRT_IMAGE) + ".json")
+    with open(lens_file, encoding="utf-8") as handle:
+        live_lens = json.load(handle)["visual_matches"]
+    priced = [m for m in live_lens if m.get("price")]
+    check("google_lens returned 60 visual matches for a real product",
+          len(live_lens) == 60, str(len(live_lens)))
+    check("but only 3 of them carried a price at all",
+          len(priced) == 3, f"{len(priced)} of {len(live_lens)}")
+    check("and the prices it did give are already in SAR, so nothing is converted",
+          all(compare.sar_price(m["price"]) is not None for m in priced),
+          str([m["price"] for m in priced]))
+
+    with open(os.path.join(HERE, "samples", "shopping",
+                           compare.slugify(OUR_TITLE) + ".json"), encoding="utf-8") as handle:
+        live_shopping = json.load(handle)["shopping_results"]
+    check("google_shopping returned 40 results for the same kind of product",
+          len(live_shopping) == 40, str(len(live_shopping)))
+    check("and priced every single one of them",
+          all(row.get("price") for row in live_shopping),
+          str(sum(1 for row in live_shopping if row.get("price"))))
+    on_platforms = [row for row in live_shopping
+                    if compare.platform_of(str(row.get("product_link") or ""),
+                                           str(row.get("source") or ""))]
+    check("seven of them are on platforms the client named",
+          len(on_platforms) == 7, str(len(on_platforms)))
+
+    print("11. the join: image finds who sells it, shopping finds for how much")
+    identified = [{"platform": "Amazon", "score": Decimal("100"), "link": "x",
+                   "title": "t", "price": None},
+                  {"platform": "Noon", "score": Decimal("100"), "link": "y",
+                   "title": "t", "price": None}]
+
+    strict = compare.prices_from_shopping(identified, live_shopping, OUR_TITLE, "sku-1")
+    check("at the client's 95% wording rule, real listings price NOTHING",
+          strict == [], f"{len(strict)} hits")
+    check("because the best a real rival title scores against ours is 75",
+          max(compare.text_score(OUR_TITLE, row.get("title", "")) for row in on_platforms)
+          == Decimal("75"),
+          str(max(compare.text_score(OUR_TITLE, row.get("title", "")) for row in on_platforms)))
+
+    original = compare.TEXT_THRESHOLD
+    try:
+        compare.TEXT_THRESHOLD = Decimal("60")
+        relaxed = compare.prices_from_shopping(identified, live_shopping, OUR_TITLE, "sku-1")
+        check("lowering only the wording bar makes real matches appear",
+              len(relaxed) == 3, str(len(relaxed)))
+        check("every one of them is on a platform the picture had identified",
+              all(hit.platform in ("Amazon", "Noon") for hit in relaxed),
+              str([hit.platform for hit in relaxed]))
+        check("the cheapest is Amazon at 553.01 SAR",
+              min(hit.price_sar for hit in relaxed) == Decimal("553.01"),
+              str(sorted(hit.price_sar for hit in relaxed)))
+        check("the score stays the picture's, so the pricing engine accepts it",
+              all(hit.match_score >= rules.MATCH_THRESHOLD for hit in relaxed),
+              str([str(hit.match_score) for hit in relaxed]))
+
+        # Controls. Each removes one condition and must kill the match.
+        only_noon = [dict(identified[1])]
+        noon_hits = compare.prices_from_shopping(only_noon, live_shopping, OUR_TITLE, "s")
+        check("CONTROL: a platform the picture did NOT identify is never priced",
+              all(hit.platform == "Noon" for hit in noon_hits),
+              str([hit.platform for hit in noon_hits]))
+
+        foreign = [dict(row, price="$99.00", extracted_price=99.0) for row in on_platforms]
+        check("CONTROL: a rival price in another currency is dropped, not converted",
+              compare.prices_from_shopping(identified, foreign, OUR_TITLE, "s") == [])
+
+        wrong_words = compare.prices_from_shopping(identified, live_shopping,
+                                                   "Kids Plastic Lunch Box", "s")
+        check("CONTROL: a title that disagrees prices nothing even on the right platform",
+              wrong_words == [], str(len(wrong_words)))
+    finally:
+        compare.TEXT_THRESHOLD = original
+
+    print("12. the second search only happens when it can change something")
+    class CountingShopping:
+        def __init__(self, rows):
+            self.rows, self.calls = rows, 0
+
+        def search_by_title(self, title):
+            self.calls += 1
+            return self.rows
+
+    class PricedLens:
+        """Every identified platform already quoted a price."""
+
+        def search_by_image(self, image_url):
+            return [{"link": "https://www.noon.com/x", "source": "Noon", "title": OUR_TITLE,
+                     "price": {"currency": "SAR", "extracted_value": 689.0,
+                               "value": "SAR 689.00"}}]
+
+    shopping = CountingShopping(live_shopping)
+    compare.hits_for_product(PricedLens(), product, OUR_TITLE, shopping=shopping)
+    check("nothing left to look up means no shopping call is paid for",
+          shopping.calls == 0, f"{shopping.calls} calls")
+
+    # The recorded boiler fixture does contain an unpriced identified platform -
+    # a Temu listing quoting USD - so it SHOULD reach for the shopping engine.
+    shopping = CountingShopping(live_shopping)
+    compare.hits_for_product(compare.FixtureProvider(), product, OUR_TITLE, shopping=shopping)
+    check("a rival identified but quoted in the wrong currency is looked up",
+          shopping.calls == 1, f"{shopping.calls} calls")
+
+    class UnpricedLens:
+        """Identifies two platforms, quotes neither - the measured normal case."""
+
+        def search_by_image(self, image_url):
+            return [{"link": "https://www.amazon.sa/dp/X", "source": "Amazon",
+                     "title": OUR_TITLE},
+                    {"link": "https://www.noon.com/x", "source": "Noon",
+                     "title": OUR_TITLE}]
+
+    shopping = CountingShopping(live_shopping)
+    compare.hits_for_product(UnpricedLens(), product, OUR_TITLE, shopping=shopping)
+    check("an identified but unpriced product asks the shopping engine once",
+          shopping.calls == 1, f"{shopping.calls} calls")
+
+    class NoMatchLens:
+        def search_by_image(self, image_url):
+            return [{"link": "https://example.com/x", "source": "Example", "title": OUR_TITLE}]
+
+    shopping = CountingShopping(live_shopping)
+    compare.hits_for_product(NoMatchLens(), product, OUR_TITLE, shopping=shopping)
+    check("CONTROL: no identified platform means no second search is paid for",
+          shopping.calls == 0, f"{shopping.calls} calls")
 
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0

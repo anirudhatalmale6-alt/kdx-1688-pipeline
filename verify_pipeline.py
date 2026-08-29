@@ -228,6 +228,22 @@ def main() -> int:
     check("a dual-voltage product counts as 220V", dual.published == 1,
           dual.results[0].audit.reason_ar if dual.results else "no results")
 
+    # A charger almost never prints "220V"; it prints the range it accepts.
+    spread = boiler_with([{"attributeName": "电压", "attributeValue": "AC100-240V"},
+                          {"attributeName": "频率", "attributeValue": "50/60Hz"}],
+                         888000666, "range")
+    check("a 100-240V range covers Saudi mains and is accepted",
+          spread.published == 1,
+          spread.results[0].audit.reason_ar if spread.results else "no results")
+
+    narrow = boiler_with([{"attributeName": "电压", "attributeValue": "100-127V"},
+                          {"attributeName": "频率", "attributeValue": "60Hz"}],
+                         888000777, "narrow")
+    check("CONTROL: a range that stops below 220 is still rejected",
+          narrow.published == 0
+          and all(r.audit.reason_code == "mains_spec" for r in narrow.results),
+          str({r.audit.reason_code for r in narrow.results}))
+
     print("6. skipping translation must not silently change the price")
     untranslated = build(translate=False, state="untranslated.json").run_offer(BOILER)
     check("the outcome says the comparison did not run",
