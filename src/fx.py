@@ -22,7 +22,17 @@ import time
 import urllib.request
 from decimal import Decimal
 
-CACHE_PATH = os.environ.get("KDX_FX_CACHE", "/opt/kdx/fx_rate.json")
+import paths
+
+
+def cache_path() -> str:
+    """
+    Resolved on every call, not at import. A module-level constant here read
+    /opt/kdx before KDX_STATE_DIR was ever consulted, so the whole run died on
+    a machine that had not been prepared as root - the one file left behind
+    when the other seven were centralised.
+    """
+    return paths.state_path("fx_rate.json", "KDX_FX_CACHE")
 
 # SAR is pegged to USD, and CNY/USD has not left this range in decades. Anything
 # outside it means the source changed shape or returned a different pair.
@@ -95,15 +105,16 @@ def _today() -> str:
 
 def load_cached() -> dict | None:
     try:
-        with open(CACHE_PATH, encoding="utf-8") as handle:
+        with open(cache_path(), encoding="utf-8") as handle:
             return json.load(handle)
     except (OSError, ValueError):
         return None
 
 
 def save_cache(rate: Decimal, readings: list) -> None:
-    os.makedirs(os.path.dirname(CACHE_PATH), exist_ok=True)
-    with open(CACHE_PATH, "w", encoding="utf-8") as handle:
+    destination = cache_path()
+    os.makedirs(os.path.dirname(destination), exist_ok=True)
+    with open(destination, "w", encoding="utf-8") as handle:
         json.dump({"date": _today(),
                    "rate": str(rate),
                    "sources": {name: str(value) for name, value in readings},

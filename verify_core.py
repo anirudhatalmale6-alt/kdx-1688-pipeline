@@ -104,7 +104,9 @@ def test_audit(tmp: str) -> None:
 def test_fx(tmp: str, offline: bool) -> None:
     import fx as fx_module
 
-    fx_module.CACHE_PATH = os.path.join(tmp, "fx.json")
+    os.environ["KDX_FX_CACHE"] = os.path.join(tmp, "fx.json")
+    check("the fx cache follows the environment, not a constant",
+          fx_module.cache_path() == os.environ["KDX_FX_CACHE"], fx_module.cache_path())
 
     print("8. controls: a bad rate must stop the run, never be averaged in")
     real_sources = list(fx_module.SOURCES)
