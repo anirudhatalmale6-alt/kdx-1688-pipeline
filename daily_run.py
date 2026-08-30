@@ -133,17 +133,31 @@ def main() -> int:
         for note in walker.notes:
             print(f"           note: {note}")
 
-        # A dry run that prints only counts cannot be checked. The assembled
+        # A run that prints only counts cannot be checked. The assembled
         # products are written out so the client can read what would have been
-        # published before any of it reaches his shop.
-        products_dir = ""
-        if args.dry_run:
-            products_dir = os.path.join(HERE, "out", day)
-            os.makedirs(products_dir, exist_ok=True)
+        # published before any of it reaches his shop - and on a live run so
+        # that "what exactly did we send for this product" has an answer
+        # afterwards. On 2026-08-30 twenty-one products reached his shop
+        # without their photographs and nothing on disk could say what was in
+        # the payload, because only dry runs were ever written.
+        products_dir = os.path.join(paths.state_path("out", "KDX_OUT_DIR"), day)
+        os.makedirs(products_dir, exist_ok=True)
 
         published = held = skipped = 0
+        photos_dropped = 0
         reasons: dict = {}
         for outcome in runner.run_products(harvested):
+            # Written before the error check, not after: a product his shop
+            # refused is exactly the one whose payload has to be readable.
+            if products_dir and outcome.product is not None:
+                with open(os.path.join(products_dir, f"{outcome.offer_id}.json"),
+                          "w", encoding="utf-8") as handle:
+                    json.dump(outcome.product, handle, ensure_ascii=False,
+                              indent=2, default=str)
+            if outcome.photos and outcome.photos.get("dropped"):
+                photos_dropped += len(outcome.photos["dropped"])
+                for url in outcome.photos["dropped"]:
+                    print(f"  {outcome.offer_id}  photo unreachable, dropped: {url[:100]}")
             if outcome.error:
                 skipped += 1
                 print(f"  {outcome.offer_id}  SKIPPED  {outcome.error}")
@@ -154,11 +168,6 @@ def main() -> int:
                     code = result.audit.reason_code
                     reasons[code] = reasons.get(code, 0) + 1
             published += outcome.published
-            if products_dir and outcome.product is not None:
-                with open(os.path.join(products_dir, f"{outcome.offer_id}.json"),
-                          "w", encoding="utf-8") as handle:
-                    json.dump(outcome.product, handle, ensure_ascii=False,
-                              indent=2, default=str)
 
         elapsed = time.time() - started
         report = {
@@ -174,6 +183,8 @@ def main() -> int:
             "held": held,
             "skipped": skipped,
             "held_reasons": reasons,
+            "photos_dropped": photos_dropped,
+            "photos": runner.photos.summary() if runner.photos is not None else None,
             "ledger": ledger,
             "points": runner.budget.summary(),
             "searches": runner.meter.summary() if runner.meter is not None else None,
@@ -191,7 +202,7 @@ def main() -> int:
             json.dump(report, handle, ensure_ascii=False, indent=2, default=str)
         print(f"report: {path}")
         if products_dir:
-            print(f"products: {os.path.relpath(products_dir, HERE)}/")
+            print(f"products: {products_dir}/")
         return 0
     finally:
         release_lock(lock)

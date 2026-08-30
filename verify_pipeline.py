@@ -17,10 +17,12 @@ photo priced from a different one, and that the audit file adds up.
 from __future__ import annotations
 
 import csv
+import io
 import json
 import os
 import sys
 import tempfile
+import urllib.error
 from decimal import Decimal
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -396,8 +398,20 @@ def main() -> int:
     higher = engine_with_floor("20")
     check("CONTROL raising it rejects more, so the number is really in force",
           higher.evaluate(one_variant("12.00"), {})[0].audit.reason_code == "below_min_price")
-    os.environ["KDX_MIN_PRICE_SAR"] = "3"
+
+    # He answered on 2026-08-30: "اجعلها الحد الادنى 0.01". The floor stops a
+    # zero and nothing else, which is what he asked for - a 0.08 SAR stone is
+    # published again, deliberately, and he was told so.
+    os.environ.pop("KDX_MIN_PRICE_SAR", None)
     importlib.reload(rules)
+    check("the floor with nothing configured is the client's 0.01",
+          rules.MIN_PRICE_SAR == Decimal("0.01"), str(rules.MIN_PRICE_SAR))
+    his = rules.Engine(cny_to_sar=Decimal("0.52"))
+    check("at his floor the 0.08 SAR product publishes again",
+          his.evaluate(one_variant("0.12"), {})[0].decision == rules.Decision.PUBLISH)
+    check("CONTROL and a price of exactly zero is still refused",
+          his.evaluate(one_variant("0"), {})[0].audit.reason_code == "below_min_price",
+          str(his.evaluate(one_variant("0"), {})[0].audit.reason_code))
 
     print("\none bad product must not cost the night")
     # A SerpApi read timed out at product ~150 of 300 on 30 August and the
@@ -440,6 +454,96 @@ def main() -> int:
           len(stopped) == 1, str(len(stopped)))
     check("CONTROL and it says why", "allowance exhausted" in stopped[0].error,
           stopped[0].error)
+
+    print("\na product his shop cannot show is not a published product")
+    # On 30 August twenty-one products reached his shop with empty picture
+    # frames and the run reported twenty-one published, because the photographs
+    # were never checked and the shop's answer was thrown away.
+    import photos as photos_module
+
+    class FakeKdx:
+        def __init__(self, answer):
+            self.answer = answer
+            self.pushed = []
+
+        def push(self, products, batch_size=20):
+            self.pushed.extend(products)
+            return [self.answer]
+
+    class Opener:
+        def __init__(self, dead=()):
+            self.dead = set(dead)
+            self.asked = []
+
+        def __call__(self, request, timeout=None):
+            url = request.full_url
+            self.asked.append(url)
+            if url in self.dead:
+                raise urllib.error.HTTPError(url, 404, "gone", {}, io.BytesIO(b""))
+
+            class R:
+                status = 200
+                headers = {"Content-Type": "image/jpeg"}
+
+                def __enter__(self_inner):
+                    return self_inner
+
+                def __exit__(self_inner, *exc):
+                    return False
+            return R()
+
+    IMPORTED = {"success": True, "imported_count": 1, "failed_count": 0,
+                "skipped_count": 0, "failed_items": []}
+
+    def live_runner(answer, dead=()):
+        runner = build(state=f"points-live-{len(dead)}-{answer['skipped_count']}.json")
+        runner.dry_run = False
+        runner.kdx = FakeKdx(answer)
+        runner.photos = photos_module.PhotoChecker(opener=Opener(dead))
+        return runner
+
+    healthy = live_runner(IMPORTED)
+    outcome = healthy.run_product(healthy.source.get_product(TSHIRT))
+    all_photos = list(outcome.product["images"])
+    check("with live photographs the product is pushed",
+          len(healthy.kdx.pushed) == 1 and not outcome.error, outcome.error)
+    check("and the photographs are checked, not assumed",
+          healthy.photos.summary()["urls_checked"] == len(set(all_photos)),
+          str(healthy.photos.summary()))
+
+    partial = live_runner(IMPORTED, dead=all_photos[1:])
+    outcome = partial.run_product(partial.source.get_product(TSHIRT))
+    check("a dead photograph is dropped and the rest still go",
+          outcome.product["images"] == all_photos[:1], str(outcome.product["images"]))
+    check("and the run says which one it dropped",
+          outcome.photos["dropped"] == all_photos[1:], str(outcome.photos))
+
+    blind = live_runner(IMPORTED, dead=all_photos)
+    outcome = blind.run_product(blind.source.get_product(TSHIRT))
+    check("a product with no reachable photograph is never pushed",
+          blind.kdx.pushed == [], str(blind.kdx.pushed))
+    check("it is reported as an error, not as a publication",
+          "no reachable photograph" in outcome.error and outcome.product is None,
+          outcome.error)
+
+    SKIPPED = dict(IMPORTED, imported_count=0, skipped_count=1)
+    refused = live_runner(SKIPPED)
+    outcome = refused.run_product(refused.source.get_product(TSHIRT))
+    check("an offer his shop silently skipped is not counted as published",
+          "does not update" in outcome.error, outcome.error)
+    check("and the answer it gave is kept for the report",
+          outcome.kdx_response == SKIPPED, str(outcome.kdx_response))
+
+    # CONTROL: the guard has to be switchable off without editing code, or a
+    # network that cannot reach alicdn at all would hold the entire catalogue
+    # and look exactly like a pricing bug.
+    unguarded = build(state="points-unguarded.json")
+    unguarded.dry_run = False
+    unguarded.kdx = FakeKdx(IMPORTED)
+    unguarded.photos = None
+    outcome = unguarded.run_product(unguarded.source.get_product(TSHIRT))
+    check("CONTROL with the check off the same product still publishes",
+          len(unguarded.kdx.pushed) == 1 and not outcome.error, outcome.error)
 
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0

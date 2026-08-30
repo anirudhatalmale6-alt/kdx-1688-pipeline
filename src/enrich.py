@@ -28,8 +28,13 @@ Remove completely, never translate:
 
 Keep and translate faithfully:
 - what the product actually is, its material, dimensions, capacity, contents
-- brand names stay EXACTLY as written in the original, untranslated
+- a brand already written in Latin letters stays EXACTLY as written (FaSoLa, Deli)
+- a brand written in Chinese characters: use its official Latin name if it has
+  one, otherwise leave the brand out. Never copy Chinese characters through.
 - technical and commercial terms stay accurate (220V, 50/60Hz, cotton, nylon)
+
+No Chinese character may appear anywhere in name_ar, name_en, description_ar or
+description_en. A Saudi customer cannot read them.
 
 Write like a real store, not like a translation. Arabic must read naturally to a
 Saudi customer. Never invent a feature that is not in the source.
@@ -103,6 +108,40 @@ def _chat(system: str, user: str, api_key: str | None, timeout: int) -> dict:
     return result
 
 
+# Chinese, Japanese and Korean blocks, plus the full-width punctuation that
+# comes with them.
+_CJK = re.compile(r"[⺀-鿿豈-﫿＀-￯]+")
+
+# What is left dangling when a brand written in Chinese is lifted out of a
+# sentence. "تيشيرت للأطفال من 可可鸭 بنمط كرتوني" must not become
+# "تيشيرت للأطفال من بنمط كرتوني" - the preposition has to go with the brand.
+_DANGLING = re.compile(
+    r"(?:\s|^)(?:من|ماركة|علامة|from|by|brand)\s*$", re.IGNORECASE)
+
+
+def strip_cjk(text: str) -> str:
+    """
+    Take the Chinese out of a line meant for a Saudi shopper.
+
+    The prompt asks for this and the prompt is not a guarantee: on the first
+    real night a published title read "تيشيرت بأكمام طويلة للأطفال من 可可鸭
+    بنمط كرتوني". A model instruction is a request; this is the enforcement.
+    """
+    if not text:
+        return text
+    out = []
+    last = 0
+    for match in _CJK.finditer(text):
+        head = text[last:match.start()]
+        # Drop the preposition that introduced the brand, so the sentence
+        # closes cleanly instead of trailing off.
+        head = _DANGLING.sub("", head)
+        out.append(head)
+        last = match.end()
+    out.append(text[last:])
+    return " ".join("".join(out).split()).strip(" -،,·")
+
+
 def enrich(title_zh: str, description_zh: str, api_key: str | None = None,
            timeout: int = 60) -> dict:
     result = _chat(SYSTEM_PROMPT,
@@ -112,6 +151,12 @@ def enrich(title_zh: str, description_zh: str, api_key: str | None = None,
     for field in ("name_ar", "name_en", "description_ar", "description_en"):
         if not result.get(field):
             raise EnrichError(f"model returned an empty {field}")
+        result[field] = strip_cjk(result[field])
+        # Emptied by the strip means the model returned nothing but a Chinese
+        # brand, which is not a product name. Better to fail the offer than to
+        # publish a blank title.
+        if not result[field]:
+            raise EnrichError(f"{field} was nothing but Chinese text")
 
     return result
 

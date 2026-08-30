@@ -28,6 +28,7 @@ from decimal import Decimal
 import compare
 import enrich as enrich_module
 import mapping
+import photos
 import rules
 
 
@@ -41,6 +42,8 @@ class OfferOutcome:
     compared: bool = True         # False when the image search was not run at all
     searches_spent: int = 0       # SerpApi searches this offer cost
     from_cache: bool = False      # the comparison was reused, not bought again
+    photos: dict | None = None    # how many photographs survived the check
+    kdx_response: dict | None = None   # what his shop said when it took it
 
     @property
     def published(self) -> int:
@@ -178,12 +181,49 @@ def _restate_assumed_weight(results: list, normalised: dict) -> None:
                 f"فلم يُنشر. حدِّد وزن هذا التصنيف لتغيير النتيجة")
 
 
+def _one_response(responses) -> dict:
+    """push() batches, and one product is one batch. Keep the shape honest."""
+    if not responses:
+        return {}
+    return responses[0] if isinstance(responses[0], dict) else {}
+
+
+def _publish_trouble(response: dict) -> str:
+    """
+    Say what went wrong, or "" if the product really did land.
+
+    Until 2026-08-30 the answer from his shop was thrown away and every push
+    was counted as a publication. It is not: the endpoint answers
+    `success: true` while reporting `skipped_count: 1` for an offer id it
+    already holds, and `failed_count` for one it refused. A run that reports
+    twenty-one published when his shop took none of them is worse than a run
+    that fails, because nobody goes looking.
+    """
+    if not response:
+        return ""
+    if response.get("success") is False:
+        return f"KDX refused the product: {str(response.get('message'))[:160]}"
+    failed = int(response.get("failed_count") or 0)
+    if failed:
+        detail = response.get("failed_items") or ""
+        return f"KDX rejected the product: {str(detail)[:200]}"
+    skipped = int(response.get("skipped_count") or 0)
+    if skipped:
+        # Not a failure of ours: his endpoint has no update path, so an offer
+        # it already holds is dropped and reported as a success.
+        return ("KDX already holds this offer and does not update: "
+                "skipped_count=1")
+    if int(response.get("imported_count") or 0) < 1:
+        return f"KDX imported nothing: {str(response)[:200]}"
+    return ""
+
+
 class Pipeline:
     def __init__(self, *, source, provider, engine, budget=None, audit_log=None,
                  shopping=None,
                  kdx=None, translate: bool = True, dry_run: bool = True,
                  points_per_offer: int = 1, enricher=None, term_translator=None,
-                 categories=None, cache=None, meter=None):
+                 categories=None, cache=None, meter=None, photo_checker=None):
         self.source = source
         self.provider = provider
         # Prices, when the image search finds the product but not its price.
@@ -192,6 +232,10 @@ class Pipeline:
         self.budget = budget
         self.audit_log = audit_log
         self.kdx = kdx
+        # Checks each photograph is fetchable before the product is pushed.
+        # None disables the check entirely, which is what the unit checks that
+        # care about pricing rather than pictures want.
+        self.photos = photo_checker
         self.translate = translate
         self.dry_run = dry_run
         self.points_per_offer = points_per_offer
@@ -336,12 +380,36 @@ class Pipeline:
             description_en=enriched.get("description_en", ""),
         )
 
+        # The photographs are checked here, on the way out, because his shop
+        # downloads its own copy at import time and his endpoint has no update
+        # path: a dead URL now is a product that stays pictureless for good.
+        report = None
+        if self.photos is not None:
+            report = photos.prune(payload, self.photos)
+            if not payload["images"]:
+                return OfferOutcome(
+                    offer_id=offer_id, product=None, results=results,
+                    points_spent=spent, compared=compared,
+                    searches_spent=searches, from_cache=from_cache,
+                    photos=report,
+                    error=f"no reachable photograph ({report['had']} URL(s) "
+                          f"offered, none answered with an image)")
+
+        response = None
         if self.kdx is not None and not self.dry_run:
-            self.kdx.push([payload])
+            response = _one_response(self.kdx.push([payload]))
+            trouble = _publish_trouble(response)
+            if trouble:
+                return OfferOutcome(
+                    offer_id=offer_id, product=payload, results=results,
+                    points_spent=spent, compared=compared,
+                    searches_spent=searches, from_cache=from_cache,
+                    photos=report, kdx_response=response, error=trouble)
 
         return OfferOutcome(offer_id=offer_id, product=payload, results=results,
                             points_spent=spent, compared=compared,
-                            searches_spent=searches, from_cache=from_cache)
+                            searches_spent=searches, from_cache=from_cache,
+                            photos=report, kdx_response=response)
 
     def _compare(self, product: rules.Product, title_en: str, translated: bool):
         """
@@ -520,6 +588,7 @@ def build(*, dry_run: bool = True, translate: bool | None = None, cny_to_sar=Non
         budget=budget_module.PointBudget(),
         audit_log=audit_module.AuditLog(),
         kdx=kdx,
+        photo_checker=photos.PhotoChecker() if photos.ENABLED else None,
         translate=translate,
         dry_run=dry_run,
     )

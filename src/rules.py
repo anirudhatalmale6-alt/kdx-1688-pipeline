@@ -55,10 +55,12 @@ LIGHT_MAX_KG = Decimal("2")
 # price and still nonsense in a retail shop: the payment fee alone is larger
 # than the sale.
 #
-# Three riyals is a placeholder the client can change in one line, not a
-# judgement about his market. KDX_MIN_PRICE_SAR=0 restores the old behaviour of
-# publishing whatever the arithmetic produces.
-MIN_PRICE_SAR = Decimal(os.environ.get("KDX_MIN_PRICE_SAR", "3"))
+# Three riyals was a placeholder while the question was with him. He answered
+# on 2026-08-30 - "اجعلها الحد الادنى 0.01" - so the floor is now his number,
+# and it is deliberately low enough to change almost nothing: it exists only to
+# stop a product priced at literally zero. KDX_MIN_PRICE_SAR=0 turns it off
+# entirely.
+MIN_PRICE_SAR = Decimal(os.environ.get("KDX_MIN_PRICE_SAR", "0.01"))
 
 # A match is only trusted at or above this score.
 MATCH_THRESHOLD = Decimal("95")
