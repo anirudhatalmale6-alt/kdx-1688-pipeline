@@ -210,6 +210,27 @@ except source.SourceError:
 else:
     check("an empty picUrl is refused before spending a call", False)
 
+# A photograph Alibaba cannot fetch is refused beside `result`, not inside it.
+# Reading only result.result turned that into a silent zero, which is
+# indistinguishable from a photograph that simply has no similar offers.
+REFUSAL = {"code": "SYSTEM_ERROR", "success": False,
+           "message": "handle image error with url https://example.invalid/gone.jpg"}
+dead = source.LinkPlusSource(FakeClient(payload=REFUSAL))
+try:
+    dead.search_by_image("https://example.invalid/gone.jpg")
+except source.SourceError as exc:
+    check("a photograph the gateway could not fetch raises, not returns []",
+          "handle image error" in str(exc), str(exc)[:80])
+else:
+    check("a photograph the gateway could not fetch raises, not returns []",
+          False, "returned quietly")
+
+# CONTROL: the success payload carries no `code` at all - verified against the
+# live gateway - so the guard above must not fire on a good response.
+good = source.LinkPlusSource(FakeClient())
+check("CONTROL a successful payload is not mistaken for a refusal",
+      len(good.search_by_image("https://example.invalid/photo.jpg")) > 0)
+
 print("\n7. build_source routes KDX_SOURCE=linkplus")
 with env(KDX_SOURCE="linkplus"):
     importlib.reload(source)

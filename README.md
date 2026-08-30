@@ -38,6 +38,16 @@ Two things make that repeatable rather than a one-off:
   already paid for with a gateway call, and the next night takes them before it
   searches anything.
 
+Check a seed list before trusting a night to it:
+
+```bash
+python3 check_seeds.py seeds.txt
+```
+
+One gateway call per seed. It says which are alive, which categories each one
+opens, and — because two seeds that return the same offers are one seed — how
+many offers any two of them share.
+
 `deploy/` has the systemd service and timer, and `deploy/kdx.env.example` lists
 every setting. Credentials belong in `/etc/kdx/kdx.env` and nowhere else.
 

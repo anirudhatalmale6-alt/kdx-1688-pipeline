@@ -424,6 +424,21 @@ def normalise_search_row(row: dict) -> dict:
     }
 
 
+def _raise_if_refused(payload: dict, pic_url: str) -> None:
+    """
+    A photograph Alibaba could not fetch is not a photograph with no matches.
+
+    The gateway is explicit about the difference - success: false with
+    SYSTEM_ERROR "handle image error with url ..." - but that lives beside
+    `result`, not inside it, so reading only `result.result` turns a dead seed
+    into a silent zero. A night that starts on a broken URL would then report
+    "no similar products" and nobody would know the URL was the problem.
+    """
+    if payload.get("success") is False or payload.get("code"):
+        message = str(payload.get("message") or payload.get("code") or "refused")
+        raise SourceError(f"LinkPlus refused {pic_url}: {message[:200]}")
+
+
 class LinkPlusSource:
     """
     Discovery by photograph, which is the only shape this channel has.
@@ -452,6 +467,7 @@ class LinkPlusSource:
             "country": self.country,
             "language": self.language,
         })
+        _raise_if_refused(payload, pic_url)
         rows = ((payload.get("result") or {}).get("result")) or []
         products = []
         for row in rows:
