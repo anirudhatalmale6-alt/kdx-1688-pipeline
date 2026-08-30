@@ -33,6 +33,8 @@ from __future__ import annotations
 import json
 import os
 import re
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from decimal import Decimal, InvalidOperation
@@ -329,6 +331,34 @@ def rows_or_empty(payload: dict, key: str) -> list:
     return payload.get(key) or []
 
 
+def fetch_json(url: str, timeout: int, attempts: int = 3, opener=None,
+               sleep=time.sleep) -> dict:
+    """
+    One SerpApi request, retried while the failure is a network one.
+
+    A read timeout is not an answer about a product - it is the connection
+    saying nothing at all. On 30 August one of them arrived at product ~150 of
+    300 and took the whole night with it. A second attempt a few seconds later
+    costs a few seconds; not retrying costs the product, and before this was
+    caught, every product after it too.
+
+    Only network failures are retried. An error the service actually returned -
+    a rejected key, an exhausted plan - would give the same answer three times,
+    so it is raised on the first.
+    """
+    opener = opener or urllib.request.urlopen
+    last = None
+    for attempt in range(1, attempts + 1):
+        try:
+            with opener(url, timeout=timeout) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
+            last = exc
+            if attempt < attempts:
+                sleep(2 * attempt)
+    raise CompareError(f"SerpApi unreachable after {attempts} attempts: {last}")
+
+
 class LensProvider:
     """
     Image search through SerpApi's google_lens engine.
@@ -353,8 +383,7 @@ class LensProvider:
             "hl": "ar",
             "api_key": self.api_key,
         })
-        with urllib.request.urlopen(f"{self.ENDPOINT}?{query}", timeout=self.timeout) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+        payload = fetch_json(f"{self.ENDPOINT}?{query}", self.timeout)
         return rows_or_empty(payload, "visual_matches")
 
 
@@ -386,8 +415,7 @@ class ShoppingProvider:
             "location": "Saudi Arabia",
             "api_key": self.api_key,
         })
-        with urllib.request.urlopen(f"{self.ENDPOINT}?{query}", timeout=self.timeout) as response:
-            payload = json.loads(response.read().decode("utf-8"))
+        payload = fetch_json(f"{self.ENDPOINT}?{query}", self.timeout)
         return rows_or_empty(payload, "shopping_results")
 
 

@@ -361,5 +361,82 @@ check("a lock left behind by a dead run is cleared, not obeyed for ever",
 daily_run.release_lock(handle, stale)
 shutil.rmtree(work6)
 
+print("\n8. forty-nine departments must not become four")
+
+# Ten seeds, each worth a full four pages, exactly like a real department.
+def department(index: int) -> tuple:
+    pic = f"https://cbu01.alicdn.com/img/ibank/dept-{index}.jpg"
+    rows = [row(index * 1000 + n, category=f"10{index:03d}") for n in range(80)]
+    return pic, rows
+
+
+many = dict(department(i) for i in range(10))
+seed_list = list(many)
+
+work7 = tempfile.mkdtemp(prefix="kdx-share-")
+walker = discover.Discovery(FakeSource(many), ledger_in(work7), day="2026-08-31")
+got = walker.run(seed_list, quota=100)
+opened = {product["category_id"] for product in got}
+check("a hundred products off ten seeds touch all ten departments",
+      len(opened) == 10, f"{len(opened)} departments: {sorted(opened)}")
+check("and each department contributes its share, not all of one",
+      max(sum(1 for p in got if p["category_id"] == c) for c in opened) <= 10,
+      str({c: sum(1 for p in got if p["category_id"] == c) for c in opened}))
+check("the quota is still filled", len(got) == 100, str(len(got)))
+
+# CONTROL: without the share, the same run is four departments wide - which is
+# the behaviour every run had before there were forty-nine seeds.
+work8 = tempfile.mkdtemp(prefix="kdx-noshare-")
+unfair = discover.Discovery(FakeSource(many), ledger_in(work8), day="2026-08-31",
+                            max_per_seed=0)
+got_unfair = unfair.run(seed_list, quota=100)
+check("CONTROL uncapped, the same seeds give a narrow catalogue",
+      len({p["category_id"] for p in got_unfair}) < 5,
+      str(len({p["category_id"] for p in got_unfair})))
+
+check("CONTROL one seed alone is never capped",
+      discover.Discovery(FakeSource(many), ledger_in(tempfile.mkdtemp()),
+                         day="x").fair_share(300, 1) == 0)
+check("CONTROL the share is worked out from the quota and the seed count",
+      discover.Discovery(FakeSource(many), ledger_in(tempfile.mkdtemp()),
+                         day="x").fair_share(300, 49) == 6)
+
+# Nothing paid for is thrown away: what a department could not contribute
+# tonight is held, not dropped.
+held = discover.Ledger(os.path.join(work7, "discovered.json")).summary()["waiting"]
+check("what a department could not give tonight is held, not lost",
+      held > 0, str(held))
+
+print("\n9. a night made entirely of leftovers opens nothing new")
+work9 = tempfile.mkdtemp(prefix="kdx-surplus-")
+ledger9 = ledger_in(work9)
+for n in range(500):
+    ledger9.hold(source_module.normalise_search_row(row(90000 + n, category="99999")))
+ledger9.save()
+balanced = discover.Discovery(FakeSource(many), ledger_in(work9), day="2026-09-01")
+got9 = balanced.run(seed_list, quota=100)
+from_old = sum(1 for p in got9 if p["category_id"] == "99999")
+check("at most half a night comes from the surplus",
+      from_old <= 50, f"{from_old} of {len(got9)}")
+check("so the rest of the night still opens new departments",
+      len({p["category_id"] for p in got9 if p["category_id"] != "99999"}) >= 5,
+      str(sorted({p["category_id"] for p in got9})))
+
+# CONTROL: told it may, it still takes the whole night from the surplus - the
+# old behaviour is a setting, not a thing that was deleted.
+work10 = tempfile.mkdtemp(prefix="kdx-surplus2-")
+ledger10 = ledger_in(work10)
+for n in range(500):
+    ledger10.hold(source_module.normalise_search_row(row(90000 + n, category="99999")))
+ledger10.save()
+greedy = discover.Discovery(FakeSource(many), ledger_in(work10), day="2026-09-01",
+                            surplus_share=1.0)
+got10 = greedy.run(seed_list, quota=100)
+check("CONTROL surplus_share=1 fills the whole night from the surplus",
+      all(p["category_id"] == "99999" for p in got10), str(len(got10)))
+
+for directory in (work7, work8, work9, work10):
+    shutil.rmtree(directory, ignore_errors=True)
+
 print(f"\n{PASS} passed, {FAIL} failed")
 raise SystemExit(1 if FAIL else 0)

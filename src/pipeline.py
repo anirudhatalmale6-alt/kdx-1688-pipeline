@@ -408,10 +408,37 @@ class Pipeline:
         return outcomes
 
     def run_products(self, products) -> list:
-        """The nightly path: products discovery already has in its hands."""
+        """
+        The nightly path: products discovery already has in its hands.
+
+        One product must never cost the night. On 30 August a single SerpApi
+        request timed out at product ~150 of 300 and the exception travelled all
+        the way out of this loop: the run died, nothing was published, and the
+        three hours of gateway calls before it were spent for nothing. At
+        midnight, with nobody awake, that is the whole night gone because one
+        HTTP response was slow.
+
+        So an unexpected failure is recorded against the offer it belongs to and
+        the next product is tried. Two things still stop the night, because
+        continuing past them is pointless rather than resilient: the daily point
+        budget, and the monthly SerpApi allowance.
+        """
+        import searches as searches_module
+
         outcomes = []
         for normalised in products:
-            outcome = self.run_product(normalised)
+            offer_id = str(normalised.get("offer_id") or "")
+            try:
+                outcome = self.run_product(normalised)
+            except searches_module.OutOfSearches as exc:
+                outcomes.append(OfferOutcome(offer_id=offer_id, product=None,
+                                             results=[], error=str(exc)))
+                break
+            except Exception as exc:                     # noqa: BLE001
+                outcomes.append(OfferOutcome(
+                    offer_id=offer_id, product=None, results=[],
+                    error=f"{type(exc).__name__}: {str(exc)[:200]}"))
+                continue
             outcomes.append(outcome)
             if outcome.error == "daily point budget exhausted":
                 break

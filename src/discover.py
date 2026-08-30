@@ -67,12 +67,28 @@ def ledger_path() -> str:
 PAGES = int(os.environ.get("KDX_DISCOVERY_PAGES", "4"))
 
 # A run that finds nothing must not sit there calling the gateway all night.
-# Counted in PAGES, not photographs, because a page is what costs a call. A
-# full 300-product night needs roughly fourteen photographs, so about 56 pages;
-# 200 leaves room for a night where the offers overlap heavily without letting a
-# runaway walk call the gateway indefinitely. The first run at the old value of
-# 40 stopped at 223 products, which is exactly the failure this number causes.
-MAX_SEARCHES = int(os.environ.get("KDX_DISCOVERY_MAX_SEARCHES", "200"))
+# Counted in PAGES, not photographs, because a page is what costs a call.
+#
+# Raised from 200 after a live run on 30 August reported "stopped at the
+# 200-search ceiling". Both earlier values were set when a night started from
+# one or two photographs and needed about 56 pages. Forty-nine departments need
+# 196 to walk the seeds alone, so 200 left nothing for the frontier and cut the
+# night off at the last department. 400 walks all forty-nine and still expands.
+# The first run at the old value of 40 stopped at 223 products, which is exactly
+# the failure this number causes.
+MAX_SEARCHES = int(os.environ.get("KDX_DISCOVERY_MAX_SEARCHES", "400"))
+
+# How much of a night may come from the offers held over from previous nights.
+#
+# All of it, and a general catalogue never becomes general: one seed is worth
+# about 75 offers, so a 300-product night drains four of them and holds the rest.
+# The next night then fills its whole quota from that surplus and opens no new
+# department at all, and the one after that does the same. Nothing is lost - the
+# held offers were already paid for - but the shop stays four departments wide
+# for a fortnight while the client is told it is pulling from forty-nine.
+#
+# Half. The surplus still drains first, and every night still breaks new ground.
+SURPLUS_SHARE = float(os.environ.get("KDX_SURPLUS_SHARE", "0.5"))
 
 
 class DiscoveryError(RuntimeError):
@@ -223,13 +239,19 @@ class Discovery:
 
     def __init__(self, source, ledger: Ledger, *, categories=None,
                  pages: int = PAGES, max_searches: int = MAX_SEARCHES,
-                 day: str = ""):
+                 day: str = "", surplus_share: float = SURPLUS_SHARE,
+                 max_per_seed: int = -1):
         self.source = source
         self.ledger = ledger
         self.categories = categories
         self.pages = pages
         self.max_searches = max_searches
         self.day = day
+        self.surplus_share = surplus_share
+        # -1 means "work it out from the quota and the number of seeds", which
+        # is the only setting that keeps a wide catalogue wide. 0 disables the
+        # cap, which is what every run did before there were forty-nine seeds.
+        self.max_per_seed = max_per_seed
         self.searches = 0
         self.rejected_early = 0
         self.from_surplus = 0
@@ -310,16 +332,35 @@ class Discovery:
                 break
         return pictures
 
+    def fair_share(self, quota: int, seeds: int) -> int:
+        """
+        How many products one photograph may contribute tonight.
+
+        With one seed this is the whole quota and nothing changes. With
+        forty-nine it is six, and the shop gets all forty-nine departments on
+        the first night instead of the first four. What a seed finds beyond its
+        share is held, not dropped - it was paid for.
+        """
+        if self.max_per_seed >= 0:
+            return self.max_per_seed
+        if seeds <= 1:
+            return 0
+        return max(1, quota // seeds)
+
     def run(self, seeds: list, quota: int) -> list:
         if quota <= 0:
             return []
         queue = list(seeds)
         harvested: list = []
+        per_seed = self.fair_share(quota, len(seeds))
 
         # Last night's surplus first. It cost gateway calls that have already
         # been made, so spending a fresh one before using it would be paying
-        # twice for the same offers.
-        for product in self.ledger.take_pending(quota):
+        # twice for the same offers. Not the whole quota, though - see
+        # SURPLUS_SHARE. A night that is entirely surplus opens no new ground.
+        from_surplus_cap = (quota if self.surplus_share >= 1
+                            else max(1, int(quota * self.surplus_share)))
+        for product in self.ledger.take_pending(from_surplus_cap):
             self.ledger.add_offer(product["offer_id"], self.day)
             if self._worth_queueing(product):
                 harvested.append(product)
@@ -337,10 +378,12 @@ class Discovery:
             fresh = [row for row in rows if not self.ledger.knows_offer(row["offer_id"])]
             self.ledger.mark_expanded(picture, len(fresh))
 
+            taken_here = 0
             for product in fresh:
-                if len(harvested) >= quota:
+                if len(harvested) >= quota or (per_seed and taken_here >= per_seed):
                     # Paid for, and this photograph will never be searched
-                    # again. Keep it for tomorrow rather than losing it.
+                    # again. Keep it for tomorrow rather than losing it - whether
+                    # the night is full or this department has had its share.
                     self.ledger.hold(product)
                     continue
                 self.ledger.add_offer(product["offer_id"], self.day)
@@ -348,6 +391,7 @@ class Discovery:
                     self.rejected_early += 1
                     continue
                 harvested.append(product)
+                taken_here += 1
 
             # Grow the frontier from what this search found, even if the quota
             # is now full: tomorrow starts from a warm queue instead of the same
@@ -355,6 +399,20 @@ class Discovery:
             for candidate in self._frontier_from(fresh, want=3):
                 if not self.ledger.expanded(candidate) and candidate not in queue:
                     queue.append(candidate)
+
+        # Reserved, not wasted. Holding half the quota back for new departments
+        # is right while there are unexpanded seeds; once there are none, that
+        # same rule would hand over half a night and leave offers we had already
+        # paid for sitting on disk. So top up from the surplus at the end, when
+        # it is clear nothing else was going to fill the night.
+        if len(harvested) < quota:
+            for product in self.ledger.take_pending(quota - len(harvested)):
+                self.ledger.add_offer(product["offer_id"], self.day)
+                if self._worth_queueing(product):
+                    harvested.append(product)
+                    self.from_surplus += 1
+                else:
+                    self.rejected_early += 1
 
         self.ledger.save()
         return harvested

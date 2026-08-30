@@ -89,7 +89,23 @@ class GoogleImages:
                 originals.append(original)
             elif thumbnail.startswith("http"):
                 thumbnails.append(thumbnail)
-        return (originals + thumbnails)[:count]
+        return (self.china_first(originals) + self.china_first(thumbnails))[:count]
+
+    # Hosts Alibaba's own fetcher certainly reaches, since they are Alibaba's.
+    CHINA_HOSTS = ("alicdn.com", "aliimg.com", "taobaocdn.com", "tbcdn.cn",
+                   "360buyimg.com", "sinaimg.cn", "bytedance", "zhimg.com")
+
+    @classmethod
+    def china_first(cls, urls: list) -> list:
+        """
+        A seed is fetched from China, not from here, and the two are not the
+        same question. On 30 August a menswear seed answered HTTP 200 to me and
+        was refused by the gateway on the night - an ordinary Western host that
+        Alibaba could not reach. Any host can work, but the ones that always
+        work go first.
+        """
+        chinese = [url for url in urls if any(host in url for host in cls.CHINA_HOSTS)]
+        return chinese + [url for url in urls if url not in chinese]
 
 
 # --------------------------------------------------------------------------

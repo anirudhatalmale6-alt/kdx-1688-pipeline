@@ -421,8 +421,61 @@ def main() -> int:
     check("CONTROL an empty good payload is empty, not an error",
           compare.rows_or_empty({}, "visual_matches") == [])
 
+    # A read timeout is the connection saying nothing, not an answer about a
+    # product. One of them at product ~150 of 300 took a whole night with it.
+    class Flaky:
+        def __init__(self, fail_times, payload=None):
+            self.fail_times = fail_times
+            self.payload = payload if payload is not None else {"visual_matches": [1]}
+            self.calls = 0
+
+        def __call__(self, url, timeout=0):
+            self.calls += 1
+            if self.calls <= self.fail_times:
+                raise TimeoutError("The read operation timed out")
+            return _FakeBody(json.dumps(self.payload))
+
+    slept = []
+    flaky = Flaky(fail_times=2)
+    got = compare.fetch_json("https://serpapi/x", timeout=1, opener=flaky,
+                             sleep=slept.append)
+    check("a timed-out request is tried again rather than losing the product",
+          got == {"visual_matches": [1]} and flaky.calls == 3, str(flaky.calls))
+    check("and it waits between attempts instead of hammering",
+          slept == [2, 4], str(slept))
+
+    dead = Flaky(fail_times=99)
+    try:
+        compare.fetch_json("https://serpapi/x", timeout=1, opener=dead,
+                           sleep=lambda _s: None)
+        check("CONTROL a host that is really down still raises", False)
+    except compare.CompareError as exc:
+        check("CONTROL a host that is really down still raises",
+              "after 3 attempts" in str(exc), str(exc))
+    check("CONTROL and it gave up after three, not forever", dead.calls == 3,
+          str(dead.calls))
+
+    good = Flaky(fail_times=0)
+    compare.fetch_json("https://serpapi/x", timeout=1, opener=good,
+                       sleep=lambda _s: None)
+    check("CONTROL a request that works is made exactly once", good.calls == 1)
+
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0
+
+
+class _FakeBody:
+    def __init__(self, text):
+        self.text = text
+
+    def read(self):
+        return self.text.encode("utf-8")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        return False
 
 
 if __name__ == "__main__":

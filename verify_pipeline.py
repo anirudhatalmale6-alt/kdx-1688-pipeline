@@ -357,6 +357,48 @@ def main() -> int:
     check("CONTROL asking the same source for it by id still fails",
           bool(runner.run_offer(TSHIRT).error))
 
+    print("\none bad product must not cost the night")
+    # A SerpApi read timed out at product ~150 of 300 on 30 August and the
+    # exception left this loop: nothing was published and three hours of gateway
+    # calls were spent for nothing, at midnight, with nobody awake.
+    runner2 = build(state="points-resilient.json")
+    good = runner2.source.get_product(TSHIRT)
+    seen = []
+
+    def explode_on_the_second(normalised):
+        seen.append(normalised["offer_id"])
+        if len(seen) == 2:
+            raise TimeoutError("The read operation timed out")
+        return pipeline_module.OfferOutcome(offer_id=normalised["offer_id"],
+                                            product={}, results=[])
+
+    runner2.run_product = explode_on_the_second
+    outcomes = runner2.run_products([good, good, good])
+    check("the night carries on past the product that failed",
+          len(outcomes) == 3, str(len(outcomes)))
+    check("the failure is recorded against the offer it belongs to, with its type",
+          outcomes[1].error.startswith("TimeoutError:"), outcomes[1].error)
+    check("the products after it are still priced",
+          not outcomes[2].error, outcomes[2].error)
+    check("CONTROL and the failed one published nothing",
+          outcomes[1].product is None and outcomes[1].results == [])
+
+    # CONTROL: running out of the monthly allowance is not a product failing.
+    # Continuing past it would price every remaining product with no comparison
+    # at all, so it must still stop the night.
+    import searches as searches_module
+
+    def out_of_searches(normalised):
+        raise searches_module.OutOfSearches("monthly SerpApi allowance exhausted: 30000/30000")
+
+    runner3 = build(state="points-outofsearches.json")
+    runner3.run_product = out_of_searches
+    stopped = runner3.run_products([good, good, good])
+    check("CONTROL an exhausted monthly allowance still stops the night",
+          len(stopped) == 1, str(len(stopped)))
+    check("CONTROL and it says why", "allowance exhausted" in stopped[0].error,
+          stopped[0].error)
+
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0
 

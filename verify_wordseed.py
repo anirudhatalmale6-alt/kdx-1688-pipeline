@@ -108,6 +108,24 @@ def main() -> int:
     check("originals come first, thumbnail kept as a fallback",
           urls == ["https://big/b.jpg", "https://big/c.jpg", "https://tbn/a.jpg"], str(urls))
     check("count is honoured", len(images.find("鞋", count=2)) == 2)
+
+    # A seed is fetched from China. A menswear seed that answered HTTP 200 here
+    # was refused by the gateway on the night of 30 August.
+    china = {"images_results": [
+        {"original": "https://www.irkmagazine.com/wp-content/uploads/a.png"},
+        {"original": "https://cbu01.alicdn.com/img/ibank/b.jpg"},
+        {"original": "https://example.com/c.jpg"},
+    ]}
+    ordered = wordseed.GoogleImages(api_key="k", opener=fake_opener(china)).find("男装")
+    check("a host Alibaba certainly reaches is tried first",
+          ordered[0] == "https://cbu01.alicdn.com/img/ibank/b.jpg", str(ordered))
+    check("CONTROL but the others are kept, not discarded", len(ordered) == 3, str(ordered))
+    check("CONTROL with no Chinese host the order is untouched",
+          wordseed.GoogleImages.china_first(["https://a/x.jpg", "https://b/y.jpg"])
+          == ["https://a/x.jpg", "https://b/y.jpg"])
+    check("CONTROL the count still bounds the result",
+          len(wordseed.GoogleImages(api_key="k",
+                                    opener=fake_opener(china)).find("男装", count=2)) == 2)
     # CONTROL: a SerpApi error must not be read as "no pictures found"
     broken = wordseed.GoogleImages(api_key="k",
                                    opener=fake_opener({"error": "Invalid API key"}))
