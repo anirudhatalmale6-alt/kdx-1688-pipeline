@@ -526,13 +526,25 @@ def main() -> int:
           "no reachable photograph" in outcome.error and outcome.product is None,
           outcome.error)
 
-    SKIPPED = dict(IMPORTED, imported_count=0, skipped_count=1)
+    SKIPPED = dict(IMPORTED, imported_count=0, skipped_count=1,
+                   message="declined by the shop")
     refused = live_runner(SKIPPED)
     outcome = refused.run_product(refused.source.get_product(TSHIRT))
     check("an offer his shop silently skipped is not counted as published",
-          "does not update" in outcome.error, outcome.error)
+          "declined by the shop" in outcome.error, outcome.error)
     check("and the answer it gave is kept for the report",
           outcome.kdx_response == SKIPPED, str(outcome.kdx_response))
+
+    # Since 30 August the same route upserts, so a product his shop already
+    # holds comes back as an update. That is a landing, and it has to be counted
+    # as one - otherwise every price refresh would report itself as a failure.
+    UPDATED = dict(IMPORTED, imported_count=0, updated_count=1)
+    again = live_runner(UPDATED)
+    outcome = again.run_product(again.source.get_product(TSHIRT))
+    check("an update counts as published", outcome.published >= 1 and not outcome.error,
+          outcome.error)
+    check("and it is distinguishable from an insert",
+          pipeline_module.was_update(outcome.kdx_response), str(outcome.kdx_response))
 
     # CONTROL: the guard has to be switchable off without editing code, or a
     # network that cannot reach alicdn at all would hold the entire catalogue

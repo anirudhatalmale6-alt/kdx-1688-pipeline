@@ -166,10 +166,17 @@ def main() -> int:
     ok = {"success": True, "imported_count": 1, "failed_count": 0,
           "skipped_count": 0, "failed_items": []}
     check("a real import is silent", pipeline._publish_trouble(ok) == "")
-    skipped = dict(ok, imported_count=0, skipped_count=1)
+    # Before 30 August skipped_count meant "already there". Since his developer
+    # made the route upsert it means his shop declined the product for a reason
+    # of its own, so the message carries that reason instead of my old guess.
+    skipped = dict(ok, imported_count=0, skipped_count=1, message="duplicate sku")
     check("success:true with skipped_count=1 is trouble",
-          "does not update" in pipeline._publish_trouble(skipped),
+          "duplicate sku" in pipeline._publish_trouble(skipped),
           pipeline._publish_trouble(skipped))
+    updated = dict(ok, imported_count=0, updated_count=1)
+    check("an update is NOT trouble, now the route upserts",
+          pipeline._publish_trouble(updated) == "",
+          pipeline._publish_trouble(updated))
     failed = dict(ok, imported_count=0, failed_count=1,
                   failed_items=[{"source_offer_id": "1", "error": "bad"}])
     check("failed_count is trouble",

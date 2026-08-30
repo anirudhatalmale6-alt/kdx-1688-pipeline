@@ -198,6 +198,14 @@ def _publish_trouble(response: dict) -> str:
     already holds, and `failed_count` for one it refused. A run that reports
     twenty-one published when his shop took none of them is worse than a run
     that fails, because nobody goes looking.
+
+    On 2026-08-30 his developer made the same route upsert, and `updated_count`
+    joined the reply. Measured with a control pair against the live endpoint: a
+    fresh id answered `imported_count: 1, updated_count: 0`; the same id at a
+    different price answered `imported_count: 0, updated_count: 1`, and the
+    product page then showed the new price, the new name and BOTH photographs.
+    So an update is a landing, not trouble - but it is still only a landing if
+    a counter says so, which is why the last check below counts both.
     """
     if not response:
         return ""
@@ -209,13 +217,20 @@ def _publish_trouble(response: dict) -> str:
         return f"KDX rejected the product: {str(detail)[:200]}"
     skipped = int(response.get("skipped_count") or 0)
     if skipped:
-        # Not a failure of ours: his endpoint has no update path, so an offer
-        # it already holds is dropped and reported as a success.
-        return ("KDX already holds this offer and does not update: "
-                "skipped_count=1")
-    if int(response.get("imported_count") or 0) < 1:
+        # `skipped` no longer means "already there" - that is now an update. It
+        # means his shop declined the product for a reason of its own, and that
+        # reason is worth reading rather than counting as published.
+        return f"KDX skipped this offer: {str(response.get('message'))[:160]}"
+    landed = (int(response.get("imported_count") or 0)
+              + int(response.get("updated_count") or 0))
+    if landed < 1:
         return f"KDX imported nothing: {str(response)[:200]}"
     return ""
+
+
+def was_update(response: dict) -> bool:
+    """True when his shop updated a product it already held, rather than inserting."""
+    return bool(response) and int(response.get("updated_count") or 0) > 0
 
 
 class Pipeline:
