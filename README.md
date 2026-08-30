@@ -160,7 +160,7 @@ client specified that shape; nothing depends on getting them back.
 (≤ 2 kg → `true`), so the weight itself never needs to reach KDX.
 
 ```bash
-KDX_API_TOKEN=... python3 verify_kdx.py     # 22 checks, run it twice
+KDX_API_TOKEN=... python3 verify_kdx.py     # 24 checks, run it twice
 ```
 
 Each success is paired with a control: a wrong token must be refused, a product
@@ -196,8 +196,74 @@ Three consequences, in order of how much they cost:
    it is not "any public image".
 
 The answer from the endpoint is now read rather than discarded: `success: true`
-accompanies `skipped_count: 1` for an offer it already holds, so a push that
-stored nothing used to be counted as a publication.
+used to accompany `skipped_count: 1` for an offer it already held, so a push
+that stored nothing was counted as a publication.
+
+### One photograph per product, and why
+
+Every product published so far reached the shop with exactly one picture, no
+colours and no sizes. That is not the shop and it is not the mapping: the only
+channel this appKey holds is a **search**, and its rows carry eleven fields —
+`offerId, subject, quantityBegin, unit, oldPrice, imageUrl, province, city,
+supplyAmount, categoryId, detailUrl`. `imageUrl` is singular. There is no
+gallery, no SKU table, no description and no weight in the response at all.
+
+Control, so this is not blamed on the wrong component: a probe product pushed
+with two image URLs came back from the public product page with **both** stored
+as mirrored webp files. His shop handles a gallery correctly.
+
+Sixteen candidate detail-API names were put to the gateway on 2026-08-30, which
+separates "no such API" from "exists, no permission" for us:
+
+| API | verdict |
+|---|---|
+| `com.alibaba.product / alibaba.category.get` | allowed (positive control) |
+| `com.alibaba.linkplus / alibaba.cross.similar.offer.search` | allowed — the channel in use |
+| `com.alibaba.product / alibaba.product.get` | exists, **ACL declined** |
+| `com.alibaba.fenxiao.crossborder / product.search.queryProductDetail` | exists, **ACL declined** |
+| twelve other guessed names | `gw.APIUnsupported` |
+
+So the gallery is one permission away, on the client's own 1688 console, and
+`docs/product-detail-permission-ar.md` is the request written out for him.
+
+### Chinese writing printed inside the photograph
+
+`src/imagetext.py` scores a photograph by the percentage of its area covered by
+confidently-read Chinese characters and orders a gallery cleanest-first.
+Measured on twelve real photographs from the 30 August run: ten clean product
+shots scored 0.00–0.83 %, and the poster the client complained about scored
+**6.11 %**, reading 立体装饰 / 萌趣刺绣 / 好棉好柔软. Confidence filtering is what
+makes that separation — a bare character count reports Chinese on clean shots,
+because OCR invents characters out of folds and shadows.
+
+`KDX_MAX_CJK_TEXT_PCT` drops photographs above a threshold; it defaults to 0,
+which orders but never drops. Two rules that do not bend: with no tesseract
+installed the score is `None` and `None` never filters anything, and the last
+photograph is never dropped — an ugly picture beats an empty frame. Until the
+detail permission lands there is one photograph per offer and nothing to choose
+between, so the ordering costs nothing and does nothing.
+
+## Refreshing the price of a product already published
+
+```bash
+python3 refresh_prices.py --dry-run --limit 10
+python3 refresh_prices.py
+```
+
+This became possible on 2026-08-30, when the client's developer made
+`/api/v1/products/import` upsert. Control pair against the live endpoint: a
+fresh `source_offer_id` answered `imported_count: 1`; the same id at a different
+price answered `updated_count: 1`, and the public product page then showed the
+new price, the new name and both photographs.
+
+The other half is finding the offer again, which this channel has no lookup for.
+An offer comes back from a search of its own photograph — measured on the first
+six products of the 30 August run, six of six within two pages and five of six
+on the first. `src/relookup.py` does that and refuses a near miss: the rest of
+the page is other sellers' listings of a similar thing, and taking one would put
+a stranger's price on the client's product. An offer that cannot be found again
+keeps the price it has and is counted, because a refresh that silently freezes
+every price looks exactly like one that works.
 
 ## Still open
 
@@ -216,12 +282,15 @@ stored nothing used to be counted as a publication.
    challenge page): omitting it returns `缺少必要参数` (missing required
    parameter), a wrong one returns `非法请求` (invalid request). Only the value
    registered in the client's own 1688 console will work.
-4. **The import endpoint has no update path.** Control pair against the live
-   endpoint: a fresh `source_offer_id` returns `imported_count: 1`; the same id
-   with a different price returns `skipped_count: 1` and `success: true`. A
-   daily price refresh would therefore change nothing while reporting success.
-   This is his shop's code, on a different host. His developer needs to add an
-   update route; the pipeline already has `KdxClient.update()` waiting for it.
+4. **Product detail on 1688.** The channel in use is a search and carries one
+   photograph, no SKU table, no description and no weight. Both APIs that would
+   carry them - `alibaba.product.get` and
+   `product.search.queryProductDetail` - exist and are ACL-declined for this
+   appKey. Until one is granted, every product publishes with a single picture
+   and no colours or sizes. See `docs/product-detail-permission-ar.md`.
+   *(The import endpoint's missing update path, which was item 4 here, was
+   fixed by the client's developer on 30 August and is now proved by
+   verify_kdx.py against the live endpoint.)*
 5. `GET /api/alibaba/categories` on kdx-sa.com answers HTTP 500 with
    `gw.SignatureInvalid` from 1688. The same app key and secret sign correctly
    from `src/aop_client.py`, so the fault is in the Laravel signing or in the

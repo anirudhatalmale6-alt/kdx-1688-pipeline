@@ -140,9 +140,14 @@ def main() -> int:
             "points": runner.budget.summary(),
             "searches": runner.meter.summary() if runner.meter is not None else None,
         }
-        print(f"\n{updated} updated, {inserted} re-inserted, {held} held by the rules, "
-              f"{errors} errored, {len(missing)} not found, in {elapsed / 60:.1f} min")
-        print(f"{changed} price(s) moved, {unchanged} unchanged")
+        print(f"\n{changed + unchanged} re-priced, in {elapsed / 60:.1f} min")
+        print(f"  {changed} price(s) moved, {unchanged} unchanged")
+        if args.dry_run:
+            print("  nothing was sent: this was a dry run")
+        else:
+            print(f"  {updated} updated in his shop, {inserted} re-inserted")
+        print(f"  {held} held by the rules, {errors} errored, "
+              f"{len(missing)} not found on 1688 today")
 
         path = args.report or paths.state_path("reports", "KDX_REPORT_DIR")
         if not path.endswith(".json"):

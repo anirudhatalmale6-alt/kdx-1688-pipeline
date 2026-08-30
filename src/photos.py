@@ -43,14 +43,26 @@ ENABLED = os.environ.get("KDX_CHECK_IMAGES", "1").strip().lower() not in (
     "0", "false", "no", "off")
 
 
+# The check already downloads the whole photograph, so the bytes are kept for
+# whoever else wants to look at them - today that is the Chinese-text scorer in
+# src/imagetext.py. Bounded, because a night handles hundreds of products and
+# nothing here should be able to grow without a limit: once the budget is used
+# the bytes are simply not kept and the next reader fetches its own copy.
+KEEP_BYTES = int(os.environ.get("KDX_IMAGE_CACHE_BYTES", str(48 * 1024 * 1024)))
+
+
 class PhotoChecker:
     """Answers 'can this URL be fetched' once per URL per run."""
 
-    def __init__(self, opener=None, timeout: int = TIMEOUT, attempts: int = 2):
+    def __init__(self, opener=None, timeout: int = TIMEOUT, attempts: int = 2,
+                 keep_bytes: int = KEEP_BYTES):
         self.opener = opener or urllib.request.urlopen
         self.timeout = timeout
         self.attempts = attempts
         self.seen: dict = {}
+        self.bodies: dict = {}
+        self.keep_bytes = keep_bytes
+        self.held_bytes = 0
         self.checked = 0
         self.dead = 0
 
@@ -66,9 +78,13 @@ class PhotoChecker:
             try:
                 with self.opener(request, timeout=self.timeout) as response:
                     kind = (response.headers.get("Content-Type") or "").lower()
+                    body = response.read()
                     # A 200 that hands back an HTML error page is not a photo.
                     ok = 200 <= getattr(response, "status", 200) < 300 \
                         and kind.startswith("image/")
+                    if ok and body and self.held_bytes + len(body) <= self.keep_bytes:
+                        self.bodies[url] = body
+                        self.held_bytes += len(body)
                 break
             except urllib.error.HTTPError:
                 # 403 and 404 do not improve by asking again.
@@ -82,6 +98,10 @@ class PhotoChecker:
         if not ok:
             self.dead += 1
         return ok
+
+    def body(self, url: str) -> bytes:
+        """The bytes already downloaded for this URL, or b'' if they were not kept."""
+        return self.bodies.get(url, b"")
 
     def keep(self, urls) -> list:
         return [url for url in (urls or []) if self.reachable(url)]

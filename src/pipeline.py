@@ -27,6 +27,7 @@ from decimal import Decimal
 
 import compare
 import enrich as enrich_module
+import imagetext
 import mapping
 import photos
 import rules
@@ -409,6 +410,19 @@ class Pipeline:
                     photos=report,
                     error=f"no reachable photograph ({report['had']} URL(s) "
                           f"offered, none answered with an image)")
+
+            # Then the clean photographs first. The client asked on 30 August
+            # about Chinese writing printed inside the picture; it cannot be
+            # removed, but it can be ranked behind the plain product shots.
+            # Skipped when there is nothing to choose between and no threshold
+            # set, because reading one photograph costs about a second and this
+            # channel gives only one photograph per offer today.
+            if len(payload["images"]) > 1 or imagetext.MAX_TEXT_PERCENT > 0:
+                ranked = imagetext.order_gallery(payload["images"], self.photos)
+                if ranked["images"]:
+                    payload["images"] = ranked["images"]
+                    report["text_scores"] = ranked["scores"]
+                    report["text_dropped"] = ranked["dropped"]
 
         response = None
         if self.kdx is not None and not self.dry_run:

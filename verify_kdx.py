@@ -87,8 +87,15 @@ def main() -> int:
     print("3. the live endpoint accepts it")
     response = client.push([PRODUCT])[0]
     check("import returns success", response.get("success") is True, str(response))
-    check("one product imported", response.get("imported_count") == 1, str(response))
+    # This suite sends a fixed test id, so on every run after the first his shop
+    # already holds it and answers with an update instead of an insert. Both are
+    # landings; what must never happen is a counter of zero, which is what
+    # "success: true" alone used to hide.
+    check("one product landed, inserted or updated",
+          (response.get("imported_count") or 0) + (response.get("updated_count") or 0) == 1,
+          str(response))
     check("none failed", response.get("failed_count") == 0, str(response))
+    check("and none was skipped", not response.get("skipped_count"), str(response))
 
     print("4. control: a wrong token must be refused")
     try:
@@ -119,9 +126,15 @@ def main() -> int:
         check(f"update payload has no '{forbidden}'", forbidden not in payload)
 
     print("8. same source_offer_id again - must update, never duplicate")
+    # Until 30 August this answered skipped_count: 1 with success: true, so a
+    # price refresh would have changed nothing and reported that it worked.
+    # His developer made the route upsert; this is the live proof of it.
     again = client.update([{**PRODUCT, "price": 5.49}])[0]
-    check("second send still reports 1 imported",
-          again.get("imported_count") == 1 and again.get("failed_count") == 0, str(again))
+    check("a second send updates rather than inserting",
+          again.get("updated_count") == 1 and again.get("imported_count") == 0,
+          str(again))
+    check("and nothing was skipped or failed",
+          not again.get("skipped_count") and not again.get("failed_count"), str(again))
 
     print(f"\n{passed} passed, {failed} failed")
     return 0 if failed == 0 else 1

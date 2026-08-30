@@ -37,9 +37,15 @@ def check(what: str, ok: bool, detail: str = "") -> None:
 
 
 class FakeResponse:
-    def __init__(self, status=200, content_type="image/jpeg"):
+    def __init__(self, status=200, content_type="image/jpeg", body=b"\xff\xd8jpeg"):
         self.status = status
         self.headers = {"Content-Type": content_type}
+        self._body = body
+
+    def read(self) -> bytes:
+        # The checker reads the body now, so the Chinese-text scorer can look at
+        # a photograph without downloading it a second time.
+        return self._body
 
     def __enter__(self):
         return self

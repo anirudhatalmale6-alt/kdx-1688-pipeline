@@ -485,6 +485,10 @@ def main() -> int:
                 status = 200
                 headers = {"Content-Type": "image/jpeg"}
 
+                def read(self_inner):
+                    # The checker keeps the bytes for the text scorer to read.
+                    return b"\xff\xd8jpeg"
+
                 def __enter__(self_inner):
                     return self_inner
 
