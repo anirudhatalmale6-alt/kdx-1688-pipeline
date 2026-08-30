@@ -168,9 +168,36 @@ without `name_en` must be caught before it leaves, KDX itself must reject a
 malformed `needs_shipment`, and the update payload is asserted to carry no
 `sku` / `product_url` / `rating` / `sales` / `stock`.
 
-**Images are hot-linked, not mirrored.** KDX stores the URL and the shop renders
-it directly, so a URL that 404s shows the customer a broken-image box — that is
-what a placeholder URL in an early test produced.
+### Images — measured on 2026-08-30, and the earlier note here was wrong
+
+KDX does **not** hot-link. Its importer fetches every URL in `images`,
+re-encodes it, and serves its own copy from
+`https://kdx-sa.com/uploads/product_1688_images/<uuid>.webp`. Verified by
+pushing five probes and reading their public pages back.
+
+Three consequences, in order of how much they cost:
+
+1. **A URL that does not answer at import time loses the product its picture
+   for good.** The endpoint inserts and never updates, so there is no second
+   chance to supply it. `src/photos.py` therefore fetches every photograph
+   before the push, drops the dead ones from the gallery *and from each
+   variant*, and holds a product that has none left rather than publishing an
+   empty frame. `KDX_CHECK_IMAGES=0` turns the guard off.
+2. **The check must not send a `Referer`.** alicdn answers `200` to a request
+   with none and `403` to one carrying `Referer: https://kdx-sa.com/` — its
+   hot-link protection. His server sends none, so the check sends none. This is
+   also why mirroring, rather than hot-linking, is the only arrangement that
+   could ever have worked: his shop's pages declare
+   `referrer: strict-origin-when-cross-origin`, so a browser asking alicdn
+   directly would be refused.
+3. **A non-alicdn host is not necessarily accepted.** A Wikimedia URL was taken
+   by the validator and came out as `img/no-image.png` on the page, while five
+   alicdn URLs came out as stored webp files. Whatever his importer's rule is,
+   it is not "any public image".
+
+The answer from the endpoint is now read rather than discarded: `success: true`
+accompanies `skipped_count: 1` for an offer it already holds, so a push that
+stored nothing used to be counted as a publication.
 
 ## Still open
 
@@ -189,9 +216,15 @@ what a placeholder URL in an early test produced.
    challenge page): omitting it returns `缺少必要参数` (missing required
    parameter), a wrong one returns `非法请求` (invalid request). Only the value
    registered in the client's own 1688 console will work.
-4. `GET /api/alibaba/categories` on kdx-sa.com answers HTTP 500 with
+4. **The import endpoint has no update path.** Control pair against the live
+   endpoint: a fresh `source_offer_id` returns `imported_count: 1`; the same id
+   with a different price returns `skipped_count: 1` and `success: true`. A
+   daily price refresh would therefore change nothing while reporting success.
+   This is his shop's code, on a different host. His developer needs to add an
+   update route; the pipeline already has `KdxClient.update()` waiting for it.
+5. `GET /api/alibaba/categories` on kdx-sa.com answers HTTP 500 with
    `gw.SignatureInvalid` from 1688. The same app key and secret sign correctly
    from `src/aop_client.py`, so the fault is in the Laravel signing or in the
    secret stored on that server.
-5. The 1688 server only accepts inbound SSH: ports 80 and 8080 are blocked
+6. The 1688 server only accepts inbound SSH: ports 80 and 8080 are blocked
    upstream by the host, so nothing web-facing can be served from it.
