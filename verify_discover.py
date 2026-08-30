@@ -17,6 +17,7 @@ drying up:
 
 from __future__ import annotations
 
+import collections
 import json
 import os
 import shutil
@@ -420,6 +421,8 @@ for department in range(5):
 ledger_fifo.save()
 reader = ledger_in(work_fifo)
 drawn = reader.take_pending(50)
+# NOTE: every offer above carries a distinct category and no photograph, which
+# is the weak version of this test - see 8c for the one that matters.
 spread = {product["category_id"] for product in drawn}
 check("fifty leftovers reach all five departments, not the first two",
       len(spread) == 5, str(sorted(spread)))
@@ -433,6 +436,51 @@ check("CONTROL what was drawn is gone from the surplus",
 check("CONTROL asking for more than is held returns everything, not a crash",
       len(ledger_in(work_fifo).take_pending(10_000)) == 150)
 shutil.rmtree(work_fifo, ignore_errors=True)
+
+print("\n8c. spreading across categories is not spreading across departments")
+# The bug this catches shipped and was visible on the live shop: a draw of
+# fifteen came back under fifteen different categories and was fifteen kinds of
+# bra. One department holds dozens of leaf categories, so category-spread and
+# department-spread are not the same measurement.
+work_dept = tempfile.mkdtemp(prefix="kdx-dept-")
+ledger_dept = ledger_in(work_dept)
+PHOTOS = [f"https://cbu01.alicdn.com/img/ibank/dept{d}.jpg" for d in range(4)]
+for index, photo in enumerate(PHOTOS):
+    for leaf in range(30):                       # 30 leaf categories per department
+        ledger_dept.hold(
+            source_module.normalise_search_row(
+                row(600000 + index * 1000 + leaf, category=f"leaf-{index}-{leaf}")),
+            held_by=photo)
+ledger_dept.save()
+
+taken = ledger_in(work_dept).take_pending(20)
+check("CONTROL the weak measurement passes either way - 20 distinct categories",
+      len({p["category_id"] for p in taken}) == 20,
+      str(len({p["category_id"] for p in taken})))
+departments = collections.Counter(
+    p["category_id"].rsplit("-", 1)[0] for p in taken)
+check("and the draw really does reach every department, not one of them",
+      len(departments) == 4, str(dict(departments)))
+check("with the turns taken evenly",
+      max(departments.values()) - min(departments.values()) <= 1,
+      str(dict(departments)))
+
+# The photograph must not travel on into the product handed to the pipeline.
+check("CONTROL the bookkeeping key is stripped before the product is used",
+      all("_held_by" not in product for product in taken))
+
+# An older ledger, written before the photograph was recorded, still works.
+work_old = tempfile.mkdtemp(prefix="kdx-old-")
+ledger_old = ledger_in(work_old)
+for n in range(20):
+    ledger_old.hold(source_module.normalise_search_row(
+        row(650000 + n, category=f"old-{n % 4}")))
+ledger_old.save()
+old_draw = ledger_in(work_old).take_pending(8)
+check("CONTROL a ledger with no photographs falls back to the category",
+      len({p["category_id"] for p in old_draw}) == 4, str(len(old_draw)))
+for directory in (work_dept, work_old):
+    shutil.rmtree(directory, ignore_errors=True)
 
 print("\n9. a night made entirely of leftovers opens nothing new")
 work9 = tempfile.mkdtemp(prefix="kdx-surplus-")

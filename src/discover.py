@@ -133,6 +133,9 @@ def _rehydrate(product: dict) -> dict:
     raise at all.
     """
     product = dict(product)
+    # Which photograph held it - bookkeeping for the surplus draw, not part of
+    # the product. It must not travel on into the pipeline or KDX.
+    product.pop("_held_by", None)
     variants = []
     for variant in product.get("variants", []):
         variant = dict(variant)
@@ -197,8 +200,18 @@ class Ledger:
     # so throwing them away would lose them for good. They wait here instead,
     # and the next run takes them before it searches anything.
 
-    def hold(self, product: dict) -> None:
-        self.state["pending"][str(product["offer_id"])] = product
+    def hold(self, product: dict, held_by: str = "") -> None:
+        """
+        Keep an offer for a later night, remembering which photograph found it.
+
+        The photograph is the department - each seed is one - and without it the
+        draw below has only the leaf category to go on, which is not the same
+        thing at all. See take_pending.
+        """
+        record = dict(product)
+        if held_by:
+            record["_held_by"] = held_by
+        self.state["pending"][str(product["offer_id"])] = record
 
     def take_pending(self, limit: int) -> list:
         """
@@ -212,8 +225,16 @@ class Ledger:
         all forty-nine departments and this put the catalogue straight back into
         a corner.
 
-        So: round-robin by category. Oldest first within each one, so nothing
-        held is forgotten, but no single department can take the whole draw.
+        Round-robin, then - but by the photograph that found the offer, not by
+        its category. Grouping by category was the first attempt and it looked
+        right: fifteen products came back under fifteen different categories.
+        On the shop page they were fifteen kinds of bra. One department holds
+        dozens of leaf categories, so a draw can spread perfectly across
+        categories and never leave the department it started in. The seed is the
+        department, by construction, so that is what the turns are taken over.
+
+        Older ledgers have no photograph recorded against their pending offers;
+        those fall back to the category, which is what they had before.
         """
         limit = max(0, limit)
         if not limit:
@@ -221,7 +242,8 @@ class Ledger:
 
         by_category: dict = {}
         for offer_id, product in self.state["pending"].items():
-            by_category.setdefault(str(product.get("category_id") or ""), []).append(offer_id)
+            key = str(product.get("_held_by") or product.get("category_id") or "")
+            by_category.setdefault(key, []).append(offer_id)
 
         order: list = []
         queues = list(by_category.values())
@@ -412,7 +434,7 @@ class Discovery:
                     # Paid for, and this photograph will never be searched
                     # again. Keep it for tomorrow rather than losing it - whether
                     # the night is full or this department has had its share.
-                    self.ledger.hold(product)
+                    self.ledger.hold(product, held_by=picture)
                     continue
                 self.ledger.add_offer(product["offer_id"], self.day)
                 if not self._worth_queueing(product):
