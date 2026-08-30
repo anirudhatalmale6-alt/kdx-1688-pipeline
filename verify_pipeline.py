@@ -357,6 +357,48 @@ def main() -> int:
     check("CONTROL asking the same source for it by id still fails",
           bool(runner.run_offer(TSHIRT).error))
 
+    print("\na fraction of a riyal is a real price and still not a product")
+    # A glass decorative stone went live at 0.08 SAR on the first real night.
+    # 1688 quotes wholesale per piece, so the arithmetic was right and the
+    # listing was still nonsense - the payment fee exceeds the sale.
+    import importlib
+
+    def engine_with_floor(floor: str):
+        os.environ["KDX_MIN_PRICE_SAR"] = floor
+        importlib.reload(rules)
+        return rules.Engine(cny_to_sar=Decimal("0.52"))
+
+    def one_variant(price_cny: str):
+        return rules.Product(
+            offer_id="9001", title_zh="装饰玻璃石", description_zh="",
+            images=["https://cbu01.alicdn.com/img/ibank/stone.jpg"],
+            variants=[rules.Variant(sku_id="9001-default", attributes={},
+                                    price_cny=Decimal(price_cny), stock=9,
+                                    weight_kg=Decimal("0.2"))])
+
+    engine = engine_with_floor("3")
+    cheap = engine.evaluate(one_variant("0.12"), {})[0]
+    check("a product that would sell for pennies is not published",
+          cheap.decision == rules.Decision.REJECT
+          and cheap.audit.reason_code == "below_min_price", str(cheap.audit.reason_code))
+    check("and the reason names both numbers, in Arabic",
+          "الحد الأدنى" in cheap.audit.reason_ar, cheap.audit.reason_ar)
+
+    dearer = engine.evaluate(one_variant("12.00"), {})[0]
+    check("CONTROL an ordinary product is unaffected",
+          dearer.decision == rules.Decision.PUBLISH, str(dearer.audit.reason_code))
+
+    # CONTROL: it is the client's number, not mine. Zero restores the old
+    # behaviour exactly.
+    off = engine_with_floor("0")
+    check("CONTROL KDX_MIN_PRICE_SAR=0 publishes what the arithmetic produces",
+          off.evaluate(one_variant("0.12"), {})[0].decision == rules.Decision.PUBLISH)
+    higher = engine_with_floor("20")
+    check("CONTROL raising it rejects more, so the number is really in force",
+          higher.evaluate(one_variant("12.00"), {})[0].audit.reason_code == "below_min_price")
+    os.environ["KDX_MIN_PRICE_SAR"] = "3"
+    importlib.reload(rules)
+
     print("\none bad product must not cost the night")
     # A SerpApi read timed out at product ~150 of 300 on 30 August and the
     # exception left this loop: nothing was published and three hours of gateway

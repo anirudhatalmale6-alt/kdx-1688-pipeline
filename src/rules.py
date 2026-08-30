@@ -12,6 +12,7 @@ Nothing is ever published without a recorded reason.
 
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass, field, asdict
 from decimal import Decimal, ROUND_HALF_UP
@@ -44,6 +45,20 @@ MARKUP_BANDS = [
 
 # Weight boundary that decides the shipping flag, in kilograms.
 LIGHT_MAX_KG = Decimal("2")
+
+# The cheapest thing worth putting in a shop.
+#
+# Not one of the client's rules - it comes from looking at what the first real
+# night actually published. A glass decorative stone went live at 0.08 SAR, and
+# 320 of the 3,830 offers waiting cost under one yuan. 1688 quotes a wholesale
+# price per piece, so a fraction of a riyal is a truthful conversion of a real
+# price and still nonsense in a retail shop: the payment fee alone is larger
+# than the sale.
+#
+# Three riyals is a placeholder the client can change in one line, not a
+# judgement about his market. KDX_MIN_PRICE_SAR=0 restores the old behaviour of
+# publishing whatever the arithmetic produces.
+MIN_PRICE_SAR = Decimal(os.environ.get("KDX_MIN_PRICE_SAR", "3"))
 
 # A match is only trusted at or above this score.
 MATCH_THRESHOLD = Decimal("95")
@@ -321,6 +336,14 @@ class Engine:
                     cost=cost, match=match, requires_shipping=requires_shipping,
                     shipping_type=shipping_type,
                 )
+            if price < MIN_PRICE_SAR:
+                return self._reject(
+                    product, variant, "below_min_price",
+                    f"السعر النهائي ({price} ريال) أقل من الحد الأدنى "
+                    f"({MIN_PRICE_SAR} ريال) - لا يتم النشر",
+                    cost=cost, match=match, requires_shipping=requires_shipping,
+                    shipping_type=shipping_type,
+                )
             basis = f"سعر {match.platform} ناقص {int(discount * 100)}%"
             return self._accept(product, variant, price, basis, cost, match,
                                 requires_shipping, shipping_type)
@@ -334,6 +357,14 @@ class Engine:
             )
 
         price, markup = marked_up_price(cost)
+        if price < MIN_PRICE_SAR:
+            return self._reject(
+                product, variant, "below_min_price",
+                f"السعر النهائي ({price} ريال) أقل من الحد الأدنى "
+                f"({MIN_PRICE_SAR} ريال) - لا يتم النشر",
+                cost=cost, requires_shipping=requires_shipping,
+                shipping_type=shipping_type,
+            )
         basis = f"التكلفة زائد هامش {int(markup * 100)}%"
         return self._accept(product, variant, price, basis, cost, None,
                             requires_shipping, shipping_type)
