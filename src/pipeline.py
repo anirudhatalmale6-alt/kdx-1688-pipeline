@@ -463,6 +463,25 @@ def build(*, dry_run: bool = True, translate: bool | None = None, cny_to_sar=Non
     if os.environ.get(aop_client.ENV_APP_KEY) and os.environ.get(aop_client.ENV_TOKEN):
         client = aop_client.build_from_env()
 
+    # The built tree stops one level below the departments, which was enough
+    # while the catalogue was one department. Across the whole market most leaf
+    # ids fall outside it, and an unresolved category is not merely a blank
+    # department in the shop - it also answers "unknown" to the ban filter,
+    # which then cannot reject anything. So resolve the rest on demand, and do
+    # it here rather than where the tree is loaded: the client does not exist
+    # until this point, and reaching for it earlier is a NameError on every
+    # real run.
+    import category_live
+    if client is not None:
+        def _translate_category(name_zh: str) -> dict:
+            if not translate:
+                return {}
+            import enrich
+            return enrich.translate_categories([name_zh]).get(name_zh, {})
+
+        categories = category_live.LiveIndex(categories, client=client,
+                                             translate=_translate_category)
+
     return Pipeline(
         source=source_module.build_source(client),
         categories=categories,

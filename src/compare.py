@@ -306,6 +306,29 @@ def prices_from_shopping(matches: list, rows: list, our_title: str,
 # Providers
 # --------------------------------------------------------------------------
 
+def rows_or_empty(payload: dict, key: str) -> list:
+    """
+    "Nobody else sells this" is an answer. "Your key is invalid" is a fault.
+
+    SerpApi reports both in the same `error` field, and treating the pair alike
+    cost a whole night: the first product whose picture Google Lens did not
+    recognise raised, and the run died at product 1 of 12 having published
+    nothing. Yet a product no competitor carries is not an error at all - it is
+    the client's own rule, the one that says price it on margin instead of
+    undercutting. It has to arrive as an empty list.
+
+    Anything else still raises. A run that quietly treats an exhausted plan or a
+    rejected key as "no competitors found" would publish an entire night at full
+    margin and look like it worked.
+    """
+    error = str(payload.get("error") or "")
+    if error:
+        if "returned any results" in error.lower():
+            return []
+        raise CompareError(error)
+    return payload.get(key) or []
+
+
 class LensProvider:
     """
     Image search through SerpApi's google_lens engine.
@@ -332,9 +355,7 @@ class LensProvider:
         })
         with urllib.request.urlopen(f"{self.ENDPOINT}?{query}", timeout=self.timeout) as response:
             payload = json.loads(response.read().decode("utf-8"))
-        if payload.get("error"):
-            raise CompareError(str(payload["error"]))
-        return payload.get("visual_matches") or []
+        return rows_or_empty(payload, "visual_matches")
 
 
 class ShoppingProvider:
@@ -367,9 +388,7 @@ class ShoppingProvider:
         })
         with urllib.request.urlopen(f"{self.ENDPOINT}?{query}", timeout=self.timeout) as response:
             payload = json.loads(response.read().decode("utf-8"))
-        if payload.get("error"):
-            raise CompareError(str(payload["error"]))
-        return payload.get("shopping_results") or []
+        return rows_or_empty(payload, "shopping_results")
 
 
 class FixtureShoppingProvider:

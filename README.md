@@ -48,6 +48,43 @@ One gateway call per seed. It says which are alive, which categories each one
 opens, and — because two seeds that return the same offers are one seed — how
 many offers any two of them share.
 
+### Opening the whole market from words, with no photographs at all
+
+```bash
+python3 seed_from_words.py --departments        # all 49
+python3 seed_from_words.py --departments --limit 5
+```
+
+The keyword API exists but is refused to this appKey — measured 30 August,
+`product.search.keywordQuery` → `gw.APIACLDecline`, "AppKey is not allowed(acl)".
+That is a permission, not a missing feature, and it is the one under review.
+
+Until it lands, a word can still become a door. Google Images turns a word into
+pictures, the gateway accepts any public image URL, and the 1688 category tree —
+readable, since `alibaba.category.get` *is* granted — already names all 49
+departments in Chinese. So the run needs no photographs from anyone:
+
+    word → Google Images → image URL → similar-offer search → a department
+
+Measured on 30 August: eight departments opened, twenty offers each, first
+attempt on five of them. A word costs exactly one search, once — the answer is
+cached, so re-running is free for every word already opened, and those searches
+are charged to the same monthly meter as price comparison so nothing is spent
+off the books.
+
+A picture only becomes a seed after the gateway has actually returned offers for
+it. A picture that opens nothing is never written to the seed file.
+
+**Categories resolve on demand.** The built tree stops one level below the
+departments. Across a general catalogue most leaf ids fall outside it, and an
+unresolved category is not just a blank department in the shop — `state_of`
+answers "unknown", and unknown cannot reject, so the category ban filter
+quietly stops working and only the Chinese title stands between a prohibited
+product and the shop. `src/category_live.py` climbs `parentIDs` from any leaf,
+classifies the whole chain, and caches each answer to disk as it learns it. A
+blocked ancestor blocks the leaf. On a live run this took fourteen products from
+no department at all to fourteen correct ones — `办公椅` → `كراسي مكتب`.
+
 A seed does **not** have to live on Alibaba's own CDN. Measured on 30 August,
 one gateway call each: `cbu01.alicdn.com`, `images.unsplash.com` and
 `raw.githubusercontent.com` all returned 20 offers, a PNG among them. The only
@@ -142,15 +179,19 @@ what a placeholder URL in an early test produced.
    does return merchant and price and is the route being used. The engine
    consumes a list of `CompetitorHit` objects and does not care where they came
    from, so this stays one replaceable seam.
-2. **User authorization for 1688.** `redirect_uri` is mandatory on
+2. **The keyword permission.** `product.search.keywordQuery` exists and is
+   ACL-declined. When it is granted, pulling by word becomes direct and the
+   word→picture step above is no longer needed. Nothing else in the pipeline
+   changes: the source is one seam, chosen by `KDX_SOURCE`.
+3. **User authorization for 1688.** `redirect_uri` is mandatory on
    `auth.1688.com/oauth/authorize` and every guessed value is refused. Proven
    with a control pair in a real browser (curl only receives Alibaba's JS
    challenge page): omitting it returns `缺少必要参数` (missing required
    parameter), a wrong one returns `非法请求` (invalid request). Only the value
    registered in the client's own 1688 console will work.
-3. `GET /api/alibaba/categories` on kdx-sa.com answers HTTP 500 with
+4. `GET /api/alibaba/categories` on kdx-sa.com answers HTTP 500 with
    `gw.SignatureInvalid` from 1688. The same app key and secret sign correctly
    from `src/aop_client.py`, so the fault is in the Laravel signing or in the
    secret stored on that server.
-4. The 1688 server only accepts inbound SSH: ports 80 and 8080 are blocked
+5. The 1688 server only accepts inbound SSH: ports 80 and 8080 are blocked
    upstream by the host, so nothing web-facing can be served from it.

@@ -397,6 +397,30 @@ def main() -> int:
     check("CONTROL: a product with no photo at all buys no search",
           compare.hits_for_product(NeverCalled(), naked, OUR_TITLE, scope="product") == {})
 
+    # "Nobody else sells this" against "your key is invalid". SerpApi puts both
+    # in `error`, and reading them alike killed a live run at product 1 of 12.
+    check("a product no competitor carries returns no hits, and does not raise",
+          compare.rows_or_empty(
+              {"error": "Google Lens hasn't returned any results for this query."},
+              "visual_matches") == [])
+    check("the same for the shopping engine",
+          compare.rows_or_empty(
+              {"error": "Google Shopping hasn't returned any results for this query."},
+              "shopping_results") == [])
+    for fault in ("Invalid API key.",
+                  "Your account has run out of searches.",
+                  "We couldn't process your request."):
+        try:
+            compare.rows_or_empty({"error": fault}, "visual_matches")
+            check(f"CONTROL a real fault still raises: {fault[:28]}", False)
+        except compare.CompareError as exc:
+            check(f"CONTROL a real fault still raises: {fault[:28]}", fault in str(exc))
+    check("CONTROL a good payload still comes through untouched",
+          compare.rows_or_empty({"visual_matches": [{"title": "x"}]},
+                                "visual_matches") == [{"title": "x"}])
+    check("CONTROL an empty good payload is empty, not an error",
+          compare.rows_or_empty({}, "visual_matches") == [])
+
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0
 
