@@ -48,6 +48,14 @@ One gateway call per seed. It says which are alive, which categories each one
 opens, and — because two seeds that return the same offers are one seed — how
 many offers any two of them share.
 
+A seed does **not** have to live on Alibaba's own CDN. Measured on 30 August,
+one gateway call each: `cbu01.alicdn.com`, `images.unsplash.com` and
+`raw.githubusercontent.com` all returned 20 offers, a PNG among them. The only
+URL refused was one that was already broken at source — it answered HTTP 400
+here too, and the gateway named it in the refusal. So the requirement is not a
+particular host: the URL must be public, must point straight at the image file,
+and must actually return an image.
+
 `deploy/` has the systemd service and timer, and `deploy/kdx.env.example` lists
 every setting. Credentials belong in `/etc/kdx/kdx.env` and nowhere else.
 
