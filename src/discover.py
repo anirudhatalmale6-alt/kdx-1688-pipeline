@@ -201,10 +201,38 @@ class Ledger:
         self.state["pending"][str(product["offer_id"])] = product
 
     def take_pending(self, limit: int) -> list:
-        taken = []
-        for offer_id in list(self.state["pending"])[:max(0, limit)]:
-            taken.append(_rehydrate(self.state["pending"].pop(offer_id)))
-        return taken
+        """
+        The oldest held offers, taken a category at a time rather than in order.
+
+        Insertion order looks like the fair thing and is not. Offers are held in
+        the order the seeds were walked, so the front of this queue is entirely
+        the leftovers of the first two or three departments. On 30 August a
+        night drew 148 products from the surplus and 83 of them were shoes and
+        children's clothing - the fair share had spread the fresh harvest across
+        all forty-nine departments and this put the catalogue straight back into
+        a corner.
+
+        So: round-robin by category. Oldest first within each one, so nothing
+        held is forgotten, but no single department can take the whole draw.
+        """
+        limit = max(0, limit)
+        if not limit:
+            return []
+
+        by_category: dict = {}
+        for offer_id, product in self.state["pending"].items():
+            by_category.setdefault(str(product.get("category_id") or ""), []).append(offer_id)
+
+        order: list = []
+        queues = list(by_category.values())
+        while len(order) < limit and any(queues):
+            for queue in queues:
+                if queue:
+                    order.append(queue.pop(0))
+                    if len(order) >= limit:
+                        break
+
+        return [_rehydrate(self.state["pending"].pop(offer_id)) for offer_id in order]
 
     def add_offer(self, offer_id, day: str = "") -> None:
         self.state["offers"][str(offer_id)] = {"day": day, "at": int(self.clock())}

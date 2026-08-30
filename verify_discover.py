@@ -407,6 +407,33 @@ held = discover.Ledger(os.path.join(work7, "discovered.json")).summary()["waitin
 check("what a department could not give tonight is held, not lost",
       held > 0, str(held))
 
+print("\n8b. the leftovers are drawn a department at a time, not oldest-first")
+# Held in walk order, the front of the queue is entirely the first departments'
+# leftovers. A night drew 148 from the surplus and 83 were shoes and children's
+# clothing, undoing the fair share above.
+work_fifo = tempfile.mkdtemp(prefix="kdx-fifo-")
+ledger_fifo = ledger_in(work_fifo)
+for department in range(5):
+    for n in range(40):
+        ledger_fifo.hold(source_module.normalise_search_row(
+            row(700000 + department * 100 + n, category=f"cat-{department}")))
+ledger_fifo.save()
+reader = ledger_in(work_fifo)
+drawn = reader.take_pending(50)
+spread = {product["category_id"] for product in drawn}
+check("fifty leftovers reach all five departments, not the first two",
+      len(spread) == 5, str(sorted(spread)))
+counts = {c: sum(1 for p in drawn if p["category_id"] == c) for c in spread}
+check("and no department takes more than its turn",
+      max(counts.values()) - min(counts.values()) <= 1, str(counts))
+reader.save()      # what run() does at the end of a night
+check("CONTROL what was drawn is gone from the surplus",
+      ledger_in(work_fifo).summary()["waiting"] == 150,
+      str(ledger_in(work_fifo).summary()["waiting"]))
+check("CONTROL asking for more than is held returns everything, not a crash",
+      len(ledger_in(work_fifo).take_pending(10_000)) == 150)
+shutil.rmtree(work_fifo, ignore_errors=True)
+
 print("\n9. a night made entirely of leftovers opens nothing new")
 work9 = tempfile.mkdtemp(prefix="kdx-surplus-")
 ledger9 = ledger_in(work9)
