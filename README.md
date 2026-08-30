@@ -226,6 +226,30 @@ separates "no such API" from "exists, no permission" for us:
 So the gallery is one permission away, on the client's own 1688 console, and
 `docs/product-detail-permission-ar.md` is the request written out for him.
 
+**2026-08-31 — he asked for both and was declined**, and screenshotted the
+gateway saying so. Three further roads were measured before accepting that:
+
+* **thirty-five more API names** across `linkplus`, `product`,
+  `fenxiao.crossborder`, `fenxiao`, `trade`, `media`, `offer` and `p4p` — 51
+  probed in total, and **exactly two are callable**: the similar-offer search
+  and `alibaba.category.get`. Even `alibaba.category.attribute.get` and the
+  keyword/image searches in the cross-border package are ACL-declined.
+* **thirteen parameter variants of the search we do hold** — `SA`/`ar`,
+  `CN`/`zh`, no locale, `needSku`, `needDetail`, `needImages`, `needSkuInfo`,
+  `returnFields=all`, `fields=all`, `outMemberId`, `scene=detail`,
+  `pageSize=100`. All thirteen returned **the identical eleven fields**.
+* **sizes written into the Chinese title** — 7 of 151 titles mention size at
+  all, and most of those are the marketing word 大码 ("large size"), not a size
+  list. Not a source.
+
+There is no back door. What that leaves is an ordering argument rather than a
+technical one, and it is in `docs/no-permission-plan-ar.md`: 1688 reviews the
+*site* before granting product-data permissions, so a shop under construction is
+exactly what gets declined. Publishing with one photograph is what makes the
+shop reviewable — and because his import route upserts, every product published
+today fills in its gallery, sizes and description automatically on the day the
+permission lands. Nothing published now has to be deleted or re-added.
+
 ### Chinese writing printed inside the photograph
 
 `src/imagetext.py` scores a photograph by the percentage of its area covered by
@@ -239,9 +263,24 @@ because OCR invents characters out of folds and shadows.
 `KDX_MAX_CJK_TEXT_PCT` drops photographs above a threshold; it defaults to 0,
 which orders but never drops. Two rules that do not bend: with no tesseract
 installed the score is `None` and `None` never filters anything, and the last
-photograph is never dropped — an ugly picture beats an empty frame. Until the
-detail permission lands there is one photograph per offer and nothing to choose
-between, so the ordering costs nothing and does nothing.
+photograph is never dropped — an ugly picture beats an empty frame.
+
+**The same number also holds the product** (2026-08-31). Ranking is useless when
+every offer has one photograph, which is every offer this channel returns, so
+the only decision left is whether a poster deserves a listing at all:
+`imagetext.poster_only` reports the best score when even the best photograph is
+over the threshold, and `run_product` then holds the product with the
+measurement in the reason instead of pushing it. Off unless a threshold is set,
+never triggered by an unmeasured photograph, and covered end-to-end in
+`verify_pipeline.py` — through `run_product`, not by calling the scorer, so a
+pipeline that stopped consulting it would fail the check.
+
+Measured across the whole 30 August catalogue, first photograph of all 151
+products: 42 (27.8 %) score above 1 %, 30 (19.9 %) above 2 %, 21 (13.9 %) above
+3 %, 16 (10.6 %) above 5 %; the worst is 18.17 %. **5 % is the recommendation** —
+it catches both t-shirt posters the client complained about (6.11 % and 5.90 %)
+and costs a tenth of the catalogue, while keeping the office-chair shots at
+about 5.6 % that carry a small corner caption but are real product photographs.
 
 ## Refreshing the price of a product already published
 

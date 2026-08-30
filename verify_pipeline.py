@@ -550,6 +550,45 @@ def main() -> int:
     check("and it is distinguishable from an insert",
           pipeline_module.was_update(outcome.kdx_response), str(outcome.kdx_response))
 
+    print("\na product whose only photograph is an advertising poster")
+    # The client's complaint of 30-31 August, and the only lever left while the
+    # detail permission is refused: with one photograph per product there is no
+    # gallery to re-order, so the choice is publish the poster or hold the
+    # product. These go through run_product rather than calling the scorer
+    # directly - a check that calls the step itself would pass even if the
+    # pipeline never reached it.
+    import imagetext as imagetext_module
+
+    def with_score(score, limit):
+        original_percent = imagetext_module.text_percent
+        original_limit = imagetext_module.MAX_TEXT_PERCENT
+        imagetext_module.text_percent = lambda data: score
+        imagetext_module.MAX_TEXT_PERCENT = limit
+        runner = live_runner(IMPORTED)
+        try:
+            return runner, runner.run_product(runner.source.get_product(TSHIRT))
+        finally:
+            imagetext_module.text_percent = original_percent
+            imagetext_module.MAX_TEXT_PERCENT = original_limit
+
+    poster, outcome = with_score(6.11, 2.0)
+    check("a poster-only product is never pushed to his shop",
+          poster.kdx.pushed == [], str(poster.kdx.pushed))
+    check("it is held with the measurement in the reason",
+          outcome.product is None and "6.11%" in (outcome.error or ""), outcome.error)
+
+    clean, outcome = with_score(0.4, 2.0)
+    check("CONTROL a clean photograph under the same threshold still publishes",
+          len(clean.kdx.pushed) == 1 and not outcome.error, outcome.error)
+
+    unmeasurable, outcome = with_score(None, 2.0)
+    check("CONTROL a photograph tesseract could not read is published, not held",
+          len(unmeasurable.kdx.pushed) == 1 and not outcome.error, outcome.error)
+
+    off, outcome = with_score(40.0, 0.0)
+    check("CONTROL with no threshold set the poster is published as before",
+          len(off.kdx.pushed) == 1 and not outcome.error, outcome.error)
+
     # CONTROL: the guard has to be switchable off without editing code, or a
     # network that cannot reach alicdn at all would hold the entire catalogue
     # and look exactly like a pricing bug.

@@ -424,6 +424,22 @@ class Pipeline:
                     report["text_scores"] = ranked["scores"]
                     report["text_dropped"] = ranked["dropped"]
 
+                # And if even the best photograph is an advertising poster, the
+                # product is held rather than published. Ranking cannot help a
+                # product that has only one photograph, which is every product
+                # this channel returns; the only choice left is whether a poster
+                # is worth a listing. Off unless the client sets a threshold.
+                worst = imagetext.poster_only(report.get("text_scores") or {})
+                if worst is not None:
+                    return OfferOutcome(
+                        offer_id=offer_id, product=None, results=results,
+                        points_spent=spent, compared=compared,
+                        searches_spent=searches, from_cache=from_cache,
+                        photos=report,
+                        error=f"every photograph is an advertising poster "
+                              f"(cleanest one is {worst}% Chinese text, limit "
+                              f"{imagetext.MAX_TEXT_PERCENT}%)")
+
         response = None
         if self.kdx is not None and not self.dry_run:
             response = _one_response(self.kdx.push([payload]))

@@ -159,6 +159,42 @@ def score_gallery(urls, checker) -> list:
     return scored
 
 
+def cleanest(scores: dict) -> float | None:
+    """
+    The lowest measured score in a set, or None if nothing in it was measured.
+
+    None again means "not measured" and never "clean": a set where tesseract
+    could not read a single photograph must not be treated as a set of spotless
+    ones.
+    """
+    measured = [value for value in (scores or {}).values() if value is not None]
+    return min(measured) if measured else None
+
+
+def poster_only(scores: dict, max_percent: float | None = None) -> float | None:
+    """
+    The score of the best photograph, when even the best one is a poster.
+
+    Returns None when the product has at least one photograph worth showing, or
+    when nothing could be measured. A number means: every photograph this
+    product has is more advertising than product.
+
+    This is the answer to the one-image reality. order_gallery deliberately
+    never removes the last photograph, because a gallery with a poster in it is
+    better than a gallery with a hole. But this channel gives exactly one
+    photograph per offer, so "put the posters last" has nothing to sort - the
+    only decision left is whether to publish the product at all, and that
+    decision belongs to the caller, not to the ranking.
+    """
+    limit = MAX_TEXT_PERCENT if max_percent is None else max_percent
+    if limit <= 0:
+        return None
+    best = cleanest(scores)
+    if best is None or best <= limit:
+        return None
+    return best
+
+
 def order_gallery(urls, checker, max_percent: float | None = None) -> dict:
     """
     Put the clean photographs first, and optionally drop the posters.

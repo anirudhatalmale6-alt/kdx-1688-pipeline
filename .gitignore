@@ -5,8 +5,11 @@ __pycache__/
 out/
 data/categories_raw.json
 
-# client account screenshots - private, never publish
+# client account screenshots - private, never publish. Named files kept for the
+# record, but the rule is the wildcard: he sends more of these every week and a
+# list only protects the ones already sent.
 *.jpeg
+*.png
 1890.png
 1891.png
 *.jpg

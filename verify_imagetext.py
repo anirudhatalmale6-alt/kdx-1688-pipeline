@@ -101,6 +101,29 @@ def main() -> int:
     check("an empty gallery is not a crash",
           imagetext.order_gallery([], None), {"images": [], "scores": {}, "dropped": []})
 
+    print("\nholding a product whose only photograph is a poster")
+    # The one-image reality: there is nothing to re-order, so the only question
+    # left is whether a poster deserves a listing at all.
+    check("the cleanest of a measured set is the lowest number",
+          imagetext.cleanest({"a": 6.1, "b": 0.2, "c": 3.0}), 0.2)
+    check("a set nobody could measure has no cleanest",
+          imagetext.cleanest({"a": None, "b": None}), None)
+    check("an unmeasured photograph does not lower the cleanest score",
+          imagetext.cleanest({"a": None, "b": 4.0}), 4.0)
+    check("no threshold set means nothing is ever held",
+          imagetext.poster_only({"a": 40.0}, max_percent=0), None)
+    check("a product with one clean photograph is not held",
+          imagetext.poster_only({"a": 0.4, "b": 9.0}, max_percent=2.0), None)
+    check("a product whose every photograph is a poster is held, and says how bad",
+          imagetext.poster_only({"a": 6.1, "b": 9.0}, max_percent=2.0), 6.1)
+    check("exactly on the threshold is not a poster",
+          imagetext.poster_only({"a": 2.0}, max_percent=2.0), None)
+    # Same rule as the ranking: a missing tesseract must never empty the shop.
+    check("a product nothing could be measured on is never held",
+          imagetext.poster_only({"a": None}, max_percent=2.0), None)
+    check("no photographs at all is not a poster verdict",
+          imagetext.poster_only({}, max_percent=2.0), None)
+
     print("\nthe bytes come from the check that already downloaded them")
     checker = FakeChecker({"x": b""})
     original = imagetext.text_percent
