@@ -71,7 +71,7 @@ if __name__ == "__main__":
     # This used to read ALI_APP_KEY / ALI_APP_SECRET, names nothing else in the
     # project sets. It would have raised KeyError the first time anyone ran it
     # on the server with a correctly configured environment.
-    client = aop_client.build_from_env()
+    client = aop_client.build_pool_from_env()
     roots = root_categories(client)
     print(json.dumps(roots, ensure_ascii=False, indent=2))
     print(f"\n{len(roots)} root categories", file=sys.stderr)

@@ -76,7 +76,7 @@ def main(argv: list) -> int:
         print("no seeds: pass a file, some URLs, or set KDX_SEEDS")
         return 2
 
-    client = aop_client.build_from_env()
+    client = aop_client.build_pool_from_env()
     source = source_module.LinkPlusSource(client)
     categories = load_catalogue()
 

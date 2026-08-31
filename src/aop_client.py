@@ -253,3 +253,114 @@ def build_from_env(**kwargs) -> "AopClient":
                     access_token=os.environ[ENV_TOKEN],
                     refresh_token=os.environ.get(ENV_REFRESH, "")),
         **kwargs)
+
+
+# --- two apps at once -------------------------------------------------------
+#
+# The client had a second 1688 app approved for the distribution (分销) package
+# and said he would replace the first app's keys with it. He must not: the
+# permission list of the new app does not contain
+# com.alibaba.linkplus/alibaba.cross.similar.offer.search, the image search the
+# whole price comparison is built on, and that permission lives on the OLD app.
+# Neither app can run this pipeline alone, so the pipeline holds both and picks
+# per call.
+
+ENV_B_APP_KEY = "KDX_1688_B_APP_KEY"
+ENV_B_APP_SECRET = "KDX_1688_B_APP_SECRET"
+ENV_B_TOKEN = "KDX_1688_B_TOKEN"
+ENV_B_REFRESH = "KDX_1688_B_REFRESH_TOKEN"
+
+# Which app owns what, as measured rather than assumed. Keys are either
+# "namespace/apiName" (checked first) or a bare namespace (checked second);
+# anything unlisted goes to the default app. The per-API entries exist because
+# com.alibaba.product is split down the middle: alibaba.product.get belongs to
+# the old app's package and product.skuinfo.get arrived with the new one.
+SECOND_APP_ROUTES = {
+    "com.alibaba.product/product.skuinfo.get",
+    "com.alibaba.fenxiao",
+    "com.alibaba.fenxiao.crossborder",
+    "com.alibaba.logistics",
+    "com.alibaba.trade",
+}
+
+ACL_MARKERS = ("APIACLDecline", "not allowed(acl)", "APIACLDeny")
+
+
+def _is_acl_decline(error: "AopError") -> bool:
+    text = f"{error} {error.payload.get('error_code', '')} {error.payload.get('error_message', '')}"
+    return any(marker in text for marker in ACL_MARKERS)
+
+
+class ClientPool:
+    """
+    One .call() over several apps, choosing the credentials per route.
+
+    Drop-in for AopClient: the callers only ever use .call(), and a pool built
+    with a single app routes every call to it, so nothing changes until a second
+    set of credentials is actually present in the environment.
+
+    The routing table above is a starting guess, and a wrong guess is cheap to
+    recover from: an ACL decline is the gateway refusing *before* the API runs,
+    so nothing happened and the same call can be repeated against the other app.
+    When that succeeds the pool remembers it, so one call pays for the mistake
+    and the rest go straight to the right app. This is deliberately not a blind
+    retry - it fires only on an ACL decline, never on a business error, and
+    never on a timeout, because those may mean the call did happen.
+    """
+
+    def __init__(self, clients: dict, default: str, routes=None):
+        if default not in clients:
+            raise AopError(f"default app {default!r} is not one of {sorted(clients)}")
+        self.clients = clients
+        self.default = default
+        self.routes = set(SECOND_APP_ROUTES if routes is None else routes)
+        self.second = next((name for name in clients if name != default), None)
+        self.learned: dict = {}
+        self.log: list = []
+
+    @property
+    def credentials(self) -> Credentials:
+        return self.clients[self.default].credentials
+
+    def label_for(self, route: ApiRoute) -> str:
+        key = f"{route.namespace}/{route.api_name}"
+        if key in self.learned:
+            return self.learned[key]
+        if self.second and (key in self.routes or route.namespace in self.routes):
+            return self.second
+        return self.default
+
+    def call(self, route: ApiRoute, params: dict | None = None, authed: bool = True) -> dict:
+        key = f"{route.namespace}/{route.api_name}"
+        label = self.label_for(route)
+        try:
+            payload = self.clients[label].call(route, params, authed=authed)
+        except AopError as error:
+            other = next((name for name in self.clients if name != label), None)
+            if not other or not _is_acl_decline(error):
+                raise
+            payload = self.clients[other].call(route, params, authed=authed)
+            self.learned[key] = other
+            self.log.append(f"{key}: {label} declined (acl), {other} answered")
+            return payload
+        self.learned[key] = label
+        return payload
+
+
+def build_pool_from_env(**kwargs) -> "ClientPool":
+    """
+    The primary app, plus the second one if its keys are in the environment.
+
+    With no KDX_1688_B_* set this returns a pool of one, which behaves exactly
+    like build_from_env() - so this can be wired in before the second app is
+    approved without changing what runs tonight.
+    """
+    clients = {"primary": build_from_env(**kwargs)}
+    if os.environ.get(ENV_B_APP_KEY) and os.environ.get(ENV_B_APP_SECRET):
+        clients["fenxiao"] = AopClient(
+            Credentials(app_key=os.environ[ENV_B_APP_KEY],
+                        app_secret=os.environ[ENV_B_APP_SECRET],
+                        access_token=os.environ.get(ENV_B_TOKEN, ""),
+                        refresh_token=os.environ.get(ENV_B_REFRESH, "")),
+            **kwargs)
+    return ClientPool(clients, default="primary")

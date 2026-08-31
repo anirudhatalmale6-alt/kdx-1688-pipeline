@@ -86,7 +86,7 @@ def main(argv: list) -> int:
 
     seeder = wordseed.WordSeeder(
         images=wordseed.GoogleImages(),
-        source=source_module.LinkPlusSource(aop_client.build_from_env()),
+        source=source_module.LinkPlusSource(aop_client.build_pool_from_env()),
         # Passing the meter is the whole point of building it. Left out, the
         # first live run opened five departments and still reported 0/30000
         # used - five searches spent off the books, and the only way to see it

@@ -601,7 +601,7 @@ def build(*, dry_run: bool = True, translate: bool | None = None, cny_to_sar=Non
     # otherwise - which keeps fixture and dry runs working without keys.
     client = None
     if os.environ.get(aop_client.ENV_APP_KEY) and os.environ.get(aop_client.ENV_TOKEN):
-        client = aop_client.build_from_env()
+        client = aop_client.build_pool_from_env()
 
     # The built tree stops one level below the departments, which was enough
     # while the catalogue was one department. Across the whole market most leaf
