@@ -168,7 +168,20 @@ def classify(body: str) -> tuple[str, str]:
     # No error_code at all means the call went through and answered.
     if not code:
         return "ALLOWED", "answered"
-    return VERDICTS.get(code, "ALLOWED"), message or code
+    if code in VERDICTS:
+        return VERDICTS[code], message or code
+    # A gw.* code is the gateway refusing us before the API ran, so it is never
+    # permission to call anything. This branch exists because the first version
+    # fell through to ALLOWED for every unrecognised code, and on 2026-08-31 a
+    # deliberately wrong secret proved what that costs: gw.SignatureInvalid was
+    # reported as ALLOWED, so a single typo in the secret would have printed a
+    # clean sheet of twenty-two granted APIs. A wrong key must never read as a
+    # granted permission.
+    if code.startswith("gw."):
+        return "GATEWAY ERROR", message or code
+    # Anything else is the API itself answering - a business error, which means
+    # the call got through the ACL.
+    return "ALLOWED", message or code
 
 
 def main() -> int:
@@ -178,7 +191,16 @@ def main() -> int:
     token = os.environ["KDX_1688_TOKEN"]
     print(f"appKey {os.environ['KDX_1688_APP_KEY']}\n")
 
-    allowed, blocked, missing = [], [], []
+    # Pre-flight. A mistyped secret signs every request wrongly, and the gateway
+    # would answer gw.SignatureInvalid to all twenty-two probes - a uniform
+    # failure that looks exactly like "this app owns nothing". Catch it here, on
+    # one call, rather than letting it masquerade as a permission verdict.
+    verdict, detail = classify(call("com.alibaba.product", "alibaba.product.get", token))
+    if verdict == "GATEWAY ERROR" and "ignature" in detail:
+        raise SystemExit(f"the appKey and appSecret do not match: {detail}\n"
+                         "nothing below would mean anything, so nothing was run.")
+
+    allowed, blocked, missing, other = [], [], [], []
     for api, namespaces, purpose in PROBES:
         for namespace in namespaces:
             verdict, detail = classify(call(namespace, api, token))
@@ -190,8 +212,8 @@ def main() -> int:
         if verdict != "ALLOWED":
             print(f"  {'':<17} -> {detail}")
         print()
-        {"ALLOWED": allowed, "NEEDS PERMISSION": blocked}.get(
-            verdict, missing).append(f"{namespace}/{api}")
+        {"ALLOWED": allowed, "NEEDS PERMISSION": blocked,
+         "NO SUCH API": missing}.get(verdict, other).append(f"{namespace}/{api}")
 
     # A run where everything says NEEDS PERMISSION would look identical to a
     # run with a broken signature, so prove the token authenticates at all.
@@ -212,13 +234,16 @@ def main() -> int:
              "   WARNING: control did not fail as expected, treat the run as void"))
 
     print(f"\n{len(allowed)} allowed, {len(blocked)} need permission, "
-          f"{len(missing)} not found under any namespace tried")
+          f"{len(missing)} not found under any namespace tried, "
+          f"{len(other)} unclassified")
     for name in allowed:
         print(f"  allowed:  {name}")
     for name in blocked:
         print(f"  blocked:  {name}")
     for name in missing:
         print(f"  no such:  {name}")
+    for name in other:
+        print(f"  unclear:  {name}")
     return 0
 
 
