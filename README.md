@@ -241,6 +241,15 @@ Three things follow, and `verify_push_sizing.py` asserts all of them:
    wait is instead bought at the measured rate: `45s + 1.5s per photograph`,
    capped at 600s.
 
+**Open, on his side: a second push duplicates the options.** Offer
+717716012309 was created with 146 Chinese option labels and then updated with
+the same 146 in Arabic. The page afterwards showed **291** options — 146
+Chinese and 145 Arabic together. Photographs are replaced, options are
+appended, and the reply is `updated_count: 1, failed_count: 0` either way, so
+nothing in the response says it happened. Until his import de-duplicates on
+update, a product should be pushed once; `daily_run.py` prints every offer id
+his shop answered as an update and records them in the run report.
+
 `src/mapping.py` owns the product JSON. `needs_shipment` is derived from weight
 (≤ 2 kg → `true`), so the weight itself never needs to reach KDX.
 

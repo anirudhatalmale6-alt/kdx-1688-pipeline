@@ -243,7 +243,20 @@ def _publish_trouble(response: dict) -> str:
 
 
 def was_update(response: dict) -> bool:
-    """True when his shop updated a product it already held, rather than inserting."""
+    """
+    True when his shop updated a product it already held, rather than inserting.
+
+    Worth watching rather than celebrating. Measured 2 September on offer
+    717716012309: the product was created with 146 Chinese option labels, then
+    updated with the same 146 options in Arabic, and the page afterwards showed
+    291 options - 146 Chinese and 145 Arabic, side by side. His import REPLACES
+    the photographs (it deletes `product_images` first) but APPENDS the options,
+    so a second push at the same offer id doubles them.
+
+    Nothing on this side can fix that, and the reply cannot be distinguished
+    from a clean one - `updated_count: 1, failed_count: 0` either way - so a run
+    reports every update it made and lets a person look.
+    """
     return bool(response) and int(response.get("updated_count") or 0) > 0
 
 

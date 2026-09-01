@@ -258,6 +258,7 @@ def main() -> int:
 
         published = held = skipped = 0
         photos_dropped = 0
+        updated: list = []
         reasons: dict = {}
         for outcome in runner.run_products(harvested):
             # Written before the error check, not after: a product his shop
@@ -271,6 +272,15 @@ def main() -> int:
                 photos_dropped += len(outcome.photos["dropped"])
                 for url in outcome.photos["dropped"]:
                     print(f"  {outcome.offer_id}  photo unreachable, dropped: {url[:100]}")
+            # An update is not a second copy of the product, but it IS a second
+            # copy of its options: his import appends them. Measured 2 September
+            # - a product pushed twice showed 291 colour options where it has
+            # 146. Nothing here can undo it, so it is reported by offer id and
+            # a person decides.
+            if pipeline_module.was_update(outcome.kdx_response or {}):
+                updated.append(outcome.offer_id)
+                print(f"  {outcome.offer_id}  UPDATED an existing product - his import "
+                      f"appends options, so check this one for duplicates")
             if outcome.error:
                 skipped += 1
                 print(f"  {outcome.offer_id}  SKIPPED  {outcome.error}")
@@ -299,6 +309,7 @@ def main() -> int:
             "skipped": skipped,
             "held_reasons": reasons,
             "photos_dropped": photos_dropped,
+            "updated_existing": updated,
             "photos": runner.photos.summary() if runner.photos is not None else None,
             "ledger": ledger,
             "points": runner.budget.summary(),
