@@ -314,6 +314,10 @@ TREE = [
      "state": catalog.ALLOWED, "reason": ""},
     {"id": "4", "name_zh": "连衣裙", "is_leaf": True, "parent_id": None,
      "state": catalog.ALLOWED, "reason": ""},
+    {"id": "5", "name_zh": "童皮衣（停用）", "is_leaf": True, "parent_id": None,
+     "state": catalog.ALLOWED, "reason": ""},
+    {"id": "6", "name_zh": "台灯（欧式）", "is_leaf": True, "parent_id": None,
+     "state": catalog.ALLOWED, "reason": ""},
 ]
 
 
@@ -328,7 +332,12 @@ check("a blocked category is never even searched for",
       "指甲油、护甲油" not in words, str(words))
 check("and a branch that is not a leaf is not a search word either",
       "家居日用" not in words, str(words))
-check("the allowed leaves are", sorted(words) == sorted(["台灯", "连衣裙"]), str(words))
+check("a category 1688 has retired (停用) is not searched for either",
+      not any("停用" in word for word in words), str(words))
+check("a trailing qualifier is stripped, so the word is what a supplier writes",
+      "台灯" in words and "台灯（欧式）" not in words, str(words))
+check("the allowed leaves are",
+      sorted(set(words)) == sorted(["台灯", "连衣裙"]), str(words))
 
 # The wrapper the live pipeline actually passes in. It presents resolve/state_of
 # /by_id, and on 2 September it did NOT present `rows` - so the first keyword run

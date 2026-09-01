@@ -26,6 +26,7 @@ import argparse
 import errno
 import json
 import os
+import re
 import sys
 import time
 from datetime import datetime
@@ -64,9 +65,22 @@ def pool_keywords(runner, day: str, count: int) -> list:
     and walk the same offers it published yesterday.
     """
     rows = getattr(runner.categories, "rows", None) or []
-    words = [row["name_zh"] for row in rows
-             if row.get("is_leaf") and row.get("state") == catalog.ALLOWED
-             and row.get("name_zh")]
+    words = []
+    for row in rows:
+        if not (row.get("is_leaf") and row.get("state") == catalog.ALLOWED):
+            continue
+        name = str(row.get("name_zh") or "")
+        # 停用 means 1688 retired the category. The name is still in the tree
+        # and still marked allowed, but searching for it is a wasted walk: the
+        # first live keyword run spent four of its eight words on retired
+        # categories and got nothing from any of them.
+        if not name or "停用" in name:
+            continue
+        # A trailing "（...）" is a qualifier on the category, not part of what a
+        # supplier calls a product, and it narrows the search to nothing.
+        name = re.sub(r"[（(][^）)]*[）)]?$", "", name).strip("、/ ")
+        if name:
+            words.append(name)
     if not words:
         return []
     offset = int("".join(ch for ch in day if ch.isdigit()) or "0") % len(words)
