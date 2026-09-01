@@ -62,6 +62,7 @@ CAUGHT = [
     ("75%酒精免洗洗手液", "personal_care"),
     ("强力胶水粘鞋专用", "chemical"),
     ("汽车防冻液玻璃水四季通用", "chemical"),
+    ("汽车玻璃水雨刷精清洁去油膜", "chemical"),
     ("墙面乳胶漆油漆白色", "chemical"),
     ("打印机墨水连供四色", "chemical"),
     ("橄榄油食用油压榨", "food"),
@@ -121,6 +122,11 @@ KEPT = [
     "Baking Soda Cleaning Powder 1kg",
     # The liquid word is the front half of a longer, innocent word.
     "玻璃水杯耐热家用泡茶杯",           # 玻璃水 is screen wash; this is a tumbler
+    # Offer 991860111953, held by the first live run and checked against its
+    # own 52 SKUs (白色/黑色/大红 x 金底/银底): a glass rhinestone, not fluid.
+    "玻璃水钻中间钻10/14MM金底banner装饰",
+    "彩色玻璃水滴形diy饰品配件",
+    "超白玻璃水族箱生态鱼缸",
     "10.3寸墨水屏电子书阅读器",         # 墨水 is ink; 墨水屏 is an e-ink display
     "手工精油皂植物洁面皂",             # 精油 is an oil; 精油皂 is a bar of soap
     "香水百合鲜花绿植盆栽",             # 香水百合 is a lily
@@ -152,6 +158,24 @@ print("\nthe list itself cannot regress into a blunt instrument")
 check("no Chinese term is a single character",
       all(len(term) >= 2 for term in liquids.ZH_TERMS),
       str([t for t in liquids.ZH_TERMS if len(t) < 2]))
+
+# The failure that got through review was 玻璃水 - correct as screen wash, and
+# also the front of 玻璃水杯, 玻璃水钻 and 玻璃水族箱. Any term ending in 水,
+# 油 or 液 can be extended into an innocent noun the same way, so every short
+# one must either be spelled out at three characters or carry an exemption
+# proving the extensions were thought about. 柴油机 (a diesel engine) and
+# 煤油灯 (a kerosene lamp) were both found by turning this assertion on.
+EXTENDABLE = ("水", "油", "液")
+unguarded = [
+    term for term in liquids.ZH_TERMS
+    if term[-1] in EXTENDABLE and len(term) <= 2
+    and not any(phrase.startswith(term) and len(phrase) > len(term)
+                for phrase in liquids.CONTAINERS)
+]
+check("every short term ending in 水/油/液 has its extensions considered",
+      not unguarded,
+      f"no exemption records what {unguarded} can be the front of")
+
 BARE = {"oil", "gel", "cream", "spray", "water", "wax", "polish", "toner"}
 check("no bare English word that names solids as often as liquids",
       not (BARE & set(liquids.LATIN_TERMS)),

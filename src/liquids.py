@@ -62,7 +62,15 @@ ZH_TERMS = {
     "液体": "chemical", "油漆": "chemical", "涂料": "chemical", "稀释剂": "chemical",
     "胶水": "chemical", "强力胶": "chemical", "502胶": "chemical", "墨水": "chemical",
     "碳粉墨": "chemical", "润滑油": "chemical", "润滑液": "chemical", "机油": "chemical",
-    "防冻液": "chemical", "玻璃水": "chemical", "制动液": "chemical", "刹车油": "chemical",
+    "防冻液": "chemical", "制动液": "chemical", "刹车油": "chemical",
+    # Screen wash is 玻璃水, but that is not usable on its own: the first live
+    # run blocked a glass rhinestone with 52 colour SKUs (玻璃水钻) as if it
+    # were windscreen fluid, and 玻璃水杯 (a tumbler), 玻璃水滴 (a droplet
+    # bead) and 玻璃水族箱 (an aquarium) would have gone the same way. An
+    # exemption list would have to guess every noun that can follow it, so the
+    # term is spelled out in full instead.
+    "汽车玻璃水": "chemical", "雨刷精": "chemical", "雨刮水": "chemical",
+    "玻璃水补充": "chemical",
     "汽油": "chemical", "柴油": "chemical", "煤油": "chemical", "燃油": "chemical",
     "打火机油": "chemical", "松节油": "chemical", "固化剂": "chemical",
     # 食品饮料 - food and drink
@@ -150,6 +158,9 @@ CONTAINERS = (
     # essential oil, but 精油皂 is a bar of soap. Same failure as 手动螺丝刀
     # being read as a weapon, one aisle over.
     "玻璃水杯", "玻璃水壶", "玻璃水瓶", "玻璃水具", "玻璃水槽",
+    "柴油机", "柴油发电", "煤油灯", "煤油炉", "香油瓶",
+    "燃油泵", "燃油表", "燃油滤", "燃油箱", "燃油管",
+    "橄榄油皂", "橄榄油瓶", "花生油瓶", "食用油瓶",
     "墨水屏", "墨水盒", "墨水架", "香水百合", "精油皂", "精油香皂",
     "果汁粉", "牙膏架", "牙膏挤", "牙膏夹", "洗手液架", "洗手液器",
     "酒精灯", "酒精测试", "酒精检测", "汽油机", "汽油泵", "汽油桶",
