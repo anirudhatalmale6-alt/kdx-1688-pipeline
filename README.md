@@ -134,8 +134,9 @@ differ between permission packages.
 ## Two product channels, and why one photograph is not a fault
 
 ```
-daily_run.py --channel image      # the default: all of 1688, one photograph
-daily_run.py --channel selected   # the 精选货源 pool: 4-5 photographs, 1,950 offers
+daily_run.py --channel image                    # all of 1688, one photograph each
+daily_run.py --channel selected                 # the pool, searched by tonight's words
+daily_run.py --channel selected --keywords 连衣裙,台灯   # or by words you choose
 ```
 
 **image** is `com.alibaba.linkplus / alibaba.cross.similar.offer.search`. It
@@ -150,7 +151,7 @@ Measured live on 1 September against 30 offers spread across the whole walk:
 
 | | image search | selected pool |
 |---|---|---|
-| offers reachable | all of 1688 | 1,950 |
+| offers reachable | all of 1688 | ~2,000 per keyword |
 | main photographs | 1 | 4–5 (30 of 30 had more than one) |
 | photographs in the description | — | 5–32 |
 | photograph per colour | — | 21 of 30 |
@@ -158,16 +159,33 @@ Measured live on 1 September against 30 offers spread across the whole walk:
 | declared weight | never | 8 of 30 |
 | description | — | yes |
 
-They are additive. The pool is small and finite; the image search reaches
-everything else. `src/selected.py` documents the three traps that each ship a
-broken catalogue quietly — relative photograph paths, an absent weight that
-`_weight_of` turns into 2.5 kg (above the client's 2 kg line, so the product is
-classed heavy and, unmatched, never published), and a batch that refuses all
-fifty offers if one is outside the pool.
+They are additive. The image search is the only way to reach an arbitrary offer;
+the pool is the only way to get a whole product. `src/selected.py` documents the
+three traps that each ship a broken catalogue quietly — relative photograph
+paths, an absent weight that `_weight_of` turns into 2.5 kg (above the client's
+2 kg line, so the product is classed heavy and, unmatched, never published), and
+a batch that refuses all fifty offers if one is outside the pool.
 
-`product.keywords.search` is **not** a keyword search, despite the name: asked
-for 连衣裙, 运动鞋 and a nonsense string it returns the identical 978 rows.
-It is a fixed distribution list, and this repository does not use it.
+### The pool is not a shelf of 1,950
+
+Measured 2 September. The plain walk stops at 2,000 because that is the window
+the listing serves, not the size of the catalogue:
+
+* walked a day apart, **1,053 of 2,000** offers were ones the first walk never
+  showed. The window moves.
+* the listing **reads a keyword**. 连衣裙 → 50 rows, 50 of the titles contain
+  the word; 运动鞋 → trainers; and the control that makes it a fact rather than
+  a coincidence, the nonsense string `qqzzxxyy` → **0 rows**. Each keyword then
+  pages to exactly 2,000 offers (40 pages of 50, page 41 empty), and 10 offers
+  sampled from each of 9 keywords were answered by the detail API every time.
+
+So the words decide the catalogue. They come from the category tree, which is
+already built and already vetted — only leaves marked `allowed` — and the
+starting point rotates with the date so two nights do not walk the same offers.
+
+Not to be confused with `product.keywords.search`, which despite its name is
+**not** a keyword search: asked for 连衣裙, 运动鞋 and a nonsense string it
+returns the identical 978 rows. It is a fixed list, and nothing here uses it.
 
 ## KDX import contract — measured, not assumed
 
@@ -193,6 +211,35 @@ Anything else — `source`, `product_url`, `name`, `name_original`,
 `price_currency`, `weight`, `sku`, `stock` — passes the HTTP layer untouched but
 is not validated, so KDX does not store it. They are still sent because the
 client specified that shape; nothing depends on getting them back.
+
+### How long his import takes, and why one product is one request
+
+Measured 2 September, after a product with 146 colour options was lost to
+"The read operation timed out":
+
+| photographs in the request | seconds |
+|---|---|
+| 10 | 11.5 |
+| 34 | 32.2 |
+| 34, the identical payload again | 34.3 |
+
+Three things follow, and `verify_push_sizing.py` asserts all of them:
+
+1. **The cost is photographs, not bytes.** The first attempt at a fix cut the
+   gallery to five and still timed out, because 146 variant photographs
+   travelled with it untouched. `kdx_client.photo_count` counts variants too.
+2. **Chunks cannot accumulate.** A failure returned his own SQL:
+   `delete from product_images where id = 59536`. The import deletes the
+   photograph set before writing the new one, so a second chunk would erase the
+   first. One product goes in one request; a product over the whole budget
+   travels alone. Batches of *several* products are split on a photograph
+   budget, which is the part of "smaller batches" that can honestly be done
+   from this side.
+3. **A timeout is never retried.** His server re-downloads everything on every
+   call, so a retry starts the same queue again while the first is still
+   running — that is how one slow product became 142 seconds of waiting. The
+   wait is instead bought at the measured rate: `45s + 1.5s per photograph`,
+   capped at 600s.
 
 `src/mapping.py` owns the product JSON. `needs_shipment` is derived from weight
 (≤ 2 kg → `true`), so the weight itself never needs to reach KDX.

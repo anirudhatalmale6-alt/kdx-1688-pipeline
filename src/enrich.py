@@ -17,6 +17,10 @@ import urllib.request
 API_URL = "https://api.openai.com/v1/chat/completions"
 MODEL = "gpt-4.1-mini"
 
+# Option labels per translation call. See _translate_labels for why this is not
+# "all of them".
+LABELS_PER_CALL = int(os.environ.get("KDX_LABELS_PER_CALL", "40"))
+
 SYSTEM_PROMPT = """You clean and translate product listings taken from 1688 for a Saudi online store.
 
 Remove completely, never translate:
@@ -166,14 +170,52 @@ def _translate_labels(terms, prompt: str, api_key: str | None, timeout: int) -> 
     if not wanted:
         return {}
 
-    result = _chat(prompt, json.dumps(wanted, ensure_ascii=False), api_key, timeout)
-    translated = result.get("terms") or {}
+    def ask(subset: list) -> dict:
+        # In batches, because one product can carry a lot of labels: the blind
+        # box set his shop refused on 1 September had 146 colour options, and
+        # asked for all 146 at once the model answered with far fewer than it
+        # was given. Every label it omits keeps its Chinese, so a long list does
+        # not fail loudly - it just publishes Chinese.
+        answers: dict = {}
+        for start in range(0, len(subset), LABELS_PER_CALL):
+            window = subset[start:start + LABELS_PER_CALL]
+            result = _chat(prompt, json.dumps(window, ensure_ascii=False),
+                           api_key, timeout)
+            answers.update(result.get("terms") or {})
+        return answers
+
+    translated = ask(wanted)
 
     out = {}
     for term in wanted:
         entry = translated.get(term) or {}
         out[term] = {"en": str(entry.get("en") or term).strip(),
                      "ar": str(entry.get("ar") or term).strip()}
+
+    # The fallback above is "keep the Chinese", which is the right failure - a
+    # size that vanishes is worse than a size in Chinese - but it is not the
+    # right outcome. On 1 September 3 of 76 colour labels reached the shop in
+    # Chinese because the model simply left those keys out of its answer, and
+    # nothing noticed: every one of the 76 had an entry.
+    #
+    # So the labels that came back still Chinese are asked for again, by
+    # themselves. A short list is easier for the model than a long one, and one
+    # extra call for three labels is cheap. Anything still Chinese after this
+    # keeps the original, deliberately.
+    unresolved = [term for term, entry in out.items()
+                  if _CJK.search(entry["ar"]) or _CJK.search(entry["en"])]
+    if unresolved:
+        try:
+            second = ask(unresolved)
+        except Exception:                                  # noqa: BLE001
+            second = {}
+        for term in unresolved:
+            entry = second.get(term) or {}
+            english, arabic = str(entry.get("en") or "").strip(), str(entry.get("ar") or "").strip()
+            if english and not _CJK.search(english):
+                out[term]["en"] = english
+            if arabic and not _CJK.search(arabic):
+                out[term]["ar"] = arabic
     return out
 
 

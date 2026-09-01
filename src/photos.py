@@ -28,8 +28,10 @@ Two things this deliberately does NOT do:
 from __future__ import annotations
 
 import os
+import threading
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 # His importer is a server, not a browser: no Referer, plain user agent.
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; KDX-import/1.0)"}
@@ -50,12 +52,19 @@ ENABLED = os.environ.get("KDX_CHECK_IMAGES", "1").strip().lower() not in (
 # the bytes are simply not kept and the next reader fetches its own copy.
 KEEP_BYTES = int(os.environ.get("KDX_IMAGE_CACHE_BYTES", str(48 * 1024 * 1024)))
 
+# How many photographs to fetch at once. A pool product carries 100+ of them and
+# the run on 1 September spent 19.5 minutes on eight products almost entirely
+# here, one URL at a time, each one a round trip to China. Eight is deliberately
+# modest: this is someone else's CDN and the point is to stop wasting our own
+# waiting, not to hammer theirs.
+WORKERS = int(os.environ.get("KDX_IMAGE_WORKERS", "8"))
+
 
 class PhotoChecker:
     """Answers 'can this URL be fetched' once per URL per run."""
 
     def __init__(self, opener=None, timeout: int = TIMEOUT, attempts: int = 2,
-                 keep_bytes: int = KEEP_BYTES):
+                 keep_bytes: int = KEEP_BYTES, workers: int = WORKERS):
         self.opener = opener or urllib.request.urlopen
         self.timeout = timeout
         self.attempts = attempts
@@ -65,12 +74,38 @@ class PhotoChecker:
         self.held_bytes = 0
         self.checked = 0
         self.dead = 0
+        self.workers = max(1, workers)
+        # The cache and the byte budget are touched from several threads once
+        # warm() runs. Without this two threads can both see room for the last
+        # megabyte and the budget quietly becomes a suggestion.
+        self._lock = threading.Lock()
+
+    def warm(self, urls) -> None:
+        """
+        Fetch these URLs concurrently so the checks after it are cache hits.
+
+        Purely an optimisation: every answer still goes through reachable(), so
+        the result of a run is identical whether this is called or not - which
+        is what makes it safe to skip when workers is 1.
+        """
+        pending = []
+        with self._lock:
+            for url in urls or []:
+                if url and url not in self.seen and url not in pending:
+                    pending.append(url)
+        if not pending or self.workers == 1:
+            for url in pending:
+                self.reachable(url)
+            return
+        with ThreadPoolExecutor(max_workers=min(self.workers, len(pending))) as pool:
+            list(pool.map(self.reachable, pending))
 
     def reachable(self, url: str) -> bool:
         if not url:
             return False
-        if url in self.seen:
-            return self.seen[url]
+        with self._lock:
+            if url in self.seen:
+                return self.seen[url]
 
         ok = False
         for attempt in range(self.attempts):
@@ -82,9 +117,11 @@ class PhotoChecker:
                     # A 200 that hands back an HTML error page is not a photo.
                     ok = 200 <= getattr(response, "status", 200) < 300 \
                         and kind.startswith("image/")
-                    if ok and body and self.held_bytes + len(body) <= self.keep_bytes:
-                        self.bodies[url] = body
-                        self.held_bytes += len(body)
+                    if ok and body:
+                        with self._lock:
+                            if self.held_bytes + len(body) <= self.keep_bytes:
+                                self.bodies[url] = body
+                                self.held_bytes += len(body)
                 break
             except urllib.error.HTTPError:
                 # 403 and 404 do not improve by asking again.
@@ -93,10 +130,11 @@ class PhotoChecker:
                 if attempt + 1 >= self.attempts:
                     break
 
-        self.seen[url] = ok
-        self.checked += 1
-        if not ok:
-            self.dead += 1
+        with self._lock:
+            self.seen[url] = ok
+            self.checked += 1
+            if not ok:
+                self.dead += 1
         return ok
 
     def body(self, url: str) -> bytes:
@@ -123,6 +161,19 @@ def prune(payload: dict, checker: PhotoChecker) -> dict:
     survived. An empty `kept` is the caller's signal to hold the product.
     """
     before = list(payload.get("images") or [])
+
+    # Every URL this product will ask about, fetched together. A pool product
+    # carries the gallery plus one photograph per colour, and asking for them
+    # one at a time is what made 1 September's run take 19.5 minutes for eight
+    # products. The pruning below is unchanged and still authoritative; this
+    # only means it finds the answers already in hand.
+    everything = list(before)
+    for variant in payload.get("variants") or []:
+        everything.extend(variant.get("images") or [])
+        if variant.get("image"):
+            everything.append(variant["image"])
+    checker.warm(everything)
+
     kept = checker.keep(before)
     payload["images"] = kept
 

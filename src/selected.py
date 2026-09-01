@@ -28,8 +28,33 @@ for one of the shop's own offers it says, verbatim,
 
     "offerId:1004582496795 不是精选货源商品"
 
-so this channel adds 1,950 rich products and takes nothing away from the image
+so this channel adds rich products and takes nothing away from the image
 search, which remains the only way to reach the rest of 1688.
+
+HOW BIG THE POOL REALLY IS - measured 2 September, and it is not 1,950.
+
+The plain walk stops at 2,000 offers because that is the window the listing
+serves, not because the catalogue ends there. Two measurements say so:
+
+  * walked again a day later, 1,053 of the 2,000 offers were ones the first
+    walk had never shown. The window moves.
+  * the listing READS A KEYWORD, which is the part that matters. Asked for
+    连衣裙 it returned 50 rows of which 50 titles contained the word; 运动鞋
+    returned trainers; and the control that makes this a fact rather than a
+    coincidence - the nonsense string "qqzzxxyy" - returned ZERO rows. A list
+    that ignored the parameter would have answered its usual fifty.
+
+    Each keyword then pages to exactly 2,000 offers (40 pages of 50, page 41
+    empty), and ten offers sampled from each of nine keywords were answered by
+    the detail API every time, with hundreds of photograph URLs.
+
+So the reachable catalogue is roughly 2,000 offers PER WORD, all of them with
+complete photographs - not one fixed shelf of 1,950. The category tree already
+holds 1,481 allowed Chinese category names, which is where the words come from.
+
+Note what this does NOT do: it does not reach offers outside the pool. The
+image search stays for those, and it stays the only channel that can look up an
+arbitrary offer the client names.
 
 Three measured facts are load-bearing here and each is a bug if forgotten:
 
@@ -147,21 +172,31 @@ class SelectedPool:
         self.pages_walked = 0
         self.calls = 0
         self.skipped_outside_pool: list = []
+        # word -> how many distinct offers it produced, so a run can say which
+        # words are worth walking again and which have gone dry.
+        self.keyword_counts: dict = {}
 
     # -- walking ------------------------------------------------------------
 
-    def offer_ids(self, limit: int = 0, max_pages: int = 60) -> list:
+    def offer_ids(self, limit: int = 0, max_pages: int = 60, keyword: str = "") -> list:
         """
         Distinct offer ids from the pool listing, in the order it serves them.
 
-        Stops on an empty page, on a page that adds nothing new - which is what
-        a page parameter being ignored looks like, and the only way to see it -
-        or once `limit` ids are in hand.
+        With `keyword` the listing searches; without it, it serves its default
+        window. Either way it stops on an empty page, on a page that adds
+        nothing new - which is what a page parameter being ignored looks like,
+        and the only way to see it - or once `limit` ids are in hand.
+
+        A keyword with no matches returns an empty first page, and that is a
+        legitimate answer rather than a failure: it is exactly what the nonsense
+        control returns.
         """
         seen: dict = {}
         for page in range(1, max_pages + 1):
-            payload = self.client.call(LIST_ROUTE,
-                                       {"pageNum": page, "pageSize": self.page_size})
+            query = {"pageNum": page, "pageSize": self.page_size}
+            if keyword:
+                query["keyword"] = keyword
+            payload = self.client.call(LIST_ROUTE, query)
             self.calls += 1
             rows = _rows(payload, "result")
             if not rows:
@@ -176,6 +211,36 @@ class SelectedPool:
                 break
             if limit and len(seen) >= limit:
                 break
+        ids = list(seen)
+        return ids[:limit] if limit else ids
+
+    def offer_ids_for(self, keywords, *, per_keyword: int = 0, limit: int = 0,
+                      known=None) -> list:
+        """
+        Distinct offer ids across several keywords, first word first.
+
+        `known` is the ledger's membership test. It is applied here rather than
+        by the caller for one reason worth spelling out: a word whose 2,000
+        offers the shop already carries would otherwise consume the whole
+        night's quota with duplicates and the run would publish nothing while
+        reporting that it had found plenty. Filtering as we walk means the quota
+        is filled from words that still have something new, and keyword_counts
+        records what each word actually contributed.
+        """
+        seen: dict = {}
+        for word in keywords:
+            if limit and len(seen) >= limit:
+                break
+            found = self.offer_ids(limit=per_keyword, keyword=word)
+            fresh = 0
+            for ident in found:
+                if ident in seen:
+                    continue
+                if known is not None and known(ident):
+                    continue
+                seen[ident] = word
+                fresh += 1
+            self.keyword_counts[word] = fresh
         ids = list(seen)
         return ids[:limit] if limit else ids
 

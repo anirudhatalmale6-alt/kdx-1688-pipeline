@@ -223,6 +223,79 @@ check("a server that ignores our page name stops the walk instead of looping",
 limited = selected.SelectedPool(FakeClient(pages=9), page_size=50)
 check("a limit is honoured", len(limited.offer_ids(limit=30)) == 30)
 
+
+# --------------------------------------------------------------- 4b. keywords
+print("\nthe keyword, which is what makes the pool a catalogue and not a shelf")
+
+
+class KeywordClient(FakeClient):
+    """
+    A listing that really does read the keyword.
+
+    `catalogue` maps a word to the offers it holds. A word that is not in it
+    returns nothing at all - which is what the live gateway did for the
+    nonsense control, and the only reason we know the parameter is read.
+    """
+
+    def __init__(self, catalogue: dict, page_size: int = 50):
+        super().__init__()
+        self.catalogue = catalogue
+        self.words_asked: list = []
+
+    def call(self, route: ApiRoute, params: dict | None = None, authed: bool = True):
+        params = params or {}
+        if route.api_name == "jxhy.product.getPageList":
+            word = params.get("keyword", "")
+            self.words_asked.append(word)
+            page = int(params.get("pageNum", 1))
+            size = int(params.get("pageSize", 50))
+            offers = self.catalogue.get(word, [])
+            window = offers[(page - 1) * size:page * size]
+            return {"result": {"success": True,
+                               "result": [{"itemId": o} for o in window]}}
+        return super().call(route, params, authed)
+
+
+CATALOGUE = {"连衣裙": [f"A{n}" for n in range(70)],
+             "台灯": [f"B{n}" for n in range(30)],
+             "耳机": [f"A{n}" for n in range(10)]}          # overlaps 连衣裙 on purpose
+
+searcher = selected.SelectedPool(KeywordClient(CATALOGUE), page_size=50)
+dresses = searcher.offer_ids(keyword="连衣裙")
+check("a keyword walks all of its pages, not just the first",
+      len(dresses) == 70, str(len(dresses)))
+check("the word is actually sent",
+      set(searcher.client.words_asked) == {"连衣裙"},
+      str(searcher.client.words_asked))
+
+empty = selected.SelectedPool(KeywordClient(CATALOGUE))
+check("CONTROL: a word with no offers returns nothing rather than the usual page",
+      empty.offer_ids(keyword="qqzzxxyy") == [],
+      "if this ever returns rows, the listing is ignoring the keyword again")
+
+many = selected.SelectedPool(KeywordClient(CATALOGUE))
+across = many.offer_ids_for(["连衣裙", "台灯", "耳机"])
+check("several words are merged without duplicates",
+      len(across) == len(set(across)) == 100, str(len(across)))
+check("and each word is credited only with what IT added",
+      many.keyword_counts == {"连衣裙": 70, "台灯": 30, "耳机": 0},
+      str(many.keyword_counts))
+
+# The ledger filter belongs inside the walk. A night whose first word returns
+# 2,000 offers the shop already carries must not report "found 2,000" and then
+# publish nothing.
+carried = {f"A{n}" for n in range(70)}
+fresh = selected.SelectedPool(KeywordClient(CATALOGUE))
+new_ids = fresh.offer_ids_for(["连衣裙", "台灯"], known=lambda offer: offer in carried)
+check("offers the shop already has are dropped as the walk goes",
+      set(new_ids) == {f"B{n}" for n in range(30)}, str(len(new_ids)))
+check("so a word that is entirely already-published is reported as contributing none",
+      fresh.keyword_counts["连衣裙"] == 0, str(fresh.keyword_counts))
+
+capped = selected.SelectedPool(KeywordClient(CATALOGUE))
+check("a limit stops the walk early instead of after every word",
+      len(capped.offer_ids_for(["连衣裙", "台灯", "耳机"], limit=25)) == 25)
+
 # ------------------------------------------------------- 5. the product itself
 print("\nthe product this channel produces is the one the pipeline consumes")
 check("two colours became two variants", len(product["variants"]) == 2,

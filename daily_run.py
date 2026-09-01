@@ -52,7 +52,30 @@ class Locked(RuntimeError):
     pass
 
 
-def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger") -> tuple:
+def pool_keywords(runner, day: str, count: int) -> list:
+    """
+    The Chinese words tonight's pool search will use.
+
+    The pool listing serves 2,000 offers per keyword, so which words are asked
+    decides what the shop can reach. They come from the category tree that is
+    already built and already vetted - only leaves marked `allowed`, so a word
+    from a banned branch is never even asked - and the starting point moves with
+    the date. Without that rotation every night would ask the same first words
+    and walk the same offers it published yesterday.
+    """
+    rows = getattr(runner.categories, "rows", None) or []
+    words = [row["name_zh"] for row in rows
+             if row.get("is_leaf") and row.get("state") == catalog.ALLOWED
+             and row.get("name_zh")]
+    if not words:
+        return []
+    offset = int("".join(ch for ch in day if ch.isdigit()) or "0") % len(words)
+    rotated = words[offset:] + words[:offset]
+    return rotated[:count]
+
+
+def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger",
+                     keywords: list | None = None) -> tuple:
     """
     A night's products from the 精选货源 pool instead of the image search.
 
@@ -61,17 +84,28 @@ def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger") -> t
     the same ledger, so a product the shop already carries is not published a
     second time. Returns (products, notes).
 
-    The pool is a fixed 1,950 offers, so this channel runs dry by design: once
-    the ledger knows them all it harvests nothing, and the run should fall back
-    to the image search rather than looking broken. That is said out loud in the
-    notes rather than left as an empty list to interpret.
+    With keywords the pool is searched word by word; without them it serves its
+    default window, which is 2,000 offers and repeats itself once the shop has
+    them. That is why keywords are the normal path: the window is a shelf, the
+    keywords are the catalogue.
     """
     pool = selected.SelectedPool(client)
-    ids = [offer for offer in pool.offer_ids() if not ledger.knows_offer(offer)]
-    notes = [f"pool holds {pool.pages_walked} page(s); "
-             f"{len(ids)} offers the shop does not already carry"]
+    # More ids than the quota, because the two filters below reject some and a
+    # night that harvested exactly `quota` ids would publish fewer than asked.
+    want = max(quota * 4, 50)
+    if keywords:
+        ids = pool.offer_ids_for(keywords, limit=want, known=ledger.knows_offer)
+        contributing = [f"{word}:{n}" for word, n in pool.keyword_counts.items() if n]
+        notes = [f"{len(keywords)} keyword(s) searched, "
+                 f"{len(contributing)} of them had something new",
+                 "new offers per word: " + (", ".join(contributing[:12]) or "none")]
+    else:
+        ids = [offer for offer in pool.offer_ids() if not ledger.knows_offer(offer)][:want]
+        notes = [f"pool window holds {pool.pages_walked} page(s); "
+                 f"{len(ids)} offers the shop does not already carry"]
     if not ids:
-        notes.append("the pool is exhausted - every offer in it is already published")
+        notes.append("nothing new in the pool tonight - every offer these words "
+                     "return is already published")
         return [], notes
 
     harvested, dropped = [], 0
@@ -139,6 +173,11 @@ def main() -> int:
     parser.add_argument("--seeds", help="seed photograph list; default $KDX_SEEDS")
     parser.add_argument("--report", help="where to write the run report")
     parser.add_argument("--rate", help="CNY to SAR, instead of today's fetched rate")
+    parser.add_argument("--keywords",
+                        help="comma-separated Chinese words for the pool search; "
+                             "default is tonight's slice of the allowed category names")
+    parser.add_argument("--keyword-count", type=int, default=12,
+                        help="how many category names to search when --keywords is absent")
     parser.add_argument("--channel", choices=("image", "selected"), default="image",
                         help="where products come from: the LinkPlus image search "
                              "(one photograph per product, all of 1688) or the "
@@ -177,13 +216,17 @@ def main() -> int:
             return 0
 
         walker = None
+        words: list = []
         if args.channel == "selected":
             book = discover.Ledger()
             client = runner.sku_client or getattr(runner.source, "client", None)
             if client is None:
                 print("the selected pool needs 1688 credentials in the environment")
                 return 2
-            harvested, notes = harvest_selected(runner, client, quota, book)
+            words = ([w.strip() for w in args.keywords.split(",") if w.strip()]
+                     if args.keywords else pool_keywords(runner, day, args.keyword_count))
+            print(f"pool search words ({len(words)}): {', '.join(words[:12])}")
+            harvested, notes = harvest_selected(runner, client, quota, book, words)
             ledger = book.summary()
             print(f"selected pool: {len(harvested)} products worth pricing")
             for note in notes:
@@ -246,6 +289,7 @@ def main() -> int:
             "seconds": round(elapsed, 1),
             "quota": quota,
             "channel": args.channel,
+            "keywords": words,
             "discovered": len(harvested),
             "from_surplus": walker.from_surplus if walker else 0,
             "dropped_before_pricing": walker.rejected_early if walker else None,
