@@ -119,6 +119,15 @@ KEPT = [
     "Oil Painting Canvas Frame 40x50",
     "Paint Brush Set Artist 12pcs",
     "Baking Soda Cleaning Powder 1kg",
+    # The liquid word is the front half of a longer, innocent word.
+    "玻璃水杯耐热家用泡茶杯",           # 玻璃水 is screen wash; this is a tumbler
+    "10.3寸墨水屏电子书阅读器",         # 墨水 is ink; 墨水屏 is an e-ink display
+    "手工精油皂植物洁面皂",             # 精油 is an oil; 精油皂 is a bar of soap
+    "香水百合鲜花绿植盆栽",             # 香水百合 is a lily
+    "便携式酒精测试仪吹气式",           # a breathalyser, not alcohol
+    "小型汽油机水泵农用",               # a petrol engine, not petrol
+    "牙膏架挤压器壁挂免打孔",           # a squeezer, not toothpaste
+    "果汁粉固体饮料冲剂",               # powder - and 饮料 alone would catch it
     # Real department names from the 1497-category walk: machinery and agency
     # branches, not liquids. Blocking these would delete a whole aisle.
     "食品、饮料加工及餐饮行业设备",

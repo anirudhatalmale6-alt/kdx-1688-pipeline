@@ -144,10 +144,22 @@ CONTAINERS = (
     "刷子", "饮料杯", "饮料瓶", "饮料机", "饮料包装", "果汁机", "果汁杯",
     "榨汁", "矿泉水瓶", "牛奶杯", "牛奶盒", "牛奶罐", "打奶泡", "奶泡机",
     "牛奶加热", "牛奶壶", "牛奶锅", "牛奶机", "牛奶保温", "温奶器",
+    # The liquid word is the front half of a longer, innocent word. 玻璃水 is
+    # screen wash, but it is also the first three characters of 玻璃水杯, a
+    # glass tumbler; 墨水 is ink, but 墨水屏 is an e-ink display; 精油 is an
+    # essential oil, but 精油皂 is a bar of soap. Same failure as 手动螺丝刀
+    # being read as a weapon, one aisle over.
+    "玻璃水杯", "玻璃水壶", "玻璃水瓶", "玻璃水具", "玻璃水槽",
+    "墨水屏", "墨水盒", "墨水架", "香水百合", "精油皂", "精油香皂",
+    "果汁粉", "牙膏架", "牙膏挤", "牙膏夹", "洗手液架", "洗手液器",
+    "酒精灯", "酒精测试", "酒精检测", "汽油机", "汽油泵", "汽油桶",
+    "机油尺", "机油壶", "机油枪", "涂料刷", "涂料桶", "胶水瓶",
+    "面霜瓶", "面霜罐", "乳液罐", "洗发水架", "沐浴露架",
     # Department names where the liquid is what the MACHINERY or the agency
     # deals in. These three came out of the real 1497-category walk, where
     # "食品、饮料加工及餐饮行业设备" - catering industry equipment - was being
     # refused as a beverage.
+    "固体饮料", "饮料粉", "饮料冲剂",
     "饮料加工", "饮料设备", "饮料机械", "饮料生产", "饮料代理", "饮料项目",
     "饮料行业", "饮料灌装", "油漆设备", "涂料设备", "胶水设备",
     "蜂蜜罐", "蜂蜜勺", "油壶", "调味瓶", "酱油瓶", "精油瓶", "香薰炉",
