@@ -673,8 +673,14 @@ def build(*, dry_run: bool = True, translate: bool | None = None, cny_to_sar=Non
         categories = category_live.LiveIndex(categories, client=client,
                                              translate=_translate_category)
 
+    # One extra 1688 read per product, and it buys the size dropdown the shop
+    # has been publishing empty. KDX_SKUS=0 turns it off without a code change
+    # if the account ever needs the calls back.
+    sku_client = client if os.environ.get("KDX_SKUS", "1").strip() != "0" else None
+
     return Pipeline(
         source=source_module.build_source(client),
+        sku_client=sku_client,
         categories=categories,
         provider=provider,
         shopping=shopping,
