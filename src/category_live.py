@@ -210,6 +210,18 @@ class LiveIndex:
         merged.update(self.index.by_id)
         return merged
 
+    @property
+    def rows(self) -> list:
+        """
+        Every category this index can speak for, built tree and learned alike.
+
+        Added because the pool search takes its keywords from here, and this
+        wrapper did not carry `rows`: the first run silently found no words at
+        all and quietly fell back to the unfiltered window - a keyword channel
+        that searches nothing, reporting success.
+        """
+        return list(self.by_id.values())
+
     def summary(self) -> dict:
         return {"gateway_calls": self.calls, "failures": self.failures,
                 "learned": len(self.learned)}

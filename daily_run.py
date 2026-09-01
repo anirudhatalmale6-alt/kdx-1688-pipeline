@@ -226,6 +226,16 @@ def main() -> int:
             words = ([w.strip() for w in args.keywords.split(",") if w.strip()]
                      if args.keywords else pool_keywords(runner, day, args.keyword_count))
             print(f"pool search words ({len(words)}): {', '.join(words[:12])}")
+            if not words:
+                # Said loudly because the fallback is silent and plausible: the
+                # run walks the unfiltered window instead, publishes real
+                # products, and reports success while the keyword channel it
+                # was asked for searched nothing. That is exactly what happened
+                # on the first live run - the category index in use had no
+                # `rows` attribute.
+                print("  WARNING: no search words - the category table gave none, "
+                      "so this run only sees the default 2,000-offer window. "
+                      "Pass --keywords to search on purpose.")
             harvested, notes = harvest_selected(runner, client, quota, book, words)
             ledger = book.summary()
             print(f"selected pool: {len(harvested)} products worth pricing")

@@ -296,6 +296,56 @@ capped = selected.SelectedPool(KeywordClient(CATALOGUE))
 check("a limit stops the walk early instead of after every word",
       len(capped.offer_ids_for(["连衣裙", "台灯", "耳机"], limit=25)) == 25)
 
+
+# ------------------------------------------------- 4c. where the words come from
+print("\nthe words themselves, which decide what the shop can reach")
+
+sys.path.insert(0, HERE)
+import catalog  # noqa: E402
+import category_live  # noqa: E402
+import daily_run  # noqa: E402
+
+TREE = [
+    {"id": "1", "name_zh": "台灯", "is_leaf": True, "parent_id": None,
+     "state": catalog.ALLOWED, "reason": ""},
+    {"id": "2", "name_zh": "指甲油、护甲油", "is_leaf": True, "parent_id": None,
+     "state": catalog.BLOCKED, "reason": "liquid_personal_care"},
+    {"id": "3", "name_zh": "家居日用", "is_leaf": False, "parent_id": None,
+     "state": catalog.ALLOWED, "reason": ""},
+    {"id": "4", "name_zh": "连衣裙", "is_leaf": True, "parent_id": None,
+     "state": catalog.ALLOWED, "reason": ""},
+]
+
+
+class Runner:
+    def __init__(self, categories):
+        self.categories = categories
+
+
+plain = catalog.CategoryIndex(TREE)
+words = daily_run.pool_keywords(Runner(plain), "2026-09-02", 10)
+check("a blocked category is never even searched for",
+      "指甲油、护甲油" not in words, str(words))
+check("and a branch that is not a leaf is not a search word either",
+      "家居日用" not in words, str(words))
+check("the allowed leaves are", sorted(words) == sorted(["台灯", "连衣裙"]), str(words))
+
+# The wrapper the live pipeline actually passes in. It presents resolve/state_of
+# /by_id, and on 2 September it did NOT present `rows` - so the first keyword run
+# found no words, fell back to the unfiltered window, and reported success.
+live = category_live.LiveIndex(plain, client=None, cache="/nonexistent/none.json")
+check("the LIVE index gives the same words as the plain one",
+      daily_run.pool_keywords(Runner(live), "2026-09-02", 10) == words,
+      "if this is empty the keyword channel silently searches nothing")
+
+check("a different day starts at a different word",
+      daily_run.pool_keywords(Runner(plain), "2026-09-02", 1)
+      != daily_run.pool_keywords(Runner(plain), "2026-09-03", 1),
+      "without rotation every night walks the same offers it published last night")
+
+check("no category table means no words, not a crash",
+      daily_run.pool_keywords(Runner(catalog.CategoryIndex([])), "2026-09-02", 5) == [])
+
 # ------------------------------------------------------- 5. the product itself
 print("\nthe product this channel produces is the one the pipeline consumes")
 check("two colours became two variants", len(product["variants"]) == 2,
