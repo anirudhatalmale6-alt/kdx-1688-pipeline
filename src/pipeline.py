@@ -31,6 +31,7 @@ import imagetext
 import mapping
 import photos
 import rules
+import skus
 
 
 @dataclass
@@ -75,7 +76,19 @@ def to_rules_product(normalised: dict) -> rules.Product:
                 attributes={"color": colour, "size": size.get("original", ""),
                             "images": images},
                 price_cny=Decimal(str(size["price"])),
-                stock=int(size.get("stock", 0) or 0),
+                # A size with no stock figure inherits the variant's, and the
+                # variant defaults to 1 - the same "unknown means available"
+                # this channel has always published under, now applied to both
+                # paths instead of only the one without sizes.
+                #
+                # The asymmetry that used to be here was not cosmetic. Sizes
+                # from product.skuinfo.get carry no stock, because the API does
+                # not report any; defaulting them to 0 sent every single one of
+                # them into the out_of_stock rejection in rules.py, so adding
+                # real sizes to the catalogue would have emptied it. Products
+                # from the detail API always set `stock` explicitly, so their
+                # genuine zeroes still reject.
+                stock=int(size.get("stock", variant.get("stock", 1)) or 0),
                 weight_kg=Decimal(str(size.get("weight", normalised["weight_kg"]))),
             ))
 
@@ -239,8 +252,16 @@ class Pipeline:
                  shopping=None,
                  kdx=None, translate: bool = True, dry_run: bool = True,
                  points_per_offer: int = 1, enricher=None, term_translator=None,
-                 categories=None, cache=None, meter=None, photo_checker=None):
+                 categories=None, cache=None, meter=None, photo_checker=None,
+                 sku_client=None):
         self.source = source
+        # The client product.skuinfo.get is called through, or None to publish
+        # the way the shop does today - one option per product. It is a
+        # separate handle rather than `source` because the sizes do not come
+        # from the channel the products come from: LinkPlus has no SKU table at
+        # all, and this is the only API measured to answer for an arbitrary
+        # offer id (2026-09-01, 38 of the 151 prepared offers, 38 answered).
+        self.sku_client = sku_client
         self.provider = provider
         # Prices, when the image search finds the product but not its price.
         self.shopping = shopping
@@ -275,6 +296,26 @@ class Pipeline:
             return {"name_en": product.title_zh, "name_ar": product.title_zh,
                     "description_ar": "", "description_en": "", "_untranslated": True}
         return self.enricher(product.title_zh, product.description_zh)
+
+    def _add_skus(self, normalised: dict) -> dict:
+        """
+        The product with its real sizes, or exactly the product it was given.
+
+        Off by default: without a client this returns the input object itself,
+        so a run configured the way every run before today was configured
+        behaves identically rather than quietly changing what it publishes.
+
+        A product that already carries a size table is left alone. Only the
+        LinkPlus shape - one variant, no sizes - has anything to gain, and
+        overwriting a detail-API table with this thinner one would lose the
+        per-SKU prices that table has and this one does not.
+        """
+        if self.sku_client is None:
+            return normalised
+        variants = normalised.get("variants") or []
+        if any(variant.get("sizes") for variant in variants):
+            return normalised
+        return skus.enrich(self.sku_client, normalised)
 
     def _terms(self, product: rules.Product) -> dict:
         labels = []
@@ -348,6 +389,16 @@ class Pipeline:
             self._audit(results, spent)
             return OfferOutcome(offer_id=offer_id, product=None, results=results,
                                 points_spent=spent)
+
+        # Sizes and colours, fetched only now: a product the category tree has
+        # already refused must not cost a call, which is the same reason the
+        # translation and the price search sit below this line too. It happens
+        # before the banned-term filter on purpose - a variant named in Chinese
+        # is text the filter should see, and until this line existed there were
+        # no variant names to see.
+        normalised = self._add_skus(normalised)
+        if normalised.get("sku_source") == skus.SKU_APPLIED:
+            product = to_rules_product(normalised)
 
         rejected_early = rules.find_banned_term(product) or (
             rules.is_electrical(product) and not rules.has_accepted_mains_spec(product))

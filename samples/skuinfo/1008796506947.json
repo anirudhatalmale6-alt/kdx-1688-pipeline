@@ -1,0 +1,1290 @@
+{
+ "result": {
+  "success": true,
+  "result": {
+   "skuSimpleInfos": [
+    {
+     "skuId": 6174728291769,
+     "specId": "1f2311944e82821983ddaa4c5d4f5a79",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 黑框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291770,
+     "specId": "b521b560656076bf03738b6e4e38acde",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 黑框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291771,
+     "specId": "5c2bc09632899f55204a0ac2067dbe1a",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 黑框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291772,
+     "specId": "8da75ffb372784c9d25d70802c241aa3",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 黑框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291773,
+     "specId": "f72b05caed793465dc380338627c5241",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 白框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291774,
+     "specId": "d1741fb37f0cea8608ebe91d85026eb2",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 白框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291775,
+     "specId": "f4095f2497a0d0938b358caa327e6f90",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 白框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291776,
+     "specId": "66235d753eeba8e9e35355b49bd093ed",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 白框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291777,
+     "specId": "71dce758d39f7560677d61d6267dcbdd",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "款 白框橘色"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291778,
+     "specId": "779d7352f1087cb18d726963681f2aa5",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "款 白框橘色"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291779,
+     "specId": "634416b11abf3c176ff0d194824f59db",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "款 白框墨绿"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291780,
+     "specId": "4e8681f1061ef596ad2cc19e0eccf12d",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "款 白框墨绿"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291781,
+     "specId": "5266e3775d31df66d4f48a9f9842817a",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加粗电镀款 黑框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291782,
+     "specId": "cb9f222de2dbc3a0f2918ac8abd9d731",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加粗电镀款 黑框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291783,
+     "specId": "b7ade540fedeb22c026b7c25e5348372",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加粗电镀款 黑框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291784,
+     "specId": "b5dbf2ea81292911545b54e20bd6e958",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加粗电镀款 黑框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291785,
+     "specId": "7ac885d947ee6b27a24b4c2797eea827",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加粗电镀款 白框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291786,
+     "specId": "5faefdb1c06a3b3cd3b04d0393be5013",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加粗电镀款 白框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291787,
+     "specId": "6734288be1112137fddeed399950b789",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加粗电镀款 白框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291788,
+     "specId": "4ab4ee2c6825b01aac5caf19c31e3026",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加粗电镀款 白框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291789,
+     "specId": "2697a9e7c19a26c76c54fe41aa20d9e9",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加粗电镀款 白框橘色"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291790,
+     "specId": "fa0ac6206817e66420eb238e80ad400c",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加粗电镀款 白框橘色"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291791,
+     "specId": "9ebe8c1c17b2c83a2f693810ce950834",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加粗电镀款 白框墨绿"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291792,
+     "specId": "fcdcdf658786f81b8fc54d72ac5d96b4",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加粗电镀款 白框墨绿"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291793,
+     "specId": "b0266e3473af37ab0e45138b63a52cc9",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 黑框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291794,
+     "specId": "0635be41ecde7d3d2a7df56340176dd6",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 黑框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291795,
+     "specId": "f8a583f52fd025a9b5275a9960764241",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 黑框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291796,
+     "specId": "59f7a72e71c6037a4c8127b7b7487367",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 黑框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291797,
+     "specId": "70e29664713640d145ea2c9d959bc78f",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 白框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291798,
+     "specId": "bbef76693f9d28b00375a4db6b383e50",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 白框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291799,
+     "specId": "a47c4deeae8640a811a765ccbd74e127",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 白框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291800,
+     "specId": "9d02dfc43e411f249aa1c67ccb7edb06",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 白框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291801,
+     "specId": "a1174e4c2dc475e177583c593ed1b16f",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 白框橘色"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291802,
+     "specId": "c00cc9d1f7cebba13f51d12e5664ae6d",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 白框橘色"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291803,
+     "specId": "2dc228f044121563bcd82264e0502709",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 白框墨绿"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291804,
+     "specId": "5e828bded1379faff94b9ec6e3a9d24c",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 白框墨绿"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291805,
+     "specId": "232e76306dfc4891db897d745af80a75",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级款 黑框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291806,
+     "specId": "00b799acdb4896e3637337cda6c6eb90",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级款 黑框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291807,
+     "specId": "7c98d2361c56ccaecd5fb2252b59af6f",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级款 黑框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291808,
+     "specId": "73ac2d73fc1a086c2d35b3969c257437",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级款 黑框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291809,
+     "specId": "f54ad8884b1cc85a9eff892cde510c89",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级款 白框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291810,
+     "specId": "8f200504ac40867f57e86185d4650bb3",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级款 白框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291811,
+     "specId": "5d6795e0897f7c2b96f061f9bcadb2fa",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级款 白框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291812,
+     "specId": "214a55a71aaa7298ade3b3a712e05266",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级款 白框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291813,
+     "specId": "0e97346bef79a7dff9cda1c1c62aa93d",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 黑框黑网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291814,
+     "specId": "7adc88a3c30beb393fefd71e647e93de",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 黑框黑网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291815,
+     "specId": "fc831de74c056b5de6d009c964ed66da",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 黑框灰网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291816,
+     "specId": "df24e0b3a8a1ddf5c42cbeea3c25dee5",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 黑框灰网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291817,
+     "specId": "04c59ea1ab6c82a6dfb47be54b3bbc3c",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 白框黑网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291818,
+     "specId": "5bee3c67efe145131031f30c27079087",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 白框黑网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291819,
+     "specId": "1f088ff49035e5ce9d2d9d95438d0e89",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 白框灰网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291820,
+     "specId": "cffb7884c8e61aabd392e5f3bdf99fcd",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "加强版 白框灰网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291821,
+     "specId": "401ecb1220713360ef36e476a55b5549",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 黑框黑网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291822,
+     "specId": "c4cebb7cc9e3230db745f3262d57ae36",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 黑框黑网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291823,
+     "specId": "2066e644efacba739f82c8c37912f2f8",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 黑框灰网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291824,
+     "specId": "9432837888f3d2c75d0d357b722998b2",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 黑框灰网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291825,
+     "specId": "d04923189b3481af331e1b5f717bcc30",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 白框黑网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291826,
+     "specId": "329d437cdbffffcbd3be40155acefdc0",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 白框黑网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291827,
+     "specId": "5f8a2ea144cc659ebad6f7c83ad7f252",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 白框灰网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291828,
+     "specId": "540d59dc7883e3fa6a1f6d64c38d4f5d",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级滑轮款 白框灰网 头枕款"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291829,
+     "specId": "ae16180a351dfb61b7d5de4b5ca40161",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 黑框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291830,
+     "specId": "ee8e42fa207a2d8668b0e7323ca2ab6a",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 黑框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291831,
+     "specId": "8240621c85608f75a56106cb3c2f47f5",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 黑框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291832,
+     "specId": "65e5083bf05364a0c79e4aa911822ee6",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 黑框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291833,
+     "specId": "32390d73b75cae6cddcc1496443b2f55",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 白框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291834,
+     "specId": "34ec159da05106b2b96ccfd11d656dbd",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 白框黑网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291835,
+     "specId": "073bfacf93e9edf287acb97b15278e1a",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 白框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291836,
+     "specId": "b040907067b4ab2e1e4a2152b077fed3",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 白框灰网"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291837,
+     "specId": "916feabd6c86e695ce291e96c6f269cf",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 黑框黑网+头枕"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291838,
+     "specId": "cf9c7efe4832f177d5d192d463e95fe8",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 黑框黑网+头枕"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291839,
+     "specId": "d05bb081f6d7294757647d8ba7b3ed4e",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 黑框灰网+头枕"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291840,
+     "specId": "dc5399b9cedfdca3158f1ddb9015393f",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 黑框灰网+头枕"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291841,
+     "specId": "bdf0dbf96c8ae3a6c7610a2485b640e5",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 白框黑网+头枕"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291842,
+     "specId": "d7dc0684413871dda5fefe28561f50d4",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 白框黑网+头枕"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291843,
+     "specId": "d2dae95b4f48bda5c7ec4cc3ff2eb333",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 白框灰网+头枕"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291844,
+     "specId": "17bc3f2bdb6bbb65eb41633446675194",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "三代升级滑轮款 白框灰网+头枕"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291845,
+     "specId": "a56eb98143fa45fa168c7608b2356682",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "款 黑框黑网 海绵坐垫"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291846,
+     "specId": "c2ded63c00a45a5aeea0b0a181029f65",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "款 黑框黑网 海绵坐垫"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291847,
+     "specId": "6edd8ba8637f968704ba782391319522",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级加固电镀款 黑色"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "乳胶坐垫"
+      }
+     ]
+    },
+    {
+     "skuId": 6174728291848,
+     "specId": "7cbe7ec63777dece347aca94c9df8e66",
+     "attributes": [
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "升级加固电镀款 黑色"
+      },
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "海绵坐垫"
+      }
+     ]
+    }
+   ],
+   "openUid": "2216607424838"
+  }
+ }
+}

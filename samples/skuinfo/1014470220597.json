@@ -1,0 +1,298 @@
+{
+ "result": {
+  "success": true,
+  "result": {
+   "skuSimpleInfos": [
+    {
+     "skuId": 6017326717277,
+     "specId": "6ff6071792c8ab520b9b867c61b990bd",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "白色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "38"
+      }
+     ]
+    },
+    {
+     "skuId": 6017326717278,
+     "specId": "8392c83bf1f5acc659f56cc174bf31b4",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "白色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "39"
+      }
+     ]
+    },
+    {
+     "skuId": 6017326717279,
+     "specId": "09339002c114de99a88de2b0fc2e1da2",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "白色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "40"
+      }
+     ]
+    },
+    {
+     "skuId": 6017326717280,
+     "specId": "f1a259b7b1b1c76c2a2971fe9d40b85d",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "白色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "41"
+      }
+     ]
+    },
+    {
+     "skuId": 6017326717281,
+     "specId": "56b5771a6073ac50c9b770fba594ebec",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "白色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "42"
+      }
+     ]
+    },
+    {
+     "skuId": 6017326717282,
+     "specId": "b797ebdd2572671814a601289fbad8d4",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "白色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "43"
+      }
+     ]
+    },
+    {
+     "skuId": 6017326717283,
+     "specId": "e1bf87d1cbf3e11c4b32d1b4e90c9b39",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "白色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "44"
+      }
+     ]
+    },
+    {
+     "skuId": 6099578817475,
+     "specId": "e2756d62b4a4ed0e9651f39d813198dd",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "白色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "45（不退不换）"
+      }
+     ]
+    },
+    {
+     "skuId": 6099578817473,
+     "specId": "90c921dbfd37c4225519e7dafc705422",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "白色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "46（不退不换）"
+      }
+     ]
+    },
+    {
+     "skuId": 6017326717284,
+     "specId": "24a8dfcd3e63f946b66b8a1713ac8c51",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "黑色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "38"
+      }
+     ]
+    },
+    {
+     "skuId": 6017326717285,
+     "specId": "409e988ccd22beae7ed1373859c47d15",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "黑色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "39"
+      }
+     ]
+    },
+    {
+     "skuId": 6017326717286,
+     "specId": "f279f76ad1b737009211a09179cb4d19",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "黑色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "40"
+      }
+     ]
+    },
+    {
+     "skuId": 6017326717287,
+     "specId": "f13a9daaf289f5b716d04a2b3b8fc2b0",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "黑色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "41"
+      }
+     ]
+    },
+    {
+     "skuId": 6017326717288,
+     "specId": "b825000ae9a12f71815406c77db3c440",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "黑色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "42"
+      }
+     ]
+    },
+    {
+     "skuId": 6017326717289,
+     "specId": "eea47f53753ea744a2915efa56dd1263",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "黑色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "43"
+      }
+     ]
+    },
+    {
+     "skuId": 6017326717290,
+     "specId": "1ef04a8c3262c38535070c23ddc0e091",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "黑色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "44"
+      }
+     ]
+    },
+    {
+     "skuId": 6099578817476,
+     "specId": "677fcba0f760f7d1521d7d52960eed21",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "黑色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "45（不退不换）"
+      }
+     ]
+    },
+    {
+     "skuId": 6099578817474,
+     "specId": "f7c679d4cbd457268f09c5a239372050",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "黑色"
+      },
+      {
+       "attributeID": 450,
+       "attributeName": "尺码",
+       "attributeValue": "46（不退不换）"
+      }
+     ]
+    }
+   ],
+   "openUid": "2215852706406"
+  }
+ }
+}

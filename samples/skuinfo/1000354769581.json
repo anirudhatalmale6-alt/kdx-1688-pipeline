@@ -1,0 +1,26 @@
+{
+ "result": {
+  "success": true,
+  "result": {
+   "skuSimpleInfos": [
+    {
+     "skuId": 6151027218762,
+     "specId": "cae4828db60b9d779d0ec040f9acc3c1",
+     "attributes": [
+      {
+       "attributeID": 3216,
+       "attributeName": "颜色",
+       "attributeValue": "透明"
+      },
+      {
+       "attributeID": 1234,
+       "attributeName": "规格",
+       "attributeValue": "一次性脚膜套（100只）"
+      }
+     ]
+    }
+   ],
+   "openUid": "2213242812927"
+  }
+ }
+}
