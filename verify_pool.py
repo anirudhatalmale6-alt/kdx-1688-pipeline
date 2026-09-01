@@ -68,6 +68,8 @@ DETAIL = ApiRoute(namespace="com.alibaba.fenxiao",
                   api_name="alibaba.pifatuan.product.detail.list")
 SKU = ApiRoute(namespace="com.alibaba.product", api_name="product.skuinfo.get")
 PRODUCT = ApiRoute(namespace="com.alibaba.product", api_name="alibaba.product.get")
+QUERY_DETAIL = ApiRoute(namespace="com.alibaba.fenxiao.crossborder",
+                        api_name="product.search.queryProductDetail")
 
 
 def pool(primary=None, second=None) -> ClientPool:
@@ -89,6 +91,10 @@ check("product.skuinfo.get goes to the new app (per-API override)",
       one.call(SKU)["answered_by"] == "fenxiao")
 check("alibaba.product.get stays on the old app, same namespace",
       one.call(PRODUCT)["answered_by"] == "primary")
+# crossborder is split the other way round: the namespace belongs to the new app
+# but this one API is still ACL-declined there, measured 2026-09-01.
+check("queryProductDetail stays on the old app despite its namespace",
+      one.call(QUERY_DETAIL)["answered_by"] == "primary")
 
 print("\none app only: nothing changes until the second is configured")
 alone = pool()

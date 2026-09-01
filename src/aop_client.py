@@ -283,6 +283,18 @@ SECOND_APP_ROUTES = {
     "com.alibaba.trade",
 }
 
+# Exceptions to the namespace rows above, and they are not guesses: on
+# 2026-09-01, once the second app's permissions opened, a probe of all
+# twenty-two APIs measured these two as still gw.APIACLDecline on the second app
+# while the first app answers them. A namespace is not a permission boundary -
+# com.alibaba.fenxiao.crossborder is split, pool.product.pull belongs to the new
+# app and product.search.queryProductDetail does not. Without this set the
+# fallback would still recover the call, but only after paying for a refused
+# round trip on every single request.
+FIRST_APP_ROUTES = {
+    "com.alibaba.fenxiao.crossborder/product.search.queryProductDetail",
+}
+
 ACL_MARKERS = ("APIACLDecline", "not allowed(acl)", "APIACLDeny")
 
 
@@ -326,6 +338,8 @@ class ClientPool:
         key = f"{route.namespace}/{route.api_name}"
         if key in self.learned:
             return self.learned[key]
+        if key in FIRST_APP_ROUTES:
+            return self.default
         if self.second and (key in self.routes or route.namespace in self.routes):
             return self.second
         return self.default
