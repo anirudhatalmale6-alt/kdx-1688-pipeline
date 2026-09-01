@@ -131,6 +131,44 @@ a long catalogue run does not die halfway through.
 The namespace and API name are configuration, not constants, because they
 differ between permission packages.
 
+## Two product channels, and why one photograph is not a fault
+
+```
+daily_run.py --channel image      # the default: all of 1688, one photograph
+daily_run.py --channel selected   # the 精选货源 pool: 4-5 photographs, 1,950 offers
+```
+
+**image** is `com.alibaba.linkplus / alibaba.cross.similar.offer.search`. It
+searches the whole market by photograph and returns eleven fields per row, of
+which exactly one is an image. That is the entire reason every product
+published before 1 September carries a single photograph: a search channel is
+not a detail channel. Nothing about the shop or the permissions was ever wrong.
+
+**selected** is `jxhy.product.getPageList` walking 1,950 curated offers, then
+`alibaba.pifatuan.product.detail.list` fetching up to fifty of them per call.
+Measured live on 1 September against 30 offers spread across the whole walk:
+
+| | image search | selected pool |
+|---|---|---|
+| offers reachable | all of 1688 | 1,950 |
+| main photographs | 1 | 4–5 (30 of 30 had more than one) |
+| photographs in the description | — | 5–32 |
+| photograph per colour | — | 21 of 30 |
+| per-SKU prices | — | 12 of 30 |
+| declared weight | never | 8 of 30 |
+| description | — | yes |
+
+They are additive. The pool is small and finite; the image search reaches
+everything else. `src/selected.py` documents the three traps that each ship a
+broken catalogue quietly — relative photograph paths, an absent weight that
+`_weight_of` turns into 2.5 kg (above the client's 2 kg line, so the product is
+classed heavy and, unmatched, never published), and a batch that refuses all
+fifty offers if one is outside the pool.
+
+`product.keywords.search` is **not** a keyword search, despite the name: asked
+for 连衣裙, 运动鞋 and a nonsense string it returns the identical 978 rows.
+It is a fixed distribution list, and this repository does not use it.
+
 ## KDX import contract — measured, not assumed
 
 `POST https://kdx-sa.com/api/v1/products/import`, header `X-API-Token`,

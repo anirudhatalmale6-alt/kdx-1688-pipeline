@@ -35,10 +35,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "src"))
 
 import budget as budget_module  # noqa: E402
+import catalog  # noqa: E402
 import discover  # noqa: E402
 import paths  # noqa: E402
 import pipeline as pipeline_module  # noqa: E402
 import rules  # noqa: E402
+import selected  # noqa: E402
 
 LOCK_PATH = paths.state_path("daily.lock", "KDX_LOCK")
 # A machine that loses power mid-run leaves the lock behind. Twelve hours is
@@ -48,6 +50,52 @@ STALE_LOCK_SECONDS = int(os.environ.get("KDX_LOCK_STALE_SECONDS", str(12 * 3600)
 
 class Locked(RuntimeError):
     pass
+
+
+def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger") -> tuple:
+    """
+    A night's products from the 精选货源 pool instead of the image search.
+
+    Same two filters the image walk applies before spending anything - a banned
+    category and a banned term are settled from the row we already hold - and
+    the same ledger, so a product the shop already carries is not published a
+    second time. Returns (products, notes).
+
+    The pool is a fixed 1,950 offers, so this channel runs dry by design: once
+    the ledger knows them all it harvests nothing, and the run should fall back
+    to the image search rather than looking broken. That is said out loud in the
+    notes rather than left as an empty list to interpret.
+    """
+    pool = selected.SelectedPool(client)
+    ids = [offer for offer in pool.offer_ids() if not ledger.knows_offer(offer)]
+    notes = [f"pool holds {pool.pages_walked} page(s); "
+             f"{len(ids)} offers the shop does not already carry"]
+    if not ids:
+        notes.append("the pool is exhausted - every offer in it is already published")
+        return [], notes
+
+    harvested, dropped = [], 0
+    for product in pool.products(offer_ids=ids):
+        if len(harvested) >= quota:
+            break
+        state = (runner.categories.state_of(product.get("category_id"))
+                 if runner.categories is not None else "unknown")
+        if state in (catalog.BLOCKED, catalog.REVIEW):
+            dropped += 1
+            continue
+        try:
+            if rules.find_banned_term(pipeline_module.to_rules_product(product)):
+                dropped += 1
+                continue
+        except Exception:                                 # noqa: BLE001
+            pass
+        harvested.append(product)
+        ledger.add_offer(product["offer_id"])
+    ledger.save()
+    notes.append(f"{dropped} dropped on category or banned term before any spend")
+    if pool.skipped_outside_pool:
+        notes.append(f"{len(pool.skipped_outside_pool)} refused as outside the pool")
+    return harvested, notes
 
 
 def take_lock(path: str = LOCK_PATH) -> int:
@@ -91,6 +139,10 @@ def main() -> int:
     parser.add_argument("--seeds", help="seed photograph list; default $KDX_SEEDS")
     parser.add_argument("--report", help="where to write the run report")
     parser.add_argument("--rate", help="CNY to SAR, instead of today's fetched rate")
+    parser.add_argument("--channel", choices=("image", "selected"), default="image",
+                        help="where products come from: the LinkPlus image search "
+                             "(one photograph per product, all of 1688) or the "
+                             "精选货源 pool (four to five photographs, 1,950 offers)")
     args = parser.parse_args()
 
     started = time.time()
@@ -98,8 +150,13 @@ def main() -> int:
     print(f"=== KDX run for {day} (Riyadh) "
           f"{'DRY RUN, nothing will be published' if args.dry_run else ''}")
 
-    seeds = discover.read_seeds(args.seeds or "")
-    print(f"{len(seeds)} seed photograph(s)")
+    # Seeds are the image search's starting photographs. The pool channel has
+    # nothing to seed - it walks a list - so demanding them there would refuse
+    # to start a run that needs none.
+    seeds = []
+    if args.channel == "image":
+        seeds = discover.read_seeds(args.seeds or "")
+        print(f"{len(seeds)} seed photograph(s)")
 
     try:
         lock = take_lock()
@@ -119,19 +176,32 @@ def main() -> int:
             print("the day's points are gone; nothing to do until midnight")
             return 0
 
-        walker = discover.Discovery(runner.source, discover.Ledger(),
-                                    categories=runner.categories, day=day)
-        harvested = walker.run(seeds, quota)
-        ledger = walker.ledger.summary()
-        print(f"discovery: {len(harvested)} products worth pricing "
-              f"({walker.from_surplus} from last night's surplus, "
-              f"{walker.searches} gateway searches), "
-              f"{walker.rejected_early} dropped on category or banned term")
-        print(f"           ledger knows {ledger['offers_known']} offers, "
-              f"{ledger['waiting']} waiting for a future night, "
-              f"{ledger['new_per_search']} new per search over its lifetime")
-        for note in walker.notes:
-            print(f"           note: {note}")
+        walker = None
+        if args.channel == "selected":
+            book = discover.Ledger()
+            client = runner.sku_client or getattr(runner.source, "client", None)
+            if client is None:
+                print("the selected pool needs 1688 credentials in the environment")
+                return 2
+            harvested, notes = harvest_selected(runner, client, quota, book)
+            ledger = book.summary()
+            print(f"selected pool: {len(harvested)} products worth pricing")
+            for note in notes:
+                print(f"           note: {note}")
+        else:
+            walker = discover.Discovery(runner.source, discover.Ledger(),
+                                        categories=runner.categories, day=day)
+            harvested = walker.run(seeds, quota)
+            ledger = walker.ledger.summary()
+            print(f"discovery: {len(harvested)} products worth pricing "
+                  f"({walker.from_surplus} from last night's surplus, "
+                  f"{walker.searches} gateway searches), "
+                  f"{walker.rejected_early} dropped on category or banned term")
+            print(f"           ledger knows {ledger['offers_known']} offers, "
+                  f"{ledger['waiting']} waiting for a future night, "
+                  f"{ledger['new_per_search']} new per search over its lifetime")
+            for note in walker.notes:
+                print(f"           note: {note}")
 
         # A run that prints only counts cannot be checked. The assembled
         # products are written out so the client can read what would have been
@@ -175,10 +245,11 @@ def main() -> int:
             "dry_run": bool(args.dry_run),
             "seconds": round(elapsed, 1),
             "quota": quota,
+            "channel": args.channel,
             "discovered": len(harvested),
-            "from_surplus": walker.from_surplus,
-            "dropped_before_pricing": walker.rejected_early,
-            "gateway_searches": walker.searches,
+            "from_surplus": walker.from_surplus if walker else 0,
+            "dropped_before_pricing": walker.rejected_early if walker else None,
+            "gateway_searches": walker.searches if walker else None,
             "published": published,
             "held": held,
             "skipped": skipped,

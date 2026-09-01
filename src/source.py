@@ -174,7 +174,12 @@ def _base_price(product: dict) -> Decimal | None:
 
 def _weight_of(product: dict) -> float:
     shipping = _first(product, ("productShippingInfo", "shippingInfo", "logisticsInfo"), {}) or {}
-    weight = _first(shipping, ("weight", "unitWeight", "grossWeight"))
+    # offerSuttleWeight is the pool detail API's spelling (their transliteration
+    # of "nett"): measured on 1 September, 8 of 30 pool offers declared one
+    # there and none used "weight". Reading only the three names below would
+    # have thrown every declared weight away and shipped the 1 kg assumption
+    # over the top of real data.
+    weight = _first(shipping, ("weight", "offerSuttleWeight", "unitWeight", "grossWeight"))
     if weight is None:
         weight = _first(product, ("weight", "unitWeight"))
     try:
