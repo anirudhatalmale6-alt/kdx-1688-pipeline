@@ -396,11 +396,22 @@ class Pipeline:
         # before the banned-term filter on purpose - a variant named in Chinese
         # is text the filter should see, and until this line existed there were
         # no variant names to see.
+        # Liquids are checked here, above the size lookup, because the title
+        # alone settles it and he asked that a product we can never publish
+        # cost nothing. The engine checks again after the sizes arrive, for the
+        # rarer case where only a variant name gives it away ("香型: 薰衣草").
+        if rules.liquids.find_liquid_term(product.searchable_text()):
+            results = self.engine.evaluate(product, {})
+            self._audit(results, spent)
+            return OfferOutcome(offer_id=offer_id, product=None, results=results,
+                                points_spent=spent)
+
         normalised = self._add_skus(normalised)
         if normalised.get("sku_source") == skus.SKU_APPLIED:
             product = to_rules_product(normalised)
 
         rejected_early = rules.find_banned_term(product) or (
+            rules.liquids.find_liquid_term(product.searchable_text()) is not None) or (
             rules.is_electrical(product) and not rules.has_accepted_mains_spec(product))
         if rejected_early:
             results = self.engine.evaluate(product, {})

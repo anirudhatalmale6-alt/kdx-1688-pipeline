@@ -37,6 +37,8 @@ import json
 import os
 import re
 
+import liquids
+
 # Unambiguous: the word only appears in names that genuinely are the banned
 # thing. Reason codes match the ones rules.BANNED_TERMS already uses, plus the
 # two that only matter at category level.
@@ -102,6 +104,18 @@ def classify(name_zh: str) -> tuple[str, str, str]:
     for phrase in SAFE_PHRASES:
         if phrase in name:
             return ALLOWED, "", ""
+
+    # Liquids, 1 September. Blocking the department is worth more than blocking
+    # the product: a blocked branch is never descended, so its children cost no
+    # points and never reach the product filter at all.
+    #
+    # It sits BELOW the safe phrases on purpose. Put above them, "饮料" would
+    # have deleted 酒水饮料包装 - beverage PACKAGING, which is cardboard - and
+    # that exact name is why SAFE_PHRASES exists. liquids.py carries its own
+    # exemptions too, so 香水瓶 (empty bottles) survives both lists.
+    liquid = liquids.find_liquid_term(name)
+    if liquid:
+        return BLOCKED, f"liquid_{liquid[0]}", liquid[1]
 
     for token, reason in REVIEW_TOKENS.items():
         if token in name:

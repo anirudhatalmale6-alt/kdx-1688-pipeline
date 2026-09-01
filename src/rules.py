@@ -18,6 +18,8 @@ from dataclasses import dataclass, field, asdict
 from decimal import Decimal, ROUND_HALF_UP
 from enum import Enum
 
+import liquids
+
 # --------------------------------------------------------------------------
 # Configuration derived from the client's rules
 # --------------------------------------------------------------------------
@@ -303,6 +305,19 @@ class Engine:
             return [
                 self._reject(product, variant, "banned_category",
                              f"فئة ممنوعة ({category}) - الكلمة المطابقة: {term}")
+                for variant in product.variants
+            ]
+
+        # Client, 1 September: block anything containing liquids, completely.
+        # Kept as its own rule rather than another BANNED_TERMS entry because
+        # the reason has to be readable in the log - he will want to see which
+        # word did it, and to overrule a word that is catching too much.
+        liquid = liquids.find_liquid_term(product.searchable_text())
+        if liquid:
+            reason, term = liquid
+            return [
+                self._reject(product, variant, "contains_liquid",
+                             f"يحتوي على سوائل ({reason}) - الكلمة المطابقة: {term}")
                 for variant in product.variants
             ]
 
