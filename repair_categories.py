@@ -38,11 +38,58 @@ import category_live  # noqa: E402
 import enrich  # noqa: E402
 
 BATCH = int(os.environ.get("KDX_LABELS_PER_CALL", "40"))
+TREE = os.path.join(HERE, "data", "categories.json")
 
 
 def stuck_rows(cache: dict) -> list:
     return [row for row in cache.values()
             if row.get("name_zh") and not category_live.is_translated(row)]
+
+
+def chinese_names(cache: dict) -> dict:
+    """
+    id -> (Chinese name, parent id) for everything we can name.
+
+    The built tree is loaded too, because the roots live there and a leaf's
+    path stops dead without them.
+    """
+    names = {}
+    try:
+        with open(TREE, encoding="utf-8") as handle:
+            for row in json.load(handle):
+                names[str(row["id"])] = (row.get("name_zh") or "",
+                                         None if row.get("parent_id") is None
+                                         else str(row["parent_id"]))
+    except (OSError, ValueError):
+        pass
+    for row in cache.values():
+        parent = row.get("parent_id")
+        names[str(row["id"])] = (row.get("name_zh") or "",
+                                 None if parent in (None, "", "0", "None") else str(parent))
+    return names
+
+
+def path_of(category_id: str, names: dict) -> str:
+    """
+    "服饰配件、饰品 > 饰品配件 > 水钻".
+
+    Sent instead of the bare name because a category name on its own is often
+    ambiguous: 水钻 alone came back from the model as "water drills", where
+    under jewellery parts it is a rhinestone.
+    """
+    parts, seen = [], set()
+    current = str(category_id)
+    for _ in range(category_live.MAX_CLIMB):
+        if current in seen or current not in names:
+            break
+        seen.add(current)
+        name, parent = names[current]
+        if name:
+            parts.insert(0, name)
+        if not parent:
+            break
+        current = parent
+    return " > ".join(parts)
 
 
 def main() -> int:
@@ -52,6 +99,11 @@ def main() -> int:
                         help="report what is stuck without calling the model")
     parser.add_argument("--limit", type=int, default=0,
                         help="repair at most this many, for a cheap first look")
+    parser.add_argument("--all", action="store_true",
+                        help="re-name every learned category, not only the "
+                             "Chinese ones. Worth doing once: the names done "
+                             "before 2 September were translated without their "
+                             "parents, and 水钻 came back as 'water drills'")
     args = parser.parse_args()
 
     with open(args.cache, encoding="utf-8") as handle:
@@ -59,17 +111,20 @@ def main() -> int:
 
     stuck = stuck_rows(cache)
     print(f"{len(cache)} learned categories, {len(stuck)} still in Chinese")
+    targets = [row for row in cache.values() if row.get("name_zh")] if args.all else stuck
     if args.limit:
-        stuck = stuck[:args.limit]
-    if not stuck or args.dry_run:
-        for row in stuck[:20]:
+        targets = targets[:args.limit]
+    if not targets or args.dry_run:
+        for row in targets[:20]:
             print(f"  {row['id']:>12}  {row['name_zh']}")
         return 0
 
-    # One entry per DISTINCT Chinese name. Sibling ids share names often enough
-    # that this is worth doing: 成人帽 appeared under two different parents.
-    names = sorted({row["name_zh"] for row in stuck})
-    print(f"{len(names)} distinct names, {-(-len(names) // BATCH)} model call(s)")
+    lookup = chinese_names(cache)
+    # One entry per DISTINCT path. Sibling ids share a name often enough that
+    # this is worth doing: 成人帽 appeared under two different parents.
+    paths = {str(row["id"]): path_of(row["id"], lookup) for row in targets}
+    names = sorted({path for path in paths.values() if path})
+    print(f"{len(names)} distinct paths, {-(-len(names) // BATCH)} model call(s)")
 
     answers: dict = {}
     for start in range(0, len(names), BATCH):
@@ -81,8 +136,8 @@ def main() -> int:
         print(f"  {min(start + BATCH, len(names))}/{len(names)}")
 
     fixed = 0
-    for row in stuck:
-        entry = answers.get(row["name_zh"]) or {}
+    for row in targets:
+        entry = answers.get(paths.get(str(row["id"])) or "") or {}
         english, arabic = str(entry.get("en") or "").strip(), str(entry.get("ar") or "").strip()
         if not english or not arabic:
             continue

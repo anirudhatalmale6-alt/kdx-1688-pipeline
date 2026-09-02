@@ -133,9 +133,15 @@ class LiveIndex:
                     "reason": row.get("reason", "")}
         return self.learned.get(str(category_id))
 
-    def _retranslate(self, row: dict) -> bool:
+    def _retranslate(self, row: dict, ancestors=()) -> bool:
         """
         Put a Saudi name on a category, and say whether it worked.
+
+        `ancestors` are the Chinese names above this one, root first. They are
+        sent with the name because a category name on its own is often
+        ambiguous, and the wrong reading is exactly the client's complaint that
+        a department "belongs to another product": 水钻 alone came back as
+        "water drills", where 服饰配件、饰品 > 饰品配件 > 水钻 is a rhinestone.
 
         Returns False on every failure, which is what makes the failure
         temporary. The Chinese name stays in the row as a truthful fallback,
@@ -146,8 +152,9 @@ class LiveIndex:
         if self.translations >= self.max_translations:
             return False
         self.translations += 1
+        term = " > ".join(list(ancestors) + [row["name_zh"]])
         try:
-            names = self.translate(row["name_zh"])
+            names = self.translate(term)
         except Exception:  # noqa: BLE001
             return False
         english = str(names.get("en") or "").strip()
@@ -163,19 +170,35 @@ class LiveIndex:
         row["name_ar"] = arabic
         return True
 
+    def _name_chain(self, rows: list) -> None:
+        """
+        Give every row in a finished chain a Saudi name, root first.
+
+        Root first because each name is sent with the ones above it, and the
+        chain is only complete once the climb has finished - which is why this
+        is not done inside `_learn`, where the climb has only reached the leaf.
+
+        A cached row that never got its Arabic name is repaired here, not left
+        alone. Until 2 September an untranslated name was written to the cache
+        as though it were the answer, so one failed model call became
+        permanent: 649 of 902 learned categories were stuck in Chinese and 24
+        of 102 published products carried a Chinese department name. A failure
+        that caches itself is forever.
+        """
+        ancestors: list = []
+        changed = False
+        for row in rows:
+            if not is_translated(row) and str(row["id"]) in self.learned:
+                if self._retranslate(row, ancestors):
+                    self.learned[str(row["id"])] = row
+                    changed = True
+            ancestors.append(row.get("name_zh") or "")
+        if changed:
+            self.save()
+
     def _learn(self, category_id: str) -> dict | None:
         row = self._known(category_id)
         if row is not None:
-            # A cached row that never got its Arabic name is repaired here, not
-            # left alone. Until 2 September an untranslated name was written to
-            # the cache as though it were the answer, so one failed model call
-            # became permanent: 649 of 902 learned categories were stuck in
-            # Chinese and 24 of 102 published products carried a Chinese
-            # department name. A failure that caches itself is forever.
-            if (str(category_id) in self.learned and not is_translated(row)
-                    and self._retranslate(row)):
-                self.learned[str(category_id)] = row
-                self.save()
             return row
         fetched = self._fetch(category_id)
         if fetched is None:
@@ -185,7 +208,9 @@ class LiveIndex:
         fetched["reason"] = reason
         fetched["name_en"] = fetched["name_zh"]
         fetched["name_ar"] = fetched["name_zh"]
-        self._retranslate(fetched)
+        # Not translated here: the climb has only reached this row, so the
+        # ancestors that decide what its name means are not known yet.
+        # `_name_chain` does it once the chain is complete.
         self.learned[str(category_id)] = fetched
         # Written through, not at the end of the run. The first live night
         # resolved fourteen products' departments correctly and left no cache
@@ -214,6 +239,7 @@ class LiveIndex:
             if not parent or parent in ("0", "None"):
                 break
             current = str(parent)
+        self._name_chain(rows)
         return rows
 
     # -- the interface the pipeline uses ---------------------------------

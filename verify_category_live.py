@@ -84,9 +84,14 @@ NAMES = {
 }
 
 
-def naming(zh):
-    """A translator that always answers, which is what production looks like."""
-    english, arabic = NAMES.get(zh, ("Category", "تصنيف"))
+def naming(term):
+    """
+    A translator that always answers, which is what production looks like.
+
+    It is handed a path - "办公、文化 > 办公家具 > 办公椅" - and names the last
+    segment, because a category name on its own is often ambiguous.
+    """
+    english, arabic = NAMES.get(term.split(" > ")[-1], ("Category", "تصنيف"))
     return {"en": english, "ar": arabic}
 
 
@@ -240,6 +245,28 @@ def main() -> int:
     repairing.resolve("1045585")
     check("CONTROL a repaired row is not paid for a second time",
           asked == ["办公椅"], str(asked))
+
+    print("\na category is named with the ones above it, not on its own")
+    # 水钻 alone came back from the live model as "water drills". Under
+    # 服饰配件、饰品 > 饰品配件 it is a rhinestone. The ambiguity is the client's
+    # "a category that belongs to a different product", one level down.
+    seen_terms = []
+
+    def recording(term):
+        seen_terms.append(term)
+        return naming(term)
+
+    contextual = category_live.LiveIndex(index_with(), client=FakeClient(),
+                                         cache=os.path.join(tmp, "j.json"),
+                                         translate=recording)
+    contextual.resolve("1045585")
+    check("the leaf is sent with its whole path",
+          "办公、文化 > 办公家具 > 办公椅" in seen_terms, str(seen_terms))
+    check("and the root is sent on its own, because it has no ancestors",
+          seen_terms and seen_terms[0] == "办公、文化", str(seen_terms))
+    check("CONTROL the path is built root first, not leaf first",
+          seen_terms == ["办公、文化", "办公、文化 > 办公家具",
+                         "办公、文化 > 办公家具 > 办公椅"], str(seen_terms))
 
     print("\na translator that hands the Chinese back is not an answer")
     # The model returning its input is indistinguishable from success unless

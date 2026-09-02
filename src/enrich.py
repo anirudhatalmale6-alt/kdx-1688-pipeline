@@ -74,12 +74,18 @@ CATEGORIES_PROMPT = """You translate category names from the 1688 wholesale cata
 
 These are shop department names, not product titles: 女装, 家用电器, 五金、工具, 半身裙.
 
+An input may arrive as a path, "服饰配件、饰品 > 饰品配件 > 水钻". Translate ONLY
+the last segment; the earlier ones are there to tell you which meaning is
+wanted. 水钻 under jewellery parts is a rhinestone, not a water drill.
+
 Rules:
 - use the word a Saudi shopper would see in a store menu, not a literal gloss
 - keep it short: a category name, not a sentence, and no punctuation at the end
 - a name joined by 、or / stays one category: translate it as one name
 - never invent a category that is not in the input, never merge two of them
 - if a name is a brand or a latin abbreviation, leave it as it is
+- the key you return is the WHOLE input string, path and all, character for
+  character, but the name you return is the last segment only
 
 Return ONLY a JSON object of the form
 {"terms":{"<original>":{"en":"","ar":""}}}
