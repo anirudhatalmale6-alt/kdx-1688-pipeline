@@ -32,6 +32,7 @@
       "ar": "M"
     }
   ],
+  "weight": 0.35,
   "needs_shipment": true,
   "variants": [
     {

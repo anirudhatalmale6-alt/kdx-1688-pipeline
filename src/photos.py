@@ -179,6 +179,77 @@ class PhotoChecker:
         return {"urls_checked": len(self.seen), "urls_dead": self.dead}
 
 
+# The CDN will resize a picture for us if the URL asks. Measured on 25 first
+# photographs of the 2 September catalogue: every one answered, none was
+# enlarged (a 688x688 came back 688x688, a 1433x1920 came back 597x800 - the
+# shape is kept), and the 25 together fell from 7.4 MB to 3.6 MB.
+#
+# 0 turns it off and the original URLs ship, which is what happened before this
+# existed.
+DISPLAY_PX = int(os.environ.get("KDX_IMAGE_DISPLAY_PX", "800"))
+
+
+def display_url(url: str) -> str:
+    """The same photograph, asked for at display size."""
+    if not url or DISPLAY_PX <= 0 or ".alicdn.com/" not in url:
+        return url
+    if f"_{DISPLAY_PX}x{DISPLAY_PX}" in url:
+        return url
+    return f"{url}_{DISPLAY_PX}x{DISPLAY_PX}.jpg"
+
+
+def _resize(urls, checker) -> list:
+    """
+    Swap in the display-size URL, but only where it actually answers.
+
+    A URL nobody fetched is a URL nobody can vouch for, and his importer copies
+    the picture once with no second chance, so the smaller one has to prove
+    itself the same way the original did. Where it does not, the original ships
+    and the product keeps its photograph.
+    """
+    return [display_url(url) if checker.reachable(display_url(url)) else url
+            for url in urls or []]
+
+
+def resize_for_display(payload: dict, checker: PhotoChecker) -> int:
+    """
+    Ask the CDN for display-size copies of everything this product publishes.
+
+    Deliberately the LAST step, after the poster filter has run. Measured on 2
+    September on twelve photographs that scored above the 5% line: read at
+    800x800 instead of full size, four of the twelve fell below it - 7.86% to
+    0.31% in the worst case. Scoring the small copy would have published four
+    posters out of twelve. So the decisions are all taken on the full-size
+    picture and only the URL that ships is changed.
+
+    A first sample of thirty ordinary photographs showed no verdict changing at
+    all; it contained no posters, so it could not have. The posters had to be
+    looked for on purpose.
+    """
+    if DISPLAY_PX <= 0:
+        return 0
+    wanted = [display_url(url) for url in payload.get("images") or []]
+    for variant in payload.get("variants") or []:
+        wanted.extend(display_url(url) for url in variant.get("images") or [])
+    checker.warm(wanted)
+
+    before = list(payload.get("images") or [])
+    payload["images"] = _resize(before, checker)
+    changed = sum(1 for old, new in zip(before, payload["images"]) if old != new)
+
+    for variant in payload.get("variants") or []:
+        old_images = list(variant.get("images") or [])
+        variant["images"] = _resize(old_images, checker)
+        changed += sum(1 for old, new in zip(old_images, variant["images"])
+                       if old != new)
+        # The swatch has to follow its own gallery, not be resized on its own:
+        # if the small copy of this colour's photograph was refused above, the
+        # swatch must point at the original that was kept.
+        if variant.get("image") in old_images:
+            variant["image"] = variant["images"][old_images.index(variant["image"])]
+    return changed
+
+
 def prune(payload: dict, checker: PhotoChecker) -> dict:
     """
     Drop unfetchable photographs from a built KDX product, in place.

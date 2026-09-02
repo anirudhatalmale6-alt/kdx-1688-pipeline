@@ -32,6 +32,7 @@ import mapping
 import photos
 import rules
 import skus
+import source
 
 
 @dataclass
@@ -277,6 +278,45 @@ def _drop_posters_from_variants(payload: dict, scores: dict) -> list:
     return dropped
 
 
+def _weigh_by_category(normalised: dict, categories) -> dict:
+    """
+    Replace an assumed weight with the one his table gives for the department.
+
+    His table is written per department, and 1688 files an offer under a leaf:
+    of 3,776 offers queued on 2 September, 712 distinct leaf ids appeared and
+    only 817 offers - one in five - carried a leaf whose ancestry was already
+    known. A table looked up on the leaf alone would therefore have missed most
+    of the catalogue while looking like it was working, so the whole chain is
+    asked, leaf first: a number typed against a leaf is more specific than one
+    typed against the department above it and wins, and a department number
+    covers everything underneath it.
+
+    A weight the source actually measured is never touched. Only the gap this
+    fills is his to fill; overwriting a real number with a category average
+    would be inventing a lighter box than the one being shipped.
+    """
+    if not normalised.get("weight_assumed"):
+        return normalised
+    table = source.category_weight_table()
+    if not table or categories is None:
+        return normalised
+    rows = categories.chain(normalised.get("category_id")) or []
+    # Leaf first. chain() answers root first, so the ancestry is walked backwards.
+    for row in reversed(rows):
+        known = table.get(str(row.get("id")))
+        if known is None:
+            continue
+        normalised = dict(normalised)
+        normalised["weight_kg"] = float(known)
+        normalised["weight_category_id"] = str(row.get("id"))
+        # Still assumed: a category average is a policy, not a scale. The audit
+        # line has to keep saying so, or a product held back for being heavy
+        # would read as though the box had been weighed.
+        normalised["weight_assumed"] = True
+        return normalised
+    return normalised
+
+
 def _restate_assumed_weight(results: list, normalised: dict) -> None:
     """
     Say "assumed" where the weight was assumed.
@@ -294,7 +334,11 @@ def _restate_assumed_weight(results: list, normalised: dict) -> None:
     """
     if not normalised.get("weight_assumed"):
         return
-    category = normalised.get("category_id") or "-"
+    # The category the number actually came from, which is the one he can act
+    # on. Naming the leaf when the weight came from the department above it
+    # would send him looking for a row his table does not have.
+    category = (normalised.get("weight_category_id")
+                or normalised.get("category_id") or "-")
     for result in results:
         if result.audit.reason_code == "heavy_and_unmatched":
             result.audit.reason_code = "assumed_heavy_and_unmatched"
@@ -487,6 +531,12 @@ class Pipeline:
             self.budget.spend(self.points_per_offer, note=f"offer {offer_id}")
             spent = self.points_per_offer
 
+        # Before the product is built, not after: the weight decides whether the
+        # shipping rule calls this light or heavy, and that decision is taken a
+        # few lines below. Restating it afterwards would leave the audit and the
+        # payload disagreeing about the same box.
+        normalised = _weigh_by_category(normalised, self.categories)
+
         product = to_rules_product(normalised)
 
         # The banned-category and mains-voltage filters live in the engine and
@@ -639,6 +689,12 @@ class Pipeline:
                         error=f"every photograph is an advertising poster "
                               f"(cleanest one is {worst}% Chinese text, limit "
                               f"{imagetext.MAX_TEXT_PERCENT}%)")
+
+            # Last of all, once every decision about these photographs has been
+            # taken on the full-size copies: ask the CDN for the size his shop
+            # will actually show. See photos.resize_for_display - reading the
+            # small copy instead would have let four posters in twelve through.
+            report["resized"] = photos.resize_for_display(payload, self.photos)
 
         response = None
         if self.kdx is not None and not self.dry_run:

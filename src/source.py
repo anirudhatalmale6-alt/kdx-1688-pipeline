@@ -344,6 +344,17 @@ def _category_weights() -> dict:
                           f"category -> kilograms: {exc}") from None
 
 
+def category_weight_table() -> dict:
+    """
+    The client's {category -> kilograms}, for callers that resolve their own id.
+
+    weight_for_category asks about one id. The pipeline knows the whole
+    ancestry of a product by the time it publishes, and a department number has
+    to reach the leaves below it, so it needs the table rather than the answer.
+    """
+    return _category_weights()
+
+
 def weight_for_category(category_id: str) -> tuple[float, bool]:
     """
     Return (kilograms, is_assumed) for a LinkPlus offer.

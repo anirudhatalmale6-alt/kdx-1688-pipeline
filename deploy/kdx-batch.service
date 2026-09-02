@@ -12,7 +12,7 @@ EnvironmentFile=/etc/kdx/kdx.env
 # split into small batches", "keep it running all day without stopping". The
 # day's total is still the 300 points in budget.py - this only changes how the
 # day is spread, from one long run at midnight to a batch every twenty minutes.
-ExecStart=/usr/bin/python3 /opt/kdx/app/daily_run.py --channel selected --quota 5
+ExecStart=/usr/bin/python3 /opt/kdx/app/daily_run.py --channel selected --quota 40
 
 # A batch that meets its predecessor exits 2 and says so. That is the lock
 # working, not a failure, and it must not be reported as one - otherwise every

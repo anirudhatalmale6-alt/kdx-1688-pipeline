@@ -1,15 +1,17 @@
 [Unit]
-Description=Run a small KDX batch every twenty minutes, all day
+Description=Run a KDX batch every thirty minutes, all day
 
 [Timer]
 # The client's words on 2 September: pulling open all day, in small batches, so
-# there is no burst of load on his server and no long idle gap either. Seventy-
-# two batches of five is more than the 300 points a day allows, so the budget -
-# not the timer - is what stops the day; the batches that arrive after the
-# points are gone print "nothing to do until midnight" and exit.
-OnCalendar=*:00/20
+# there is no burst of load on his server and no long idle gap either. He asked
+# that day for forty products every half hour, which is 1,920 a day against the
+# 300 points 1688 allows him - so the budget, not the timer, is what ends the
+# day, and the batches that arrive after the points are gone print "nothing to
+# do until midnight" and exit. Raising the rate here cannot raise the ceiling;
+# only his 1688 allowance can.
+OnCalendar=*:00/30
 Persistent=false
-# Not on the exact minute, from the same IP, seventy-two times a day.
+# Not on the exact minute, from the same IP, forty-eight times a day.
 RandomizedDelaySec=120
 Unit=kdx-batch.service
 

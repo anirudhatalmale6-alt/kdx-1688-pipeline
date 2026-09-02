@@ -291,6 +291,70 @@ def main() -> int:
         import importlib
         importlib.reload(photos)
 
+    print("\nthe shop is sent the display-size copy, where there is one")
+    small = photos.display_url(GOOD)
+    check("the CDN is asked for the size his shop shows",
+          small == GOOD + f"_{photos.DISPLAY_PX}x{photos.DISPLAY_PX}.jpg", small)
+    check("CONTROL asking twice does not stack suffixes",
+          photos.display_url(small) == small, photos.display_url(small))
+    check("CONTROL a URL that is not on the CDN is left alone",
+          photos.display_url("https://example.com/a.jpg")
+          == "https://example.com/a.jpg")
+    check("CONTROL an empty URL stays empty", photos.display_url("") == "")
+
+    payload = {"images": [GOOD, GONE],
+               "variants": [{"image": GONE, "images": [GONE, GOOD]}]}
+    opener = FakeOpener({}, default=200)
+    checker = photos.PhotoChecker(opener=opener)
+    changed = photos.resize_for_display(payload, checker)
+    check("every photograph in the gallery is swapped", payload["images"] ==
+          [photos.display_url(GOOD), photos.display_url(GONE)], str(payload["images"]))
+    check("and the colour's photographs too",
+          payload["variants"][0]["images"]
+          == [photos.display_url(GONE), photos.display_url(GOOD)])
+    check("the swatch follows its own gallery",
+          payload["variants"][0]["image"] == photos.display_url(GONE))
+    check("and the count is reported", changed == 4, str(changed))
+
+    # The one that matters: a small copy that does not exist must not take a
+    # photograph away. His importer copies the picture once and never again.
+    payload = {"images": [GOOD, GONE], "variants": [{"image": GOOD, "images": [GOOD]}]}
+    opener = FakeOpener({photos.display_url(GOOD): 404,
+                         photos.display_url(GONE): 200}, default=200)
+    checker = photos.PhotoChecker(opener=opener)
+    photos.resize_for_display(payload, checker)
+    check("a display copy that 404s leaves the original in place",
+          payload["images"][0] == GOOD, payload["images"][0])
+    check("CONTROL while the one that answers is still swapped",
+          payload["images"][1] == photos.display_url(GONE), payload["images"][1])
+    check("CONTROL and the swatch keeps the original it can still show",
+          payload["variants"][0]["image"] == GOOD,
+          payload["variants"][0]["image"])
+    check("CONTROL no photograph is lost to the swap",
+          len(payload["images"]) == 2 and len(payload["variants"][0]["images"]) == 1)
+
+    # And the whole thing must be switchable off, reproducing what shipped
+    # before it existed.
+    keep_px = os.environ.get("KDX_IMAGE_DISPLAY_PX")
+    os.environ["KDX_IMAGE_DISPLAY_PX"] = "0"
+    try:
+        import importlib
+        importlib.reload(photos)
+        payload = {"images": [GOOD], "variants": [{"image": GOOD, "images": [GOOD]}]}
+        checker = photos.PhotoChecker(opener=FakeOpener({}, default=200))
+        moved = photos.resize_for_display(payload, checker)
+        check("CONTROL set to 0 the original URLs ship untouched",
+              payload["images"] == [GOOD] and moved == 0, str(payload["images"]))
+        check("CONTROL and no request is made for a smaller copy",
+              photos.display_url(GOOD) == GOOD)
+    finally:
+        if keep_px is None:
+            os.environ.pop("KDX_IMAGE_DISPLAY_PX", None)
+        else:
+            os.environ["KDX_IMAGE_DISPLAY_PX"] = keep_px
+        import importlib
+        importlib.reload(photos)
+
     print(f"\n{PASSED} passed, {FAILED} failed")
     return 1 if FAILED else 0
 

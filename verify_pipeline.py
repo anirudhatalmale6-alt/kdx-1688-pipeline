@@ -532,19 +532,41 @@ def main() -> int:
         runner.photos = photos_module.PhotoChecker(opener=Opener(dead))
         return runner
 
+    def original(url: str) -> str:
+        """
+        The URL as the supplier serves it, before the display-size swap.
+
+        The photographs that ship are now the CDN's smaller copies, so a test
+        that wants to kill a photograph has to kill the one the checker asks
+        about first - killing only the small copy leaves the original alive and
+        the product keeps its picture, which is the whole point of that
+        fallback.
+        """
+        tail = f"_{photos_module.DISPLAY_PX}x{photos_module.DISPLAY_PX}.jpg"
+        return url[:-len(tail)] if tail and url.endswith(tail) else url
+
     healthy = live_runner(IMPORTED)
     outcome = healthy.run_product(healthy.source.get_product(TSHIRT))
-    all_photos = list(outcome.product["images"])
+    published = list(outcome.product["images"])
+    all_photos = [original(url) for url in published]
     check("with live photographs the product is pushed",
           len(healthy.kdx.pushed) == 1 and not outcome.error, outcome.error)
-    check("and the photographs are checked, not assumed",
-          healthy.photos.summary()["urls_checked"] == len(set(all_photos)),
-          str(healthy.photos.summary()))
+    # Not a count - counts drift whenever a step asks about one more URL. What
+    # has to hold is that every photograph his shop is told to copy is one this
+    # run fetched and got an image back from.
+    check("and every photograph that ships was fetched, not assumed",
+          all(healthy.photos.seen.get(url) is True for url in published),
+          str({url: healthy.photos.seen.get(url) for url in published}))
+    check("CONTROL the full-size originals were fetched too - they are what "
+          "the poster filter reads",
+          all(healthy.photos.seen.get(url) is True for url in all_photos),
+          str({url: healthy.photos.seen.get(url) for url in all_photos}))
 
     partial = live_runner(IMPORTED, dead=all_photos[1:])
     outcome = partial.run_product(partial.source.get_product(TSHIRT))
     check("a dead photograph is dropped and the rest still go",
-          outcome.product["images"] == all_photos[:1], str(outcome.product["images"]))
+          [original(url) for url in outcome.product["images"]] == all_photos[:1],
+          str(outcome.product["images"]))
     check("and the run says which one it dropped",
           outcome.photos["dropped"] == all_photos[1:], str(outcome.photos))
 
@@ -971,6 +993,74 @@ def main() -> int:
     # And a symbol that means something in a size label is not decoration.
     check("CONTROL a temperature or degree sign survives",
           enrich._declutter("25℃±2°") == "25℃±2°", enrich._declutter("25℃±2°"))
+
+    print("the department's weight reaches a leaf filed underneath it")
+    # 1031910 (Dresses) sits under 10166 (Women's Clothing). His table is
+    # written against departments, and 1688 files offers against leaves, so
+    # this is the join the whole table depends on.
+    tree = catalog.CategoryIndex(CATEGORY_ROWS)
+    leaf_offer = {"offer_id": "1", "category_id": "1031910",
+                  "weight_kg": 1.0, "weight_assumed": True}
+
+    def weighed(table, offer=None, categories=tree):
+        before = os.environ.get("KDX_CATEGORY_WEIGHTS")
+        if table is None:
+            os.environ.pop("KDX_CATEGORY_WEIGHTS", None)
+        else:
+            os.environ["KDX_CATEGORY_WEIGHTS"] = json.dumps(table)
+        try:
+            return pipeline_module._weigh_by_category(
+                dict(offer or leaf_offer), categories)
+        finally:
+            if before is None:
+                os.environ.pop("KDX_CATEGORY_WEIGHTS", None)
+            else:
+                os.environ["KDX_CATEGORY_WEIGHTS"] = before
+
+    got = weighed({"10166": 0.4})
+    check("a department number reaches the leaf below it",
+          got["weight_kg"] == 0.4, str(got["weight_kg"]))
+    check("and the audit names the category the number came from",
+          got.get("weight_category_id") == "10166", str(got.get("weight_category_id")))
+    check("a category average is still an assumption, not a measurement",
+          got["weight_assumed"] is True, str(got["weight_assumed"]))
+
+    both = weighed({"10166": 0.4, "1031910": 0.9})
+    check("the leaf wins over the department above it when he gave both",
+          both["weight_kg"] == 0.9, str(both["weight_kg"]))
+    check("and it is the leaf that is named",
+          both.get("weight_category_id") == "1031910",
+          str(both.get("weight_category_id")))
+
+    # The controls. Each one is a way this could pass for the wrong reason.
+    check("CONTROL an empty table changes nothing",
+          weighed(None)["weight_kg"] == 1.0)
+    check("CONTROL a table that names neither the leaf nor its parents "
+          "changes nothing",
+          weighed({"130823000": 7.0})["weight_kg"] == 1.0)
+    measured = weighed({"10166": 0.4},
+                       offer={"offer_id": "2", "category_id": "1031910",
+                              "weight_kg": 3.3, "weight_assumed": False})
+    check("CONTROL a weight the source actually measured is never overwritten",
+          measured["weight_kg"] == 3.3, str(measured["weight_kg"]))
+    check("CONTROL and no category is credited for it",
+          "weight_category_id" not in measured)
+    check("CONTROL with no category tree at all the weight stands",
+          weighed({"10166": 0.4}, categories=None)["weight_kg"] == 1.0)
+    unknown = weighed({"10166": 0.4},
+                      offer={"offer_id": "3", "category_id": "999999",
+                             "weight_kg": 1.0, "weight_assumed": True})
+    check("CONTROL a leaf whose ancestry is unknown keeps the assumed weight",
+          unknown["weight_kg"] == 1.0, str(unknown["weight_kg"]))
+
+    # The ancestry itself, since everything above rests on it.
+    chain = tree.chain("1031910")
+    check("the chain is root first, leaf last",
+          [str(row["id"]) for row in chain] == ["10166", "1031910"],
+          str([row["id"] for row in chain]))
+    check("CONTROL an id the tree has never seen has no chain",
+          tree.chain("999999") == [])
+    check("CONTROL and neither does a blank one", tree.chain("") == [])
 
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0

@@ -341,6 +341,61 @@ the feature is absent, so the question went to the client rather than a
 nineteenth guess — and `KDX_WEIGHT_FIELD` holds the key so his answer costs a
 restart, not a release.
 
+He answered on 2 September: `weight`. That is what the code already shipped by
+default, so the payload was right and the question was worth asking anyway —
+seventeen of the eighteen spellings would have been silently discarded.
+
+### A table written per department, looked up per leaf
+
+His table names departments. 1688 files an offer against a leaf. Measured on the
+3,776 offers in the queue that evening:
+
+```
+distinct leaf category ids                          712
+offers whose ancestry was already known             817   (22%)
+offers whose leaf resolved to no department       2,959   (78%)
+```
+
+A lookup on the leaf id alone would therefore have missed roughly four products
+in five while looking exactly like a table that worked — every one of them
+quietly taking the fallback weight. So `_weigh_by_category` asks the whole
+ancestry instead, leaf first: a number typed against a leaf is more specific and
+wins, a number typed against a department reaches everything beneath it. The
+chain is the same one the shop menu is built from, and by the time it is needed
+the category walk has already paid for it.
+
+A weight the source actually measured is never overwritten by a table entry, and
+a category average stays marked as assumed — it is a policy, not a scale.
+
+## Photographs at the size his shop will show them
+
+The CDN resizes on request: `<url>_800x800.jpg`. Measured over 25 first
+photographs of the 2 September catalogue — every one answered, none was enlarged
+(688×688 stayed 688×688; 1433×1920 came back 597×800, so the shape is kept), and
+the 25 together fell from **7.4 MB to 3.6 MB**.
+
+The trap is where the small copy is read rather than merely shipped. A first
+sample of 30 ordinary photographs showed no poster verdict changing at all — and
+proved nothing, because it contained no posters. Repeated on twelve photographs
+that actually scored above the 5% line:
+
+```
+ 8.70 ->  8.53      5.87 ->  5.87     13.24 ->  7.48
+ 6.43 ->  2.31 X    5.50 ->  3.61 X    5.07 ->  4.34 X
+ 8.86 ->  8.86     12.62 ->  6.92      7.86 ->  0.31 X
+ 8.93 ->  8.92     10.72 ->  8.51     29.47 -> 35.70
+                                    X = would now be published
+```
+
+**Four of twelve posters** would have got through. So every decision — the
+poster filter, the reachability check, the content dedupe — is taken on the
+full-size photograph, and only the URL that finally ships is swapped, after all
+of them. Where the small copy does not answer, the original ships: his importer
+copies a picture once and there is no second chance.
+
+`KDX_IMAGE_DISPLAY_PX=0` turns it off and the original URLs ship, which is what
+happened before this existed.
+
 ## KDX import contract — measured, not assumed
 
 `POST https://kdx-sa.com/api/v1/products/import`, header `X-API-Token`,

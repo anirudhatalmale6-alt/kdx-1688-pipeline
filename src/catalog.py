@@ -351,6 +351,16 @@ class CategoryIndex:
             chain.insert(0, parent)
         return chain
 
+    def chain(self, category_id) -> list:
+        """
+        Root first, leaf last. Empty when the id is not in the built tree.
+
+        The same shape LiveIndex.chain answers with, so a caller that only wants
+        the ancestry does not have to know which index it was handed.
+        """
+        row = self.by_id.get(str(category_id or ""))
+        return self._ancestors(row) if row is not None else []
+
     def resolve(self, category_id) -> tuple:
         """
         Return (main_category, sub_category) for a 1688 category id.

@@ -32,6 +32,7 @@
       "ar": "وسط"
     }
   ],
+  "weight": 0.45,
   "needs_shipment": true,
   "variants": [
     {
