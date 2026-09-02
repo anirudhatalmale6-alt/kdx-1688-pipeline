@@ -127,6 +127,14 @@ check("圣诞用品 is not in the built words", "圣诞用品" in words, False)
 check("酒店用品 still allowed", catalog.classify("酒店用品")[0], catalog.ALLOWED)
 check("剪刀 still allowed", catalog.classify("剪刀")[0], catalog.ALLOWED)
 
+# A shop in Saudi Arabia should not go looking for decanters, even though the
+# category must stay allowed so that 酒店 and 酒精灯 survive the alcohol ban.
+check("酒具 is not a search word", wordlist.clean("酒具"), [])
+check("but the category itself is still allowed",
+      catalog.classify("酒具")[0], catalog.ALLOWED)
+check("and hotel linen, which only shares the character, survives",
+      wordlist.clean("酒店布草"), ["酒店布草"])
+
 section("what cannot travel in a parcel")
 check("live animals are refused", wordlist.clean("宠物活体"), [])
 check("live plants are refused", wordlist.clean("园林植物"), [])
@@ -170,6 +178,16 @@ tomorrow = wordlist.slice_for_day(ten, "2026-09-03", 4)
 check("consecutive days do not overlap", set(today) & set(tomorrow), set())
 check("the same day gives the same words - two runs, one list",
       wordlist.slice_for_day(ten, "2026-09-02", 4), today)
+check("a slice never repeats a word", len(set(today)), len(today))
+
+section("the interleave that spreads a day over the departments")
+alphabet = [f"w{n}" for n in range(100)]
+spread = wordlist.interleave(alphabet, 10)
+check("it is a permutation - nothing lost", sorted(spread), sorted(alphabet))
+check("and nothing duplicated", len(set(spread)), len(alphabet))
+check("neighbours in the tree are no longer neighbours",
+      abs(alphabet.index(spread[1]) - alphabet.index(spread[0])) > 1, True)
+check("a short list is left alone", wordlist.interleave(["a", "b"], 4), ["a", "b"])
 
 section("the real departments file")
 rows = json.load(open(os.path.join(HERE, "data", "categories.json"), encoding="utf-8"))
@@ -199,6 +217,28 @@ check("no machine tools", "机床" in live, False)
 check("no chemicals department words", "实验室用品" in live, False)
 check("no live animals", "宠物活体" in live, False)
 check("no Christmas goods", "圣诞用品" in live, False)
+
+# Tree order groups a department together, so a contiguous window of the list
+# is one department. The first live batch under the previous scheme published
+# four suitcases, and every batch for the rest of that day would have been
+# luggage too - the shop fills one shelf at a time instead of filling up.
+section("a day's words are spread over the shop, not taken from one shelf")
+parent_of = {}
+for row in rows:
+    for word in wordlist.clean(str(row.get("name_zh") or "")):
+        parent_of.setdefault(word, str(row.get("parent_id")))
+picked = wordlist.slice_for_day(live, "2026-09-02", 12)
+families = {parent_of.get(word) for word in picked}
+truthy(f"twelve words come from {len(families)} different departments",
+       len(families) >= 10)
+truthy("CONTROL: twelve CONSECUTIVE words really are one or two departments",
+       len({parent_of.get(word) for word in live[:12]}) <= 2)
+truthy("every day of a month asks a different twelve",
+       len({tuple(wordlist.slice_for_day(live, f"2026-09-{d:02d}", 12))
+            for d in range(1, 29)}) == 28)
+truthy("and no day repeats a word inside itself",
+       all(len(set(wordlist.slice_for_day(live, f"2026-09-{d:02d}", 12))) == 12
+           for d in range(1, 29)))
 for word in live:
     if len(word) < wordlist.MIN_LENGTH:
         check(f"{word} is long enough to search", False, True)
