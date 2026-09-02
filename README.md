@@ -200,6 +200,12 @@ lives in `data/departments.json`, one row per 1688 department with
 `sell: true|false` and, where false, a reason in Arabic. He flips a row; nobody
 touches code. He answered on 2 September: the 31 industrial and service
 departments are out, underwear stays, and the 21 retail departments are in.
+Later the same day he changed his mind about eighteen of them and asked for
+agriculture, electrical engineering, metals, textiles and leather, home
+renovation, rubber and plastics, electronic components, tools, environment,
+industrial machinery, packaging, safety, automotive, printing, telecoms,
+machine tools, instruments and building materials by name — so 39 of 52 now
+sell. That is what the file is for: it was one edit and no code.
 
 **Asking for leaves asked for the wrong kind of word.** The built tree is two
 levels deep, so a depth-2 node is a leaf only when 1688 has nothing under it —
@@ -215,6 +221,7 @@ Words are now the *children* of a selling department, leaf or not:
 |---|---|---|
 | before | 458 | mostly 项目合作 / 代理加盟 / 库存 tail buckets |
 | after | 473 | 连衣裙, 女鞋, 台灯夜灯, 餐具, 毛巾, 文胸 … |
+| + his 18 | 974 | 电动工具, 传感器, 塑料薄膜, 安防监控设备, 水泥制品 … |
 
 A name is split on 、 and /, a bracketed qualifier is stripped, retired
 categories (`停用`) are dropped, and three lists filter what is left:
@@ -223,6 +230,24 @@ categories (`停用`) are dropped, and three lists filter what is left:
 (export-restricted in China), publications, pesticides, LED components. The ban
 list applies to a word exactly as it does to a category, which is what stops
 圣诞用品 in a department he does sell.
+
+The eighteen industrial departments brought things that cannot reach a customer
+in Riyadh at all, and those are refused at category level rather than left to
+the editorial line: batteries and power banks (dangerous goods by air, the same
+class of risk as the liquids he banned), drones (a GACA permit), whole
+vehicles, petrol generators and fuel dispensers, live plants and animals. 整车
+is deliberately not on that list — it means "the complete unit" and a bicycle
+is sold that way. The known cost is 电池座, an empty battery holder, which is
+ordinary merchandise and goes with the cells; he has been told.
+
+**A category name is translated with the ones above it.** `水钻` on its own
+came back as "water drills"; under 服饰配件、饰品 > 饰品配件 it is a rhinestone.
+And a translation that fails is never written to the cache as though it were
+the answer — that is what left 649 of 902 learned categories stuck in Chinese
+and put 成人帽 in the shop menu with hats under it. A failure that caches
+itself is forever, so `_retranslate` records nothing unless both names come
+back free of Chinese, and `resolve` publishes no name a shopper cannot read.
+`repair_categories.py` fixes rows already on disk, forty at a time.
 
 The day's slice rotates by a whole slice, not by one word. With the offset being
 the date read as a number the window moved a single word a day — twelve words
