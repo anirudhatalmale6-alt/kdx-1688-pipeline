@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import errno
+import glob
 import json
 import os
 import sys
@@ -39,6 +40,7 @@ import catalog  # noqa: E402
 import discover  # noqa: E402
 import paths  # noqa: E402
 import pipeline as pipeline_module  # noqa: E402
+import risk  # noqa: E402
 import rules  # noqa: E402
 import selected  # noqa: E402
 import wordlist  # noqa: E402
@@ -269,6 +271,31 @@ def main() -> int:
         photos_dropped = 0
         updated: list = []
         reasons: dict = {}
+
+        # What 1688 thinks of the rate this account is listing at. One
+        # read-only call, ahead of the publishing rather than after it, because
+        # a warning that arrives once the products are already up has cost the
+        # thing it was meant to protect. The two counts it wants are ours: the
+        # product files written today, and every one we have ever written. They
+        # are our record of what we sent, not his shop's record of what it kept,
+        # so the reading is reported with the figures it was taken from.
+        risk_reading = None
+        risk_client = runner.sku_client or getattr(runner.source, "client", None)
+        if risk_client is not None and not args.dry_run:
+            out_root = paths.state_path("out", "KDX_OUT_DIR")
+            risk_reading = risk.check(
+                risk_client,
+                published_today=len(glob.glob(os.path.join(products_dir, "*.json"))),
+                on_sale=len(glob.glob(os.path.join(out_root, "*", "*.json"))))
+            if risk_reading.get("error"):
+                print(f"  1688 risk level unread: {risk_reading['error']}")
+        if risk.should_stop(risk_reading or {}):
+            print(f"  1688 rates this account's listing volume "
+                  f"{risk_reading['raw']} ({risk_reading['level']}). Nothing is "
+                  f"published this run - the account is worth more than the "
+                  f"afternoon. Clear it with 1688, or set KDX_IGNORE_RISK=1.")
+            harvested = []
+
         for outcome in runner.run_products(harvested):
             # Written before the error check, not after: a product his shop
             # refused is exactly the one whose payload has to be readable.
@@ -306,6 +333,7 @@ def main() -> int:
         elapsed = time.time() - started
         report = {
             "day": day,
+            "risk": risk_reading,
             "dry_run": bool(args.dry_run),
             "seconds": round(elapsed, 1),
             "quota": quota,
