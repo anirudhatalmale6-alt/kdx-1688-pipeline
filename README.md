@@ -446,6 +446,72 @@ it catches both t-shirt posters the client complained about (6.11 % and 5.90 %)
 and costs a tenth of the catalogue, while keeping the office-chair shots at
 about 5.6 % that carry a small corner caption but are real product photographs.
 
+### Option names, and the Chinese the client found in his own cart
+
+On 2 September the client photographed his shopping cart. The pushchair in it
+had one option, and it read `M005-单向推车-黑色-标配款-单手折叠（可坐可趟）`.
+Measured across everything published: **238 of 1,415 options, on 20 products,
+carried Chinese in the Arabic field.**
+
+The cause was the fallback in `to_kdx_variants` — keep the original label when
+the translator returned nothing — which is the right failure and the wrong thing
+to publish. It is the same mistake the category cache made a few hours earlier,
+one level down: *a failed translation stored as though it were an answer.* When
+you fix one of these, grep for its siblings.
+
+Four things now stand between a Chinese label and the shop, in the order they
+run:
+
+1. **Declutter first.** 1688 labels arrive carrying ornament —
+   `✷☽☽\t5号守门员手套（身高建议130CM左右）✷☽☽`. Measured against the live model:
+   with the ornament attached the label comes back unchanged, and stripped of it
+   the same model translates the whole thing correctly on the first ask. Symbols
+   and format characters go, control characters become a space (a tab was
+   holding two words apart), and `℃ ° ± ×` stay — those mean something in a size.
+2. **Ask again for what is still Chinese**, by itself. A short list is easier
+   than a long one.
+3. **Cut the label up and ask for the pieces.** A compound SKU label is a whole
+   specification joined with dashes, and the model hands that shape straight
+   back. The separator set was built by measurement, re-running the same 234
+   stuck labels after each addition: dash alone left 85, adding `~` left 59,
+   adding brackets and single spaces left 0. One addition made it *worse* before
+   it made it better — see `_AS_ASCII` in `src/enrich.py`: `【 】 、 ，` are
+   themselves CJK characters, so a label rebuilt with them still in it is
+   correctly judged Chinese and thrown away. They are written out as ASCII. The
+   seam where a latin part code runs straight into Chinese — `E2守门员手套蓝色` —
+   counts as a separator too, with no character to preserve, so a space is
+   written where it was.
+4. **Refuse whatever survives.** An option whose name is still Chinese is not
+   published. Per option, not per product: a colour that will not translate
+   costs that colour and not the other eight, and the refusal is written to the
+   audit as `untranslated_option` so the cost is visible. Off when no translator
+   is configured at all, because that mode is deliberately untranslated and this
+   guard must not turn "no API key" into "no catalogue".
+
+Result on the live model: the 234 labels that had reached the shop in Chinese
+all translate, and the batches published after the fix carry no Chinese option
+at all. His import inserts and does not update, so the eleven products already
+in his shop with Chinese options have to be deleted before they can be
+republished — he was given the list.
+
+### What 1688 thinks of our listing volume
+
+`fenxiao.risk.queryGoodsRisk` is **not** the per-product risk check its name
+suggests, and the permission list it arrived on made it look like one. It takes
+no offer id: only `publishCount` (products listed today) and `onCount` (products
+currently on sale), and it answers with one word about the *account* — 无 / 低 /
+中 / 高. It cannot back the banned-term filter, which is what the client was told
+before it was called; the correction went to him the same day, and
+`verify_risk.py` holds it in place with a CONTROL that no offer id is ever sent.
+
+`src/risk.py` reads it once per run, **before** the publishing loop rather than
+after — a warning that arrives once the products are up has already cost the
+thing it was meant to protect. Medium or high stops the run. A reading that
+could not be taken is not a reading of "no risk": a timeout, a business refusal
+and a success naming no level all give `None`, which never halts anything, and
+neither does a level this module has not heard of. `KDX_IGNORE_RISK=1` lifts the
+halt while still taking the reading.
+
 ## Refreshing the price of a product already published
 
 ```bash
