@@ -691,6 +691,56 @@ def main() -> int:
           block["variants"][1]["images"] == ["c-poster.jpg"],
           str(block["variants"][1]))
 
+    # The second, higher line. Measured on the live channel, that exception
+    # swallows the rule: all 50 colours in a six-product batch carried exactly
+    # one photograph, so 17 kept one over the limit - 14 of them at 5-6%, then
+    # 7%, 8% and one at 12%. The client complained about pictures that are
+    # advertising and nothing else, which is the 12%, not the 5.4%.
+    def with_drop_line(value, variants, scores_map):
+        payload = {"variants": json.loads(json.dumps(variants))}
+        before = os.environ.get("KDX_POSTER_DROP_COLOUR_PCT")
+        imagetext_module.MAX_TEXT_PERCENT = 5.0
+        if value is None:
+            os.environ.pop("KDX_POSTER_DROP_COLOUR_PCT", None)
+        else:
+            os.environ["KDX_POSTER_DROP_COLOUR_PCT"] = str(value)
+        try:
+            pipeline_module._drop_posters_from_variants(payload, scores_map)
+        finally:
+            imagetext_module.MAX_TEXT_PERCENT = original_limit
+            if before is None:
+                os.environ.pop("KDX_POSTER_DROP_COLOUR_PCT", None)
+            else:
+                os.environ["KDX_POSTER_DROP_COLOUR_PCT"] = before
+        return payload
+
+    THREE = [{"original": "mild", "image": "m.jpg", "images": ["m.jpg"]},
+             {"original": "loud", "image": "l.jpg", "images": ["l.jpg"]},
+             {"original": "clean", "image": "k.jpg", "images": ["k.jpg"]}]
+    MARKS = {"m.jpg": 5.4, "l.jpg": 12.0, "k.jpg": 0.3}
+
+    # CONTROL FIRST: unset must reproduce exactly what shipped before it existed.
+    unset = with_drop_line(None, THREE, MARKS)
+    check("CONTROL with no second line set, every colour survives as before",
+          [v["original"] for v in unset["variants"]] == ["mild", "loud", "clean"],
+          str([v["original"] for v in unset["variants"]]))
+
+    at_ten = with_drop_line(10, THREE, MARKS)
+    check("above the second line the colour is withdrawn, not published",
+          [v["original"] for v in at_ten["variants"]] == ["mild", "clean"],
+          str([v["original"] for v in at_ten["variants"]]))
+    check("CONTROL the borderline colour is left alone",
+          at_ten["variants"][0]["images"] == ["m.jpg"], str(at_ten["variants"][0]))
+
+    # CONTROL: the last colour is never withdrawn. A product with no variants
+    # has no price and no photograph; whether to hold it over its pictures is
+    # poster_only's decision, one step further on.
+    only = with_drop_line(10, [{"original": "loud", "image": "l.jpg",
+                                "images": ["l.jpg"]}], MARKS)
+    check("CONTROL the last colour standing is never withdrawn",
+          [v["original"] for v in only["variants"]] == ["loud"],
+          str(only["variants"]))
+
     # CONTROL: with no threshold set, nothing is touched at all.
     untouched = {"variants": [{"original": "red", "image": "a-poster.jpg",
                                "images": ["a-poster.jpg", "b-clean.jpg"]}]}

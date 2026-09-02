@@ -226,10 +226,25 @@ def _drop_posters_from_variants(payload: dict, scores: dict) -> list:
     swatch with a blank frame, which is worse for the shopper than a caption -
     the same trade `order_gallery` already makes for the gallery - so the
     cleanest one stays even when it is over the limit.
+
+    That exception swallows most of this rule on the selected channel, and the
+    measurement says so plainly: across a six-product batch, all 50 colours
+    carried exactly one photograph each, so 17 of them kept a photograph over
+    the limit because there was nothing to fall back to. Their scores were 5-6%
+    for 14 of the 17, then 7%, 8% and one at 12% - which is the shape of a
+    threshold splitting one population, not two.
+
+    DROP_COLOUR_PERCENT is the second, higher line for the ones the client
+    actually complained about: pictures that are advertising and nothing else.
+    Above it a colour is withdrawn rather than published behind a poster.
+    Default 0, meaning off, so nothing about the catalogue changes until he
+    picks a number - withdrawing colours changes what is for sale, and that is
+    his call to make, not one to arrive at by inference from a complaint.
     """
     limit = imagetext.MAX_TEXT_PERCENT
     if limit <= 0:
         return []
+    intolerable = float(os.environ.get("KDX_POSTER_DROP_COLOUR_PCT", "0") or 0)
 
     def poster(url: str) -> bool:
         percent = scores.get(url)
@@ -237,15 +252,28 @@ def _drop_posters_from_variants(payload: dict, scores: dict) -> list:
         return percent is not None and percent > limit
 
     dropped: list = []
+    keep_variants: list = []
     for variant in payload.get("variants") or []:
         images = [url for url in (variant.get("images") or []) if url]
         clean = [url for url in images if not poster(url)]
         if not clean and images:
-            clean = [min(images, key=lambda url: scores.get(url) or 0.0)]
+            best = min(images, key=lambda url: scores.get(url) or 0.0)
+            if intolerable > 0 and (scores.get(best) or 0.0) > intolerable:
+                # Nothing to show this colour with but an advertisement.
+                dropped.extend(images)
+                continue
+            clean = [best]
         dropped.extend(url for url in images if url not in clean)
         variant["images"] = clean
         if variant.get("image") not in clean:
             variant["image"] = clean[0] if clean else ""
+        keep_variants.append(variant)
+
+    # Never withdraw the last colour. An offer with no variants is an offer with
+    # no price and no photograph, and holding the whole product over its
+    # pictures is poster_only's decision to make, one step further on.
+    if keep_variants:
+        payload["variants"] = keep_variants
     return dropped
 
 
