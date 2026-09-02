@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import unicodedata
 import urllib.request
 
 API_URL = "https://api.openai.com/v1/chat/completions"
@@ -234,10 +235,51 @@ def _reassemble(term: str, named: dict, language: str) -> str:
     return "".join(out)
 
 
+# Symbols that carry meaning in a size or colour label and must survive the
+# declutter below. Everything else in the symbol categories is a seller's
+# decoration.
+_KEEP_SYMBOLS = set("℃℉°±×÷%‰㎡㎏㎝㎜")
+
+
+def _declutter(text: str) -> str:
+    """
+    Take a seller's decoration out of a label before asking what it means.
+
+    1688 labels arrive carrying things like "✷☽☽\tE2守门员手套蓝色【不带护指】✷☽☽".
+    Measured on 2 September: with that ornament attached the model returns the
+    label unchanged, and without it the same model translates the whole thing
+    correctly on the first ask - including 左右 as "approximately", which the
+    segment-by-segment fallback had rendered as "left and right".
+
+    So this runs first. It is not cosmetic: it is the difference between a good
+    translation and a fallback, and between a fallback and none at all.
+    """
+    out = []
+    for character in text:
+        category = unicodedata.category(character)
+        if character in _KEEP_SYMBOLS:
+            out.append(character)
+        elif category in ("So", "Sk", "Cf", "Co"):
+            continue
+        elif category in ("Cc", "Zs"):
+            # A tab held two words apart. Dropping it would join them.
+            out.append(" ")
+        else:
+            out.append(character)
+    return " ".join("".join(out).split()).strip()
+
+
 def _translate_labels(terms, prompt: str, api_key: str | None, timeout: int) -> dict:
     wanted = [str(term).strip() for term in terms if str(term).strip()]
     if not wanted:
         return {}
+
+    # Everything below works on the decluttered form and is projected back onto
+    # the original at the end, so the caller still gets the keys it asked with.
+    # A label that declutters to nothing keeps itself: an empty key would ask
+    # the model to name nothing and would match nothing coming back.
+    asked_as = {term: (_declutter(term) or term) for term in wanted}
+    wanted = list(dict.fromkeys(asked_as.values()))
 
     def ask(subset: list) -> dict:
         # In batches, because one product can carry a lot of labels: the blind
@@ -323,7 +365,9 @@ def _translate_labels(terms, prompt: str, api_key: str | None, timeout: int) -> 
                 # caller's own check still sees it for what it is.
                 if rebuilt and not _CJK.search(rebuilt):
                     out[term][language] = rebuilt
-    return out
+
+    # Back onto the keys the caller handed in.
+    return {term: out[asked_as[term]] for term in asked_as}
 
 
 def translate_terms(terms, api_key: str | None = None, timeout: int = 60) -> dict:

@@ -751,6 +751,50 @@ def main() -> int:
     check("CONTROL the code itself is never sent to be named",
           all("E2" not in batch for batch in glove_asked), str(glove_asked))
 
+    print("\nthe seller's decoration is taken off before the label is read")
+    # Measured against the live model on 2 September. The same label, with and
+    # without its ornament: "✷☽☽\t5号守门员手套（身高建议130CM左右）✷☽☽" came back
+    # untouched, and "5号守门员手套（身高建议130CM左右）" came back as
+    # "قفازات حارس المرمى مقاس 5 (الطول الموصى به حوالي 130 سم)" on the first ask.
+    # So the ornament is not cosmetic - it is the difference between a good
+    # translation and no translation, and the segment fallback it forced had
+    # rendered 左右 ("approximately") as "left and right".
+    DIRTY = "✷☽☽\t5号守门员手套（身高建议130CM左右）✷☽☽"
+    dirty_asked = []
+
+    def dirty_chat(_system, user, _api_key, _timeout):
+        wanted = json.loads(user)
+        dirty_asked.append(list(wanted))
+        clean = "5号守门员手套（身高建议130CM左右）"
+        # Fluent on the clean label, mute on the decorated one - the model's own
+        # behaviour, recorded.
+        return {"terms": {term: ({"en": "Goalkeeper Gloves Size 5",
+                                  "ar": "قفازات حارس المرمى مقاس 5"}
+                                 if term == clean else {"en": term, "ar": term})
+                          for term in wanted}}
+
+    enrich._chat = dirty_chat
+    try:
+        dirty = enrich.translate_terms([DIRTY], api_key="test")
+    finally:
+        enrich._chat = original_chat
+
+    check("the decorated label still translates on the first ask",
+          dirty[DIRTY]["ar"] == "قفازات حارس المرمى مقاس 5", dirty[DIRTY]["ar"])
+    check("CONTROL the ornament never reaches the model",
+          "✷" not in "".join(sum(dirty_asked, [])), str(dirty_asked))
+    check("CONTROL and one ask was enough - no fallback was needed",
+          len(dirty_asked) == 1, str(dirty_asked))
+    check("CONTROL the answer comes back under the key the caller handed in",
+          list(dirty) == [DIRTY], str(list(dirty)))
+    # A tab held two words apart; dropping it would have joined them.
+    check("CONTROL a control character becomes a space, not nothing",
+          enrich._declutter("红色\t大号") == "红色 大号",
+          enrich._declutter("红色\t大号"))
+    # And a symbol that means something in a size label is not decoration.
+    check("CONTROL a temperature or degree sign survives",
+          enrich._declutter("25℃±2°") == "25℃±2°", enrich._declutter("25℃±2°"))
+
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0
 
