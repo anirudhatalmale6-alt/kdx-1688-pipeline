@@ -151,6 +151,23 @@ def _rows(payload: dict, key: str) -> list:
     return rows if isinstance(rows, list) else []
 
 
+def _round_robin(lists) -> list:
+    """
+    One from each list, then the next from each, until they are empty.
+
+    This is what makes a batch of five five DIFFERENT kinds of thing. Handing
+    back one word's offers before the next word's means the quota is filled
+    from the first word alone.
+    """
+    rings = [list(rows) for rows in lists]
+    out: list = []
+    for index in range(max((len(rows) for rows in rings), default=0)):
+        for rows in rings:
+            if index < len(rows):
+                out.append(rows[index])
+    return out
+
+
 class SelectedPool:
     """
     Walk the pool, then fetch complete products from it.
@@ -237,7 +254,8 @@ class SelectedPool:
     def offer_ids_for(self, keywords, *, per_keyword: int = 0, limit: int = 0,
                       known=None) -> list:
         """
-        Distinct offer ids across several keywords, first word first.
+        Distinct offer ids across several keywords, a share from each and
+        returned round-robin.
 
         `known` is the ledger's membership test. It is applied here rather than
         by the caller for one reason worth spelling out: a word whose 2,000
@@ -246,27 +264,80 @@ class SelectedPool:
         reporting that it had found plenty. Filtering as we walk means the quota
         is filled from words that still have something new, and keyword_counts
         records what each word actually contributed.
+
+        The share and the round-robin are both about what the shop looks like,
+        and both were learned from a live batch. Asking the first word for
+        everything the batch needs means the first word answers it: a batch of
+        five published five 国际民族服装 costumes, and since a word holds about
+        two thousand offers, every batch for days would have come from that one
+        word. So each word is asked for its share of what is still missing, and
+        the ids are handed back one word at a time round the ring - so five
+        products are five different kinds of thing. A word with nothing new
+        costs almost nothing and the words behind it take up its share.
         """
-        seen: dict = {}
-        for word in keywords:
-            if limit and len(seen) >= limit:
+        words = [word for word in keywords if word]
+        per_word: dict = {}
+        spare: dict = {}
+        seen: set = set()
+        # Which word an id came from, so keyword_counts can be settled from the
+        # ids actually returned. Counting the share pass alone under-reported
+        # every word that filled in for a neighbour, and that count is what the
+        # run prints as "new offers per word".
+        owner: dict = {}
+        for position, word in enumerate(words):
+            gathered = sum(len(rows) for rows in per_word.values())
+            if limit and gathered >= limit:
                 break
-            # Only as deep as this word needs to go. `need` is what is still
-            # missing, so the first word usually answers the whole batch from
-            # its first page or two and the rest are never asked at all.
+            share = 0
+            if limit:
+                left_to_find = limit - gathered
+                words_left = len(words) - position
+                share = max(1, -(-left_to_find // max(words_left, 1)))
             found = self.offer_ids(limit=per_keyword, keyword=word, known=known,
-                                   need=(limit - len(seen)) if limit else 0)
-            fresh = 0
+                                   need=share)
+            mine: list = []
             for ident in found:
                 if ident in seen:
                     continue
                 if known is not None and known(ident):
                     continue
-                seen[ident] = word
-                fresh += 1
-            self.keyword_counts[word] = fresh
-        ids = list(seen)
-        return ids[:limit] if limit else ids
+                seen.add(ident)
+                owner[ident] = word
+                mine.append(ident)
+            # Everything past this word's share is kept, not thrown away: it is
+            # already paid for, and it is what fills the batch when the other
+            # words turn out to have nothing new.
+            per_word[word] = mine[:share] if share else mine
+            spare[word] = mine[share:] if share else []
+
+        ids = _round_robin(per_word.values())
+        if limit and len(ids) < limit:
+            # Short. A word that ran out gave back less than its share, so the
+            # words that had more make up the difference - from what was
+            # already fetched first, then by asking again. A batch that comes
+            # back under quota publishes under quota, every twenty minutes.
+            ids += _round_robin(spare.values())
+        if limit and len(ids) < limit:
+            for word in words:
+                if len(ids) >= limit:
+                    break
+                for ident in self.offer_ids(limit=per_keyword, keyword=word,
+                                            known=known, need=limit - len(ids)):
+                    if ident in seen or (known is not None and known(ident)):
+                        continue
+                    seen.add(ident)
+                    owner[ident] = word
+                    ids.append(ident)
+                    if len(ids) >= limit:
+                        break
+        ids = ids[:limit] if limit else ids
+        for word in words:
+            self.keyword_counts[word] = 0
+        for ident in ids:
+            word = owner.get(ident)
+            if word is not None:
+                self.keyword_counts[word] = self.keyword_counts.get(word, 0) + 1
+        return ids
 
     # -- fetching -----------------------------------------------------------
 

@@ -322,6 +322,39 @@ check("CONTROL: with no limit the word is still walked to the end",
       len(whole.offer_ids(keyword="连衣裙")) == 70,
       "if this drops below 70 the stop is firing when no one asked for one")
 
+# ---- five products should be five different kinds of thing ----
+# A live batch of five published five 国际民族服装 costumes, because the first
+# word was asked for everything the batch needed and a word holds about two
+# thousand offers. Every batch for days would have come from that one word.
+MIXED = {"连衣裙": [f"D{n}" for n in range(200)],
+         "台灯": [f"L{n}" for n in range(200)],
+         "毛巾": [f"T{n}" for n in range(200)]}
+mixed = selected.SelectedPool(KeywordClient(MIXED), page_size=50)
+six = mixed.offer_ids_for(["连衣裙", "台灯", "毛巾"], limit=6)
+check("each word gets a share of the batch, not the first word all of it",
+      sorted(mixed.keyword_counts.values()) == [2, 2, 2],
+      str(mixed.keyword_counts))
+check("and the ids come back interleaved, so the first five are not one word",
+      len({offer[0] for offer in six[:5]}) == 3, str(six))
+
+# ...but a share must not cost the batch its size when a word runs dry.
+THIN = {"连衣裙": [f"D{n}" for n in range(200)],
+        "台灯": ["L0"],
+        "耳机": []}
+thin = selected.SelectedPool(KeywordClient(THIN), page_size=50)
+filled = thin.offer_ids_for(["连衣裙", "台灯", "耳机"], limit=12)
+check("a word with nothing new does not shrink the batch",
+      len(filled) == 12, f"{len(filled)} of 12")
+check("the word that had more made up the difference",
+      thin.keyword_counts["台灯"] == 1 and thin.keyword_counts["连衣裙"] == 11,
+      str(thin.keyword_counts))
+
+# And the batch is still capped by what genuinely exists.
+tiny = selected.SelectedPool(KeywordClient({"台灯": ["L0", "L1"]}), page_size=50)
+check("asking for more than exists returns what exists, not a repeat",
+      tiny.offer_ids_for(["台灯"], limit=10) == ["L0", "L1"],
+      str(tiny.offer_ids_for(["台灯"], limit=10)))
+
 
 # ------------------------------------------------- 4c. where the words come from
 print("\nthe words themselves, which decide what the shop can reach")
