@@ -257,6 +257,90 @@ Not to be confused with `product.keywords.search`, which despite its name is
 **not** a keyword search: asked for 连衣裙, 运动鞋 and a nonsense string it
 returns the identical 978 rows. It is a fixed list, and nothing here uses it.
 
+## Two photographs the filter said no to, and the shop showed anyway
+
+Both from the same 2 September message, and both a leak rather than a
+misjudgement: the filters were right about the photographs and were being asked
+about the wrong list.
+
+**The poster filter only ever saw the gallery.** `order_gallery` re-ordered and
+pruned `payload["images"]`; the variant blocks carry their own `image` and
+`images`, and nothing touched those. So a photograph scored as an advertising
+poster was removed from the gallery and published regardless, one level down,
+inside the colour it belonged to. Counted over the live catalogue before the
+fix: **170 such photographs across 48 of the 230 products**. Re-scored, they
+came back 8.9%–20.2% Chinese text against a 5% limit, while the photographs that
+had survived into the same galleries scored 0.1%–0.4% — the filter had judged
+them correctly and been overruled by the layout.
+
+A colour is still never emptied. When every photograph it owns is over the
+limit, the cleanest one stays: a blank frame beside a live price is worse for
+the shopper than a caption inside a picture, and it is the trade `order_gallery`
+already makes at product level.
+
+**Duplicates were counted by URL.** 1688 serves one photograph from more than
+one path, so deduplicating URLs never caught it. Fetched and hashed across 12
+published products: **3 of 91 photographs were a byte-identical second copy**.
+`PhotoChecker` already holds the bytes for the text scorer, so the fingerprint
+costs nothing extra. No fingerprint means keep — the checker drops bodies once
+it is over its memory budget, and "I did not look" must never read as "duplicate".
+
+Both suites' photo stubs answered the same six bytes for every URL, which under
+content-dedupe makes every photograph in the suite a copy of the first one. That
+is a fixture that cannot express the thing being tested, so the fixtures were
+fixed and the rule pinned with two URLs that deliberately do share bytes.
+
+## The weight his shop never received
+
+The client photographed his own cart on 2 September: 12.34 SAR of goods, fast
+delivery selected, and *free shipping* printed against the total. A second
+photograph, after he typed a weight into a product by hand, showed the same cart
+charging 28.00 SAR of delivery. His shop prices fast delivery from a product
+weight, and it had never been sent one.
+
+Not "sent a wrong one" — sent none. The number lived only inside
+`variants[].sizes[]`, and a product with no size axis carried it nowhere at all:
+**95 of the 230 live products**. The other 135 carried it somewhere his importer
+does not look.
+
+The same measurement answered a second complaint of his in the same breath.
+Every one of those 230 products came back `needs_shipment: true`. Not most —
+**all of them**. There has never been a free-shipping product in the shop,
+because nothing in reach reports a weight over the 2 kg line:
+
+* the discovery channel returns no weight at all — 3776 offers in the queue, all
+  carrying the assumed 1 kg, not one measured;
+* the selected-pool detail API reports `unitWeight` for 4 offers in 20, and in
+  that sample the largest was 1.0 kg;
+* `alibaba.product.get`, which carries the real shipping weight, is still
+  `gw.APIACLDecline` on both apps.
+
+So the light/heavy split cannot be derived here. `KDX_CATEGORY_WEIGHTS` is the
+mechanism that exists for it, and it is the client's table to fill: a department
+is a crude unit — hardware holds both a screw and a toolbox — but it is the only
+one he can state and we can act on.
+
+### Which key does his importer read it under?
+
+Not a guess, and not yet answered. Type-probed against the live endpoint:
+
+```
+CONTROL price = "abc"            -> 422, "must be a number"
+CONTROL name_en removed          -> 422, "field is required"
+CONTROL needs_shipment = "abc"   -> 422, "must be true or false"
+CONTROL images = "abc"           -> 422, "must be an array"
+weight, weight_kg, product_weight, shipping_weight, wt, gross_weight,
+net_weight, package_weight, weight_grams, weight_g, item_weight, weightKg,
+productWeight, shippingWeight, weight_value, unit_weight  = "abc"
+                                 -> accepted, all eighteen
+```
+
+The four controls are the point: the validator is real and specific, and no
+spelling of weight is in it. An absent field under names I invented is not proof
+the feature is absent, so the question went to the client rather than a
+nineteenth guess — and `KDX_WEIGHT_FIELD` holds the key so his answer costs a
+restart, not a release.
+
 ## KDX import contract — measured, not assumed
 
 `POST https://kdx-sa.com/api/v1/products/import`, header `X-API-Token`,

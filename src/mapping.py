@@ -51,7 +51,11 @@ WEIGHT_FIELD = os.environ.get("KDX_WEIGHT_FIELD", "weight")
 # The client sets delivery type from this one boolean:
 #   True  -> 0.00-2 kg  -> fast shipping
 #   False -> over 2 kg   -> free shipping
-# No shipping fee is charged to the customer in either case.
+#
+# "No shipping fee is charged in either case" stood here until 2 September and
+# was wrong. His own cart, photographed: 65.20 SAR of goods, 28.00 SAR of fast
+# delivery, 93.20 SAR to pay. Fast delivery is charged, and charged from a
+# weight - which is why a product arriving without one silently became free.
 LIGHT_MAX_KG = Decimal("2")
 
 OFFER_URL = "https://detail.1688.com/offer/{offer_id}.html"
