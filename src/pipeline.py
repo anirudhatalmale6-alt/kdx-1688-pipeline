@@ -167,6 +167,46 @@ def _restate_uncompared(results: list) -> None:
                 "المنتج ثقيل ولا يُنشر بدون مقارنة - مؤجَّل وليس مرفوضاً")
 
 
+def _hold_untranslated(results: list, terms: dict) -> None:
+    """
+    Refuse to publish an option whose name is still Chinese.
+
+    to_kdx_variants falls back to the original label when the translator did not
+    produce one, and that fallback is right as a fallback and wrong as a thing
+    to publish: on 2 September the client opened his own shopping cart and found
+    a pushchair whose only option read
+    "M005-单向推车-黑色-标配款-单手折叠（可坐可趟）". It is the same mistake the
+    category cache made, one level down - a failed translation dressed up as an
+    answer - and the shop is where it becomes visible.
+
+    Per option, not per product, deliberately. A colour that will not translate
+    should cost that colour, not the other eight, and each refusal is written to
+    the audit with its own reason so the client can see what it cost him. If
+    every option is stuck the product publishes nothing at all, which is the
+    correct end of the same rule.
+    """
+    for result in results:
+        if result.decision != rules.Decision.PUBLISH:
+            continue
+        stuck = []
+        for key in ("color", "size"):
+            label = result.variant.attributes.get(key, "")
+            if not label:
+                continue
+            shown = (terms.get(label) or {}).get("ar", label)
+            if enrich_module.has_cjk(shown):
+                stuck.append(str(label))
+        if not stuck:
+            continue
+        result.decision = rules.Decision.REJECT
+        result.final_price_sar = None
+        result.audit.decision = rules.Decision.REJECT.value
+        result.audit.reason_code = "untranslated_option"
+        result.audit.reason_ar = (
+            f"اسم الخيار ما زال بالصيني ({' / '.join(stuck)}) - "
+            "لا يُنشر بهذا الاسم")
+
+
 def _restate_assumed_weight(results: list, normalised: dict) -> None:
     """
     Say "assumed" where the weight was assumed.
@@ -445,9 +485,22 @@ class Pipeline:
         # After _restate_uncompared, so "nobody searched" still wins as the
         # explanation: an assumed weight only matters once a search happened.
         _restate_assumed_weight(results, normalised)
+
+        # Ahead of the audit, so an option refused for its name is reported with
+        # that reason instead of appearing in the file as published - the client
+        # reads the audit to understand why his catalogue is short, and a row
+        # that says PUBLISH about something the shop never received is a lie in
+        # the one place he goes for the truth.
+        terms = self._terms(product)
+        # Only when a translator is configured. Without one the whole run is
+        # deliberately untranslated - names included - and refusing every option
+        # for being Chinese would turn "no API key" into "no catalogue", which
+        # is not the behaviour this replaces.
+        if self.translate:
+            _hold_untranslated(results, terms)
         self._audit(results, spent)
 
-        variants = to_kdx_variants(results, self._terms(product))
+        variants = to_kdx_variants(results, terms)
         if not variants:
             return OfferOutcome(offer_id=offer_id, product=None, results=results,
                                 points_spent=spent, compared=compared,

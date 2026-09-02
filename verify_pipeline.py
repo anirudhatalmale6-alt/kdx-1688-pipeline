@@ -36,6 +36,7 @@ import audit as audit_module  # noqa: E402
 import budget as budget_module  # noqa: E402
 import catalog  # noqa: E402
 import compare  # noqa: E402
+import enrich  # noqa: E402
 import pipeline as pipeline_module  # noqa: E402
 import rules  # noqa: E402
 import source as source_module  # noqa: E402
@@ -98,7 +99,7 @@ CATEGORY_ROWS = [
 
 def build(daily_points: int = 300, cny_to_sar: str = "0.52", translate: bool = True,
           state: str = "points.json", offers: str | None = None,
-          categories=catalog.CategoryIndex(CATEGORY_ROWS)):
+          categories=catalog.CategoryIndex(CATEGORY_ROWS), term_translator=fake_terms):
     return pipeline_module.Pipeline(
         categories=categories,
         source=source_module.FixtureSource(offers),
@@ -109,7 +110,7 @@ def build(daily_points: int = 300, cny_to_sar: str = "0.52", translate: bool = T
         audit_log=audit_module.AuditLog(os.path.join(WORK, "audit.csv")),
         translate=translate,
         enricher=fake_enrich,
-        term_translator=fake_terms,
+        term_translator=term_translator,
         dry_run=True,
     )
 
@@ -599,6 +600,98 @@ def main() -> int:
     outcome = unguarded.run_product(unguarded.source.get_product(TSHIRT))
     check("CONTROL with the check off the same product still publishes",
           len(unguarded.kdx.pushed) == 1 and not outcome.error, outcome.error)
+
+    print("\nan option name that will not translate never reaches the cart")
+    # 2 September. The client opened his own shopping cart and sent a photograph
+    # of it: a pushchair whose single option read
+    # "M005-单向推车-黑色-标配款-单手折叠（可坐可趟）". Measured across everything
+    # published: 238 of 1415 options carried Chinese in the Arabic field.
+    #
+    # The cause was the fallback in to_kdx_variants - keep the original when the
+    # translator gave nothing back - which is the right failure and the wrong
+    # thing to publish. Reproduced by handing the pipeline a translator that
+    # returns one label unchanged, which is exactly what the model did.
+    def stubborn(terms, **_kwargs):
+        return {term: ({"en": term, "ar": term} if term == "黑色"
+                       else TERMS.get(term, {"en": term, "ar": term}))
+                for term in terms}
+
+    outcome = build(state="points-untranslated.json",
+                    term_translator=stubborn).run_offer(TSHIRT)
+    published = {result.variant.attributes.get("color")
+                 for result in outcome.results
+                 if result.decision is rules.Decision.PUBLISH}
+    check("the option whose name stayed Chinese is not published",
+          "黑色" not in published, str(published))
+    check("and the reason names it rather than the price",
+          any(result.audit.reason_code == "untranslated_option"
+              and "黑色" in result.audit.reason_ar for result in outcome.results),
+          str(sorted({result.audit.reason_code for result in outcome.results})))
+    check("no Chinese option name reaches the payload",
+          not any(enrich.has_cjk(variant["ar"])
+                  for variant in (outcome.product or {}).get("variants", [])),
+          str([variant["ar"] for variant in (outcome.product or {}).get("variants", [])]))
+    # CONTROL. Holding the whole product would cost the client the other colour
+    # for a fault that belongs to one of them, so the refusal has to be per
+    # option - and the white shirt is what proves the guard did not simply
+    # reject everything it touched.
+    check("CONTROL the colour that did translate still publishes",
+          "白色" in published, str(published))
+    check("CONTROL with both of its sizes",
+          len((outcome.product or {}).get("variants", [{}])[0].get("sizes", [])) == 2,
+          str((outcome.product or {}).get("variants")))
+
+    # CONTROL. Running with no translator at all is a deliberate mode - names
+    # included - and this guard must not turn "no API key" into "no catalogue".
+    untranslated = build(state="points-notranslate.json", translate=False,
+                         term_translator=stubborn).run_offer(TSHIRT)
+    check("CONTROL with translation off the old behaviour is unchanged",
+          len((untranslated.product or {}).get("variants", [])) == 2,
+          str((untranslated.product or {}).get("variants")))
+
+    print("\nthe label the model hands straight back is cut into its pieces")
+    # The second half of the same fix. Asked for the whole SKU string the model
+    # returns it unchanged - twice, because the retry asks the same way - so the
+    # third pass asks for the segments instead. This stub behaves exactly as the
+    # real model did on 2 September: mute on the compound label, fluent on its
+    # parts.
+    SEGMENTS = {"单向推车": "عربة دفع باتجاه واحد", "黑色": "أسود",
+                "标配款": "النسخة القياسية", "单手折叠（可坐可趟）": "طي بيد واحدة"}
+    WHOLE = "M005-单向推车-黑色-标配款-单手折叠（可坐可趟）"
+    asked = []
+
+    def fake_chat(_system, user, _api_key, _timeout):
+        wanted = json.loads(user)
+        asked.append(list(wanted))
+        answers = {}
+        for term in wanted:
+            arabic = SEGMENTS.get(term)
+            # The whole label comes back exactly as it went in. That is the
+            # defect, reproduced rather than described.
+            answers[term] = ({"en": term, "ar": arabic or term}
+                             if arabic else {"en": term, "ar": term})
+        return {"terms": answers}
+
+    original_chat = enrich._chat
+    enrich._chat = fake_chat
+    try:
+        result = enrich.translate_terms([WHOLE], api_key="test")
+    finally:
+        enrich._chat = original_chat
+
+    check("the label comes back with no Chinese left in it",
+          not enrich.has_cjk(result[WHOLE]["ar"]), result[WHOLE]["ar"])
+    check("and keeps its shape, model code and dashes included",
+          result[WHOLE]["ar"] == "M005-عربة دفع باتجاه واحد-أسود-"
+                                 "النسخة القياسية-طي بيد واحدة",
+          result[WHOLE]["ar"])
+    # CONTROL on the mechanism, not the output: a passing string could also be
+    # produced by asking for the whole label a third time and getting lucky.
+    check("CONTROL the third call asks for the segments, not the label",
+          len(asked) == 3 and WHOLE not in asked[2] and "黑色" in asked[2],
+          str(asked))
+    check("CONTROL and only for the Chinese ones - M005 is not sent to be named",
+          "M005" not in asked[2], str(asked[2]))
 
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0

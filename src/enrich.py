@@ -129,6 +129,11 @@ _DANGLING = re.compile(
     r"(?:\s|^)(?:من|ماركة|علامة|from|by|brand)\s*$", re.IGNORECASE)
 
 
+def has_cjk(text) -> bool:
+    """True when a shopper would still be looking at Chinese."""
+    return bool(_CJK.search(str(text or "")))
+
+
 def strip_cjk(text: str) -> str:
     """
     Take the Chinese out of a line meant for a Saudi shopper.
@@ -169,6 +174,24 @@ def enrich(title_zh: str, description_zh: str, api_key: str | None = None,
             raise EnrichError(f"{field} was nothing but Chinese text")
 
     return result
+
+
+# What a 1688 seller joins the parts of a SKU label with. Kept in the split so
+# the label can be put back together character for character.
+_SEPARATORS = re.compile(r"([-–—/／|｜+＋、,，]|\s{2,})")
+
+
+def _reassemble(term: str, named: dict, language: str) -> str:
+    """Put a segmented label back together in the language asked for."""
+    out = []
+    for part in _SEPARATORS.split(term):
+        if _SEPARATORS.fullmatch(part):
+            out.append(part)
+            continue
+        entry = named.get(part.strip()) or {}
+        value = str(entry.get(language) or "").strip()
+        out.append(value if value and not _CJK.search(value) else part)
+    return "".join(out)
 
 
 def _translate_labels(terms, prompt: str, api_key: str | None, timeout: int) -> dict:
@@ -222,6 +245,38 @@ def _translate_labels(terms, prompt: str, api_key: str | None, timeout: int) -> 
                 out[term]["en"] = english
             if arabic and not _CJK.search(arabic):
                 out[term]["ar"] = arabic
+
+    # Third pass, by segment. A 1688 SKU label is often a whole specification
+    # joined with dashes - "M005-单向推车-黑色-标配款-单手折叠（可坐可趟）" - and asked
+    # for whole, the model hands it straight back unchanged, twice. That is not
+    # a theory: on 2 September all nine options of a pushchair reached the
+    # client's shopping cart in Chinese, and replaying those nine labels through
+    # this function reproduced it exactly.
+    #
+    # Cut on the separators and the pieces are the ordinary colour and version
+    # words this prompt was written for. They also repeat across the variants of
+    # one product - nine labels here held eight distinct pieces - so the extra
+    # call is small, and the label goes back together in its original shape.
+    stuck = [term for term, entry in out.items()
+             if _CJK.search(entry["ar"]) or _CJK.search(entry["en"])]
+    if stuck:
+        pieces = []
+        for term in stuck:
+            for piece in (part.strip() for part in _SEPARATORS.split(term)):
+                if piece and _CJK.search(piece) and piece not in pieces:
+                    pieces.append(piece)
+        try:
+            named = ask(pieces) if pieces else {}
+        except Exception:                                  # noqa: BLE001
+            named = {}
+        for term in stuck:
+            for language in ("en", "ar"):
+                rebuilt = _reassemble(term, named, language)
+                # Still Chinese means a piece went untranslated, and half a
+                # label is worse than the whole one: keep the original so the
+                # caller's own check still sees it for what it is.
+                if rebuilt and not _CJK.search(rebuilt):
+                    out[term][language] = rebuilt
     return out
 
 

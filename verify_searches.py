@@ -91,8 +91,17 @@ def fake_enrich(title_zh, description_zh, **_kwargs):
             "description_en": ""}
 
 
+# Real names, not the identity stub this used to be. Since 2 September an option
+# still written in Chinese is refused publication, so a stub that hands every
+# label back untouched no longer stands in for a working translator - it stands
+# in for a broken one, and the assertions below are about the search allowance,
+# not about translation.
+TERMS = {"白色": {"en": "White", "ar": "أبيض"}, "黑色": {"en": "Black", "ar": "أسود"},
+         "S": {"en": "S", "ar": "S"}, "M": {"en": "M", "ar": "M"}}
+
+
 def fake_terms(terms, **_kwargs):
-    return {term: {"en": term, "ar": term} for term in terms}
+    return {term: TERMS.get(term, {"en": term, "ar": term}) for term in terms}
 
 
 def main() -> int:
