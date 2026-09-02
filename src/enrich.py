@@ -189,13 +189,22 @@ def enrich(title_zh: str, description_zh: str, api_key: str | None = None,
 # in one of these labels is the seller separating two things.
 _SEPARATORS = re.compile(r"([-–—/／|｜+＋、,，~～【】]|\s+)")
 
+# Half of these separators are themselves Chinese characters - 【 】 、 ， live in
+# the CJK punctuation block - so putting a label back together with them still in
+# it produces a string that is, correctly, judged to be Chinese and thrown away.
+# That is not a hypothetical: adding 【 】 to the split above took the survivors
+# from 59 back up to 132 until this map existed. The bracket is punctuation, not
+# a word, so it is carried across rather than translated.
+_AS_ASCII = {"【": "[", "】": "]", "／": "/", "｜": "|", "＋": "+", "～": "~",
+             "、": ",", "，": ",", "–": "-", "—": "-"}
+
 
 def _reassemble(term: str, named: dict, language: str) -> str:
     """Put a segmented label back together in the language asked for."""
     out = []
     for part in _SEPARATORS.split(term):
         if _SEPARATORS.fullmatch(part):
-            out.append(part)
+            out.append(_AS_ASCII.get(part, part))
             continue
         entry = named.get(part.strip()) or {}
         value = str(entry.get(language) or "").strip()
@@ -272,6 +281,10 @@ def _translate_labels(terms, prompt: str, api_key: str | None, timeout: int) -> 
         pieces = []
         for term in stuck:
             for piece in (part.strip() for part in _SEPARATORS.split(term)):
+                # A separator can be a CJK character itself, so "is it Chinese"
+                # is not enough to decide it is a word worth asking about.
+                if _SEPARATORS.fullmatch(piece or " "):
+                    continue
                 if piece and _CJK.search(piece) and piece not in pieces:
                     pieces.append(piece)
         try:

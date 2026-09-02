@@ -693,6 +693,36 @@ def main() -> int:
     check("CONTROL and only for the Chinese ones - M005 is not sent to be named",
           "M005" not in asked[2], str(asked[2]))
 
+    # The separator can be a Chinese character itself. 【 and 】 live in the CJK
+    # punctuation block, so a label rebuilt with them still in it is judged to be
+    # Chinese and thrown away - which is exactly what happened: adding the
+    # brackets to the split took the survivors of the real 234 from 59 back up to
+    # 132 before this was understood.
+    VALVE = "4V310-10~优质款【AC220V】"
+    valve_asked = []
+
+    def valve_chat(_system, user, _api_key, _timeout):
+        wanted = json.loads(user)
+        valve_asked.append(list(wanted))
+        return {"terms": {term: {"en": term,
+                                 "ar": "الفئة الممتازة" if term == "优质款" else term}
+                          for term in wanted}}
+
+    enrich._chat = valve_chat
+    try:
+        valve = enrich.translate_terms([VALVE], api_key="test")
+    finally:
+        enrich._chat = original_chat
+
+    check("a bracketed label is not defeated by its own punctuation",
+          not enrich.has_cjk(valve[VALVE]["ar"]), valve[VALVE]["ar"])
+    check("the brackets come through as brackets, and the code untouched",
+          valve[VALVE]["ar"] == "4V310-10~الفئة الممتازة[AC220V]",
+          valve[VALVE]["ar"])
+    check("CONTROL a bracket is never sent to be translated as a word",
+          all("【" not in batch and "】" not in batch for batch in valve_asked),
+          str(valve_asked))
+
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0
 
