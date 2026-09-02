@@ -37,6 +37,7 @@ import budget as budget_module  # noqa: E402
 import catalog  # noqa: E402
 import compare  # noqa: E402
 import enrich  # noqa: E402
+import mapping  # noqa: E402
 import pipeline as pipeline_module  # noqa: E402
 import rules  # noqa: E402
 import source as source_module  # noqa: E402
@@ -148,6 +149,17 @@ def main() -> int:
           all(Decimal(str(size["price"])) > 0
               for variant in product["variants"] for size in variant["sizes"]))
     check("0.35 kg is fast shipping", product["needs_shipment"] is True)
+    # The product had no weight of its own until 2 September - the number lived
+    # only inside variants[].sizes[], and a product with no size axis carried it
+    # nowhere at all. His shop prices fast delivery from a product weight, so
+    # those checked out with no delivery charge and the words "free shipping"
+    # beside a fast delivery he pays for. The two must agree: a flag saying
+    # "light" beside a weight over the line would charge the wrong fee.
+    check("the product carries its own weight",
+          product.get(mapping.WEIGHT_FIELD) == 0.35, str(product.get(mapping.WEIGHT_FIELD)))
+    check("and it is the number the shipping flag was decided from",
+          mapping.needs_shipment(product[mapping.WEIGHT_FIELD])
+          is product["needs_shipment"])
     check("the colour names reach KDX in Arabic",
           [variant["ar"] for variant in product["variants"]] == ["أبيض", "أسود"],
           str([variant["ar"] for variant in product["variants"]]))
@@ -163,6 +175,11 @@ def main() -> int:
           "Noon" in boiler.results[0].audit.pricing_basis,
           boiler.results[0].audit.pricing_basis)
     check("12.4 kg makes it free shipping", boiler.product["needs_shipment"] is False)
+    # CONTROL for the weight above: a product with no size axis is exactly the
+    # shape that carried no weight anywhere before, so it is the one to ask.
+    check("CONTROL a product with no size axis still carries a weight",
+          boiler.product.get(mapping.WEIGHT_FIELD) == 12.4,
+          str(boiler.product.get(mapping.WEIGHT_FIELD)))
     check("a colour-less product still gets exactly one variant",
           len(boiler.product["variants"]) == 1)
     check("with the price on the variant itself, not on an empty size row",
@@ -472,9 +489,11 @@ def main() -> int:
             return [self.answer]
 
     class Opener:
-        def __init__(self, dead=()):
+        def __init__(self, dead=(), bodies=None):
             self.dead = set(dead)
             self.asked = []
+            # {url: bytes} for the tests that need two URLs to be one photograph.
+            self.bodies = dict(bodies or {})
 
         def __call__(self, request, timeout=None):
             url = request.full_url
@@ -482,13 +501,19 @@ def main() -> int:
             if url in self.dead:
                 raise urllib.error.HTTPError(url, 404, "gone", {}, io.BytesIO(b""))
 
+            body = self.bodies.get(url, b"\xff\xd8jpeg" + url.encode())
+
             class R:
                 status = 200
                 headers = {"Content-Type": "image/jpeg"}
 
                 def read(self_inner):
-                    # The checker keeps the bytes for the text scorer to read.
-                    return b"\xff\xd8jpeg"
+                    # The checker keeps the bytes for the text scorer to read,
+                    # and now also to tell one photograph from another. Distinct
+                    # per URL unless a test deliberately says otherwise: a stub
+                    # that answered the same six bytes for every URL made every
+                    # photograph in the suite a duplicate of the first one.
+                    return body
 
                 def __enter__(self_inner):
                     return self_inner
@@ -589,6 +614,108 @@ def main() -> int:
     off, outcome = with_score(40.0, 0.0)
     check("CONTROL with no threshold set the poster is published as before",
           len(off.kdx.pushed) == 1 and not outcome.error, outcome.error)
+
+    print("\nthe poster filter reaches the colour swatches, not just the gallery")
+    # The defect the client photographed in his own shop on 2 September. The
+    # gallery was filtered and the variant blocks were not, so a photograph
+    # judged an advertising poster was dropped from `images` and published
+    # anyway one level down, inside the colour it belonged to. Measured on the
+    # live catalogue before this ran: 170 such photographs across 48 of 230
+    # products, scoring 8.9%-20.2% against a 5% limit, while the photographs
+    # that survived into the same galleries scored 0.1%-0.4%.
+    def with_scores(by_url, limit):
+        original_percent = imagetext_module.text_percent
+        original_limit = imagetext_module.MAX_TEXT_PERCENT
+        # The opener's body carries its own URL, which is how a per-photograph
+        # score is expressed without reaching into the checker.
+        def scorer(data):
+            url = bytes(data).decode("utf-8", "ignore")
+            return next((v for k, v in by_url.items() if k in url), 0.1)
+        imagetext_module.text_percent = scorer
+        imagetext_module.MAX_TEXT_PERCENT = limit
+        runner = live_runner(IMPORTED)
+        try:
+            return runner, runner.run_product(runner.source.get_product(TSHIRT))
+        finally:
+            imagetext_module.text_percent = original_percent
+            imagetext_module.MAX_TEXT_PERCENT = original_limit
+
+    # Through run_product, because a check that calls the step itself would pass
+    # even if the pipeline never reached it.
+    mixed, outcome = with_scores({"main-2.jpg": 20.21}, 5.0)
+    pushed = mixed.kdx.pushed[0] if mixed.kdx.pushed else {}
+    everywhere = list(pushed.get("images") or [])
+    for variant in pushed.get("variants") or []:
+        everywhere.extend(variant.get("images") or [])
+        if variant.get("image"):
+            everywhere.append(variant["image"])
+    check("a poster reaches neither the gallery nor a swatch",
+          pushed and not any("main-2.jpg" in url for url in everywhere),
+          str(everywhere))
+    # CONTROL. If the clean photographs went too this would pass for the wrong
+    # reason: a product with no pictures also has no posters in it.
+    check("CONTROL the clean photographs are still there",
+          any("main-1.jpg" in url for url in everywhere), str(everywhere))
+    check("CONTROL no colour is left with a blank swatch",
+          all(variant["image"] or not variant["images"]
+              for variant in pushed.get("variants") or []),
+          str(pushed.get("variants")))
+
+    # The rule at the level where it bites, with a colour that owns more than
+    # one photograph - which the fixture above does not have. A colour keeps its
+    # clean shot and loses its poster.
+    block = {"variants": [
+        {"original": "red", "image": "a-poster.jpg",
+         "images": ["a-poster.jpg", "b-clean.jpg"]},
+        {"original": "blue", "image": "c-poster.jpg", "images": ["c-poster.jpg"]},
+    ]}
+    original_limit = imagetext_module.MAX_TEXT_PERCENT
+    imagetext_module.MAX_TEXT_PERCENT = 5.0
+    try:
+        gone = pipeline_module._drop_posters_from_variants(
+            block, {"a-poster.jpg": 20.21, "b-clean.jpg": 0.4, "c-poster.jpg": 30.0})
+    finally:
+        imagetext_module.MAX_TEXT_PERCENT = original_limit
+    check("a colour loses the poster and keeps the photograph",
+          block["variants"][0]["images"] == ["b-clean.jpg"],
+          str(block["variants"][0]))
+    check("and its swatch moves to the one that survived",
+          block["variants"][0]["image"] == "b-clean.jpg",
+          str(block["variants"][0]))
+    check("the run can say which ones went", gone == ["a-poster.jpg"], str(gone))
+    # CONTROL for the deliberate exception. A colour whose every photograph is a
+    # poster keeps the cleanest one: a blank frame next to a live price is worse
+    # for the shopper than a caption inside the picture, and it is the same
+    # trade order_gallery already makes for the gallery.
+    check("CONTROL a colour with nothing else keeps its poster",
+          block["variants"][1]["images"] == ["c-poster.jpg"],
+          str(block["variants"][1]))
+
+    # CONTROL: with no threshold set, nothing is touched at all.
+    untouched = {"variants": [{"original": "red", "image": "a-poster.jpg",
+                               "images": ["a-poster.jpg", "b-clean.jpg"]}]}
+    imagetext_module.MAX_TEXT_PERCENT = 0.0
+    try:
+        pipeline_module._drop_posters_from_variants(untouched, {"a-poster.jpg": 90.0})
+    finally:
+        imagetext_module.MAX_TEXT_PERCENT = original_limit
+    check("CONTROL with no threshold set the swatches are left alone",
+          untouched["variants"][0]["images"] == ["a-poster.jpg", "b-clean.jpg"],
+          str(untouched["variants"][0]))
+
+    # CONTROL: an unmeasured photograph is not a poster. Tesseract fails on
+    # plenty of real photographs, and treating silence as guilt would strip
+    # galleries wholesale the first time OCR had a bad night.
+    unread = {"variants": [{"original": "red", "image": "x.jpg",
+                            "images": ["x.jpg", "y.jpg"]}]}
+    imagetext_module.MAX_TEXT_PERCENT = 5.0
+    try:
+        pipeline_module._drop_posters_from_variants(unread, {"x.jpg": None, "y.jpg": 0.2})
+    finally:
+        imagetext_module.MAX_TEXT_PERCENT = original_limit
+    check("CONTROL a photograph that could not be read is kept",
+          unread["variants"][0]["images"] == ["x.jpg", "y.jpg"],
+          str(unread["variants"][0]))
 
     # CONTROL: the guard has to be switchable off without editing code, or a
     # network that cannot reach alicdn at all would hold the entire catalogue

@@ -60,10 +60,15 @@ class FakeOpener:
     second look at the same URL is visible.
     """
 
-    def __init__(self, answers: dict, default=200):
+    def __init__(self, answers: dict, default=200, bodies=None):
         self.answers = answers
         self.default = default
         self.calls = []
+        # Two URLs are the same photograph only when a test says so. Answering
+        # one fixed body for every URL would make the whole suite one photograph
+        # repeated, and the content dedupe below would look like it worked when
+        # it had simply been handed nothing to tell apart.
+        self.bodies = dict(bodies or {})
 
     def __call__(self, request, timeout=None):
         url = request.full_url if hasattr(request, "full_url") else str(request)
@@ -77,7 +82,8 @@ class FakeOpener:
             status, kind = answer, "image/jpeg"
         if status >= 400:
             raise urllib.error.HTTPError(url, status, "no", {}, io.BytesIO(b""))
-        return FakeResponse(status, kind)
+        return FakeResponse(status, kind,
+                            self.bodies.get(url, b"\xff\xd8jpeg" + url.encode()))
 
 
 GOOD = "https://cbu01.alicdn.com/img/ibank/good.jpg"
@@ -159,6 +165,45 @@ def main() -> int:
           payload["variants"][1]["image"] == ""
           and payload["variants"][1]["images"] == [],
           str(payload["variants"][1]))
+
+    print("\nthe same photograph under two URLs is published once")
+    # The client's report of 2 September: repeated pictures on a product page.
+    # 1688 serves one photograph from more than one path, so deduplicating the
+    # URLs - which mapping.py already did - never caught it. Measured on 12
+    # published products that day, 3 of 91 photographs were a second copy.
+    TWIN = "https://cbu01.alicdn.com/img/ibank/good-again.jpg"
+    OTHER = "https://cbu01.alicdn.com/img/ibank/other.jpg"
+    same = b"\xff\xd8one-and-the-same"
+    payload = {
+        "images": [GOOD, TWIN, OTHER],
+        "variants": [{"original": "red", "image": GOOD, "images": [GOOD, TWIN]}],
+    }
+    opener = FakeOpener({GOOD: 200, TWIN: 200, OTHER: 200},
+                        bodies={GOOD: same, TWIN: same})
+    checker = photos.PhotoChecker(opener=opener)
+    photos.prune(payload, checker)
+    check("the second copy is dropped from the gallery",
+          payload["images"] == [GOOD, OTHER], str(payload["images"]))
+    # CONTROL. A photograph that only looks similar is a different photograph,
+    # and dropping it would cost the shopper a real view of the product.
+    check("CONTROL a genuinely different photograph is kept",
+          OTHER in payload["images"], str(payload["images"]))
+    check("and the colour swatch loses its copy too",
+          payload["variants"][0]["images"] == [GOOD],
+          str(payload["variants"][0]["images"]))
+    check("CONTROL the swatch still points at a photograph that survived",
+          payload["variants"][0]["image"] == GOOD,
+          str(payload["variants"][0]["image"]))
+
+    # CONTROL for the instrument itself. Without bytes there is no fingerprint,
+    # and no fingerprint must mean "keep", never "assume duplicate" - otherwise
+    # a checker over its memory budget would silently strip whole galleries.
+    starved = photos.PhotoChecker(opener=FakeOpener({GOOD: 200, TWIN: 200}),
+                                  keep_bytes=0)
+    thin = {"images": [GOOD, TWIN], "variants": []}
+    photos.prune(thin, starved)
+    check("CONTROL with no bytes kept, nothing is called a duplicate",
+          thin["images"] == [GOOD, TWIN], str(thin["images"]))
 
     print("\na product with no photograph left is not published")
     payload = {"images": [GONE], "variants": []}

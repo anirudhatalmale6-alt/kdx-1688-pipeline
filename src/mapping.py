@@ -23,11 +23,30 @@ KDX accepts but does NOT validate or store: source, product_url, name,
 name_original, price_currency, weight, sku, stock. They are still sent because
 the client asked for this shape, and because they cost nothing - but nothing may
 depend on KDX giving them back.
+
+WEIGHT, 2 September. The product had no weight of its own at all: the number
+lived only inside variants[].sizes[], and a product with no size axis - 95 of
+230 in the live catalogue - carried none anywhere. His shop computes the fast
+delivery fee from a product weight, so every one of those checked out with no
+fee and the word "free shipping" next to a fast delivery he pays for.
+
+The product-level number is now sent. Whether his importer reads it is not
+something this end can see: type-probed against the live endpoint on 2
+September, `weight`, `weight_kg`, `product_weight` and `shipping_weight` were
+all accepted carrying the string "abc", while the same request with price="abc"
+was rejected 422 and one with name_en missing was rejected 422. So the
+validator is real and none of those four names is in it. WEIGHT_FIELD holds the
+key so his answer costs a restart, not a release.
 """
 
 from __future__ import annotations
 
+import os
 from decimal import Decimal
+
+# The key his importer reads the weight under. Four guesses were wrong (above),
+# so this is his to set rather than mine to assume.
+WEIGHT_FIELD = os.environ.get("KDX_WEIGHT_FIELD", "weight")
 
 # The client sets delivery type from this one boolean:
 #   True  -> 0.00-2 kg  -> fast shipping
@@ -205,6 +224,10 @@ def to_kdx_product(*, offer_id: str, name_ar: str, name_en: str, name_original: 
         "price_min": card_price,
         "price_max": highest,
         "sizes": flat_sizes,
+        # The same number the flag is decided from, so the two can never
+        # disagree in his shop: a product marked fast delivery and priced from a
+        # heavier weight would overcharge, and the reverse undercharges.
+        WEIGHT_FIELD: float(Decimal(str(weight_kg))),
         "needs_shipment": needs_shipment(weight_kg),
     }
     if block:

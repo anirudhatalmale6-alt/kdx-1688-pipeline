@@ -207,6 +207,48 @@ def _hold_untranslated(results: list, terms: dict) -> None:
             "لا يُنشر بهذا الاسم")
 
 
+def _drop_posters_from_variants(payload: dict, scores: dict) -> list:
+    """
+    Take the poster photographs out of the variant blocks too, and say which.
+
+    The gallery was being filtered and the variants were not, so a photograph
+    judged an advertising poster was removed from `images` and then published
+    anyway, one level down, inside the colour it belonged to. Measured on the
+    live catalogue before this existed: 170 such photographs across 48 of 230
+    products, scoring 8.9% to 20.2% Chinese text against a 5% limit, while the
+    photographs that survived into the same galleries scored 0.1% to 0.4%. The
+    client saw them in his own shop.
+
+    Every variant URL is already in `scores`, because the gallery is built from
+    the variant photographs, so nothing is read a second time here.
+
+    A variant is never emptied. Losing its last photograph would leave a colour
+    swatch with a blank frame, which is worse for the shopper than a caption -
+    the same trade `order_gallery` already makes for the gallery - so the
+    cleanest one stays even when it is over the limit.
+    """
+    limit = imagetext.MAX_TEXT_PERCENT
+    if limit <= 0:
+        return []
+
+    def poster(url: str) -> bool:
+        percent = scores.get(url)
+        # Never measured is not evidence of a poster.
+        return percent is not None and percent > limit
+
+    dropped: list = []
+    for variant in payload.get("variants") or []:
+        images = [url for url in (variant.get("images") or []) if url]
+        clean = [url for url in images if not poster(url)]
+        if not clean and images:
+            clean = [min(images, key=lambda url: scores.get(url) or 0.0)]
+        dropped.extend(url for url in images if url not in clean)
+        variant["images"] = clean
+        if variant.get("image") not in clean:
+            variant["image"] = clean[0] if clean else ""
+    return dropped
+
+
 def _restate_assumed_weight(results: list, normalised: dict) -> None:
     """
     Say "assumed" where the weight was assumed.
@@ -551,6 +593,8 @@ class Pipeline:
                     payload["images"] = ranked["images"]
                     report["text_scores"] = ranked["scores"]
                     report["text_dropped"] = ranked["dropped"]
+                    report["text_dropped_variants"] = _drop_posters_from_variants(
+                        payload, ranked["scores"])
 
                 # And if even the best photograph is an advertising poster, the
                 # product is held rather than published. Ranking cannot help a

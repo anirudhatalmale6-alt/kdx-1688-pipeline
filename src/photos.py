@@ -27,6 +27,7 @@ Two things this deliberately does NOT do:
 
 from __future__ import annotations
 
+import hashlib
 import os
 import threading
 import urllib.error
@@ -141,6 +142,36 @@ class PhotoChecker:
         """The bytes already downloaded for this URL, or b'' if they were not kept."""
         return self.bodies.get(url, b"")
 
+    def fingerprint(self, url: str):
+        """
+        What this photograph *is*, rather than where it lives, or None.
+
+        1688 serves the same photograph under more than one URL, so a gallery
+        deduplicated by URL still shows the shopper the same picture twice - the
+        client reported it on 2 September. Measured on 12 published products
+        that day: 3 of 91 photographs were byte-identical to another photograph
+        in the same product under a different URL.
+
+        None where the bytes were not kept - the checker holds only as many as
+        its budget allows - and None is not a match, because not having looked
+        is not evidence of a duplicate.
+        """
+        body = self.bodies.get(url)
+        return hashlib.sha256(body).hexdigest() if body else None
+
+    def deduplicate(self, urls) -> list:
+        """The same list with any repeat of an earlier photograph removed."""
+        kept: list = []
+        seen: set = set()
+        for url in urls or []:
+            mark = self.fingerprint(url)
+            if mark is not None and mark in seen:
+                continue
+            if mark is not None:
+                seen.add(mark)
+            kept.append(url)
+        return kept
+
     def keep(self, urls) -> list:
         return [url for url in (urls or []) if self.reachable(url)]
 
@@ -174,12 +205,17 @@ def prune(payload: dict, checker: PhotoChecker) -> dict:
             everything.append(variant["image"])
     checker.warm(everything)
 
-    kept = checker.keep(before)
+    # Reachable first, then one copy of each distinct photograph. The order is
+    # not interchangeable: fingerprints only exist for URLs that answered.
+    kept = checker.deduplicate(checker.keep(before))
     payload["images"] = kept
 
     for variant in payload.get("variants") or []:
-        variant["images"] = checker.keep(variant.get("images"))
-        if variant.get("image") and not checker.reachable(variant["image"]):
+        # Within one colour only. Two colours sharing a photograph is the
+        # supplier reusing a shot, and dropping the second one would leave that
+        # colour with a blank swatch.
+        variant["images"] = checker.deduplicate(checker.keep(variant.get("images")))
+        if variant.get("image") not in variant["images"]:
             variant["image"] = variant["images"][0] if variant["images"] else ""
 
     return {"had": len(before), "kept": len(kept),
