@@ -268,6 +268,36 @@ def main() -> int:
     check("a missing tree file gives an empty index, not a crash",
           empty.resolve(11) == (None, None) and empty.state_of(11) == "unknown")
 
+    print("\nwhat the eighteen industrial departments bring with them")
+    # The client asked for agriculture, machinery, automotive, electrical
+    # engineering and thirteen more on 2 September. These are not editorial
+    # judgements - they are things that cannot reach a customer in Riyadh.
+    for name, reason in (("电池", "dangerous_goods"),
+                         ("蓄电池", "dangerous_goods"),
+                         ("充电宝", "dangerous_goods"),
+                         ("民用无人机", "restricted_import"),
+                         ("乘用车", "vehicle"),
+                         ("二手汽车", "vehicle"),
+                         ("加油站设备", "fuel_system"),
+                         ("发电机组", "fuel_system"),
+                         ("果树", "live_plants"),
+                         ("特种养殖动物", "live_animals"),
+                         ("畜牧业副产品", "live_animals")):
+        state, why, _ = catalog.classify(name)
+        check(f"{name} is refused as {reason}",
+              (state, why) == (catalog.BLOCKED, reason), f"{state}/{why}")
+    # CONTROL: the same departments' ordinary merchandise has to survive, or
+    # switching them on bought nothing. A charger with no cell in it ships.
+    for name in ("电动工具", "充电器", "开关", "插座", "园林五金工具",
+                 "手动扳手", "水泥制品", "传感器", "电线", "汽车用品"):
+        check(f"CONTROL {name} is still allowed",
+              catalog.classify(name)[0] == catalog.ALLOWED,
+              str(catalog.classify(name)))
+    # The one over-reach, written down rather than discovered later: an empty
+    # battery holder is ordinary merchandise and is refused with the cells.
+    check("KNOWN COST an empty battery holder goes with the batteries",
+          catalog.classify("电池座")[0] == catalog.BLOCKED)
+
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0
 

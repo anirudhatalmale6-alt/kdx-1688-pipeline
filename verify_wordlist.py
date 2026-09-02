@@ -200,8 +200,16 @@ truthy("every excluded department says why",
        all(d.get("why") for d in departments if not d.get("sell")))
 truthy("underwear is sold - the client asked for it to stay",
        any(str(d["id"]) == "312" and d["sell"] for d in departments))
-truthy("machine tools are not",
-       any(str(d["id"]) == "1426" and not d["sell"] for d in departments))
+# 1426 机床 was off until 2 September, when the client asked for it and
+# seventeen more industrial departments by name.
+truthy("machine tools are sold - he asked for them on 2 September",
+       any(str(d["id"]) == "1426" and d["sell"] for d in departments))
+truthy("and so are the other seventeen he named",
+       all(any(str(d["id"]) == wanted and d["sell"] for d in departments)
+           for wanted in ("1", "5", "9", "4", "13", "55", "57", "59", "64", "65",
+                          "68", "70", "71", "72", "509", "10208", "201346017")))
+truthy("chemicals are still off - he did not ask for them",
+       any(str(d["id"]) == "8" and not d["sell"] for d in departments))
 truthy("adult products are not",
        any(str(d["id"]) == "130823000" and not d["sell"] for d in departments))
 

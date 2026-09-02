@@ -61,6 +61,30 @@ BLOCK_TOKENS = {
     "猪肉": "pork", "猪皮": "pork",
     "大麻": "drugs", "毒品": "drugs",
     "高仿": "counterfeit", "仿牌": "counterfeit",
+    # Added 2 September with the eighteen industrial departments the client
+    # asked for. These are not editorial judgements - his line is his to draw -
+    # they are things that cannot arrive at a customer in Riyadh at all:
+    #
+    #   batteries and power banks are dangerous goods by air, the same class of
+    #     risk as the liquids he banned on 1 September
+    #   a drone needs a GACA permit to enter Saudi Arabia
+    #   a whole car is not a parcel
+    #   a petrol generator or a fuel dispenser carries a fuel system
+    #   live plants and animals need phytosanitary and veterinary papers
+    #
+    # 电池 also catches 电池座, an empty battery holder, which is ordinary
+    # merchandise. That is one over-reach in exchange for never shipping a
+    # lithium cell by mistake, and the client has been told so he can overrule.
+    "电池": "dangerous_goods", "蓄电池": "dangerous_goods",
+    "充电宝": "dangerous_goods", "充电桩": "dangerous_goods",
+    "无人机": "restricted_import",
+    # 整车 is NOT here. It means "the complete unit" and a bicycle is sold that
+    # way - 自行车整车 is a whole bike, which ships. The suite caught it.
+    "乘用车": "vehicle", "商用车": "vehicle", "专用汽车": "vehicle",
+    "二手汽车": "vehicle",
+    "加油站": "fuel_system", "发电机": "fuel_system",
+    "果树": "live_plants", "苗木": "live_plants", "种苗": "live_plants",
+    "养殖动物": "live_animals", "畜牧": "live_animals", "活体": "live_animals",
 }
 
 # Ambiguous: the word is banned in some names and ordinary merchandise in

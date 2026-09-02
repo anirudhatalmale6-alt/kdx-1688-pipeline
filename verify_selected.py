@@ -368,9 +368,12 @@ import daily_run  # noqa: E402
 # here is that daily_run reaches them at all - which is the part that broke.
 #
 # 10166 is 女装, a department the client sells, so its children are searchable.
-# 1426 is 机床 (machine tools), which he does not: 260 of the 452 words the
+# 8 is 化工 (chemical industry), which he does not: 260 of the 452 words the
 # first version produced were industrial, and one rotation put lingerie into a
-# Saudi shop because nothing had ever asked him what his shop sells.
+# Saudi shop because nothing had ever asked him what his shop sells. It has to
+# be a department that is OFF in data/departments.json - 机床 stood here until
+# 2 September, when he asked for machine tools by name and this check started
+# affirming a policy he had replaced.
 TREE = [
     {"id": "10166", "name_zh": "女装", "is_leaf": False, "parent_id": None,
      "state": catalog.ALLOWED, "reason": ""},
@@ -384,9 +387,9 @@ TREE = [
      "state": catalog.ALLOWED, "reason": ""},
     {"id": "6", "name_zh": "台灯（欧式）", "is_leaf": True, "parent_id": "10166",
      "state": catalog.ALLOWED, "reason": ""},
-    {"id": "1426", "name_zh": "机床", "is_leaf": False, "parent_id": None,
+    {"id": "8", "name_zh": "化工", "is_leaf": False, "parent_id": None,
      "state": catalog.ALLOWED, "reason": ""},
-    {"id": "7", "name_zh": "数控车床", "is_leaf": True, "parent_id": "1426",
+    {"id": "7", "name_zh": "数控车床", "is_leaf": True, "parent_id": "8",
      "state": catalog.ALLOWED, "reason": ""},
 ]
 
