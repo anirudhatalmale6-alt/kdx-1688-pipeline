@@ -198,12 +198,34 @@ _SEPARATORS = re.compile(r"([-–—/／|｜+＋、,，~～【】]|\s+)")
 _AS_ASCII = {"【": "[", "】": "]", "／": "/", "｜": "|", "＋": "+", "～": "~",
              "、": ",", "，": ",", "–": "-", "—": "-"}
 
+# The seam where a latin part code runs straight into Chinese with nothing
+# between them: "E2守门员手套蓝色". The first live run after the separator work
+# held thirty options of one goalkeeper glove on exactly this shape - the model
+# hands back a piece like that unchanged, the same way it does a whole label.
+# The boundary is a separator with no character to stand for it, so a space is
+# written in where it was; there was nothing there to preserve.
+_LATIN_CJK = re.compile(r"(?<=[A-Za-z0-9])(?=[⺀-鿿])|(?<=[⺀-鿿])(?=[A-Za-z0-9])")
+
+
+def _tokenise(term: str) -> list:
+    """Cut a label into its pieces and the separators between them."""
+    tokens = []
+    for part in _SEPARATORS.split(term):
+        if _SEPARATORS.fullmatch(part):
+            tokens.append((part, True))
+            continue
+        for index, chunk in enumerate(_LATIN_CJK.split(part)):
+            if index:
+                tokens.append((" ", True))
+            tokens.append((chunk, False))
+    return tokens
+
 
 def _reassemble(term: str, named: dict, language: str) -> str:
     """Put a segmented label back together in the language asked for."""
     out = []
-    for part in _SEPARATORS.split(term):
-        if _SEPARATORS.fullmatch(part):
+    for part, is_separator in _tokenise(term):
+        if is_separator:
             out.append(_AS_ASCII.get(part, part))
             continue
         entry = named.get(part.strip()) or {}
@@ -280,12 +302,14 @@ def _translate_labels(terms, prompt: str, api_key: str | None, timeout: int) -> 
     if stuck:
         pieces = []
         for term in stuck:
-            for piece in (part.strip() for part in _SEPARATORS.split(term)):
-                # A separator can be a CJK character itself, so "is it Chinese"
-                # is not enough to decide it is a word worth asking about.
-                if _SEPARATORS.fullmatch(piece or " "):
+            for part, is_separator in _tokenise(term):
+                # A separator can be a CJK character itself - 【 】 、 ， all are -
+                # so "is it Chinese" is not enough to decide it is a word worth
+                # asking about.
+                piece = part.strip()
+                if is_separator or not piece or not _CJK.search(piece):
                     continue
-                if piece and _CJK.search(piece) and piece not in pieces:
+                if piece not in pieces:
                     pieces.append(piece)
         try:
             named = ask(pieces) if pieces else {}

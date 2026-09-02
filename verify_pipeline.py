@@ -723,6 +723,34 @@ def main() -> int:
           all("【" not in batch and "】" not in batch for batch in valve_asked),
           str(valve_asked))
 
+    # A part code can run straight into the Chinese with nothing between them.
+    # The first live run after the separator work held all thirty options of one
+    # goalkeeper glove on this shape - "E2守门员手套蓝色" - because a piece glued
+    # together like that comes back unchanged exactly as a whole label does.
+    GLOVE = "E2守门员手套蓝色【不带护指】"
+    glove_asked = []
+
+    def glove_chat(_system, user, _api_key, _timeout):
+        wanted = json.loads(user)
+        glove_asked.append(list(wanted))
+        known = {"守门员手套蓝色": "قفازات حارس مرمى زرقاء", "不带护指": "بدون واقي أصابع"}
+        return {"terms": {term: {"en": term, "ar": known.get(term, term)}
+                          for term in wanted}}
+
+    enrich._chat = glove_chat
+    try:
+        glove = enrich.translate_terms([GLOVE], api_key="test")
+    finally:
+        enrich._chat = original_chat
+
+    check("a code glued to the Chinese does not defeat the split",
+          not enrich.has_cjk(glove[GLOVE]["ar"]), glove[GLOVE]["ar"])
+    check("the code stays, and the seam becomes a space",
+          glove[GLOVE]["ar"] == "E2 قفازات حارس مرمى زرقاء[بدون واقي أصابع]",
+          glove[GLOVE]["ar"])
+    check("CONTROL the code itself is never sent to be named",
+          all("E2" not in batch for batch in glove_asked), str(glove_asked))
+
     print(f"\n{passed} passed, {failed} failed")
     return 1 if failed else 0
 
