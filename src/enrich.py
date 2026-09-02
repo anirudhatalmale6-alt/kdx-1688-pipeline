@@ -178,7 +178,11 @@ def enrich(title_zh: str, description_zh: str, api_key: str | None = None,
 
 # What a 1688 seller joins the parts of a SKU label with. Kept in the split so
 # the label can be put back together character for character.
-_SEPARATORS = re.compile(r"([-–—/／|｜+＋、,，]|\s{2,})")
+#
+# ~ is in the list because of measurement, not taste: with only the dash, 85 of
+# the 234 labels that had reached the shop in Chinese were still stuck, and
+# almost all of them were pneumatic valves written "4V310-10~优质款【AC220V】".
+_SEPARATORS = re.compile(r"([-–—/／|｜+＋、,，~～]|\s{2,})")
 
 
 def _reassemble(term: str, named: dict, language: str) -> str:
