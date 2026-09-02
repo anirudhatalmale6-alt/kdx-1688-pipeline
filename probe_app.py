@@ -126,6 +126,20 @@ PROBES = [
      "1688's own AI copy and images for a product"),
     ("fenxiao.hitlab.queryHitLabItem", [FENXIAO],
      "best-seller detail, useful for choosing what to import"),
+
+    # --- added 2 September, from the full permission list the client sent ---
+    # He asked why several names on it had never been requested. These four are
+    # the ones that would change what the pipeline can do, and all four only
+    # read. The rest of the list is ordering, paying, refunding and invoicing,
+    # which belong to a later phase and are deliberately not probed.
+    ("fenxiao.risk.queryGoodsRisk", [FENXIAO],
+     "1688's own risk verdict on a product - would back up our ban filter"),
+    ("fenxiao.brand.queryAuth", [FENXIAO],
+     "whether we are allowed to resell a branded product"),
+    ("supply.offer.fetchIdList", [FENXIAO],
+     "offer ids in bulk, a second discovery channel"),
+    ("open.agent.deepSearch", [FENXIAO],
+     "1688's own deep search"),
 ]
 
 VERDICTS = {
