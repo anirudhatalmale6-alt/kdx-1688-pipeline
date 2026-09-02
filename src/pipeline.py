@@ -623,6 +623,12 @@ class Pipeline:
                                              results=[], error=str(exc)))
                 break
             except Exception as exc:                     # noqa: BLE001
+                # The message alone is often not enough to find the line -
+                # "'str' object has no attribute 'get'" could be anywhere in the
+                # stage. KDX_TRACE=1 prints where, without making every run noisy.
+                if os.environ.get("KDX_TRACE") == "1":
+                    import traceback
+                    traceback.print_exc()
                 outcomes.append(OfferOutcome(
                     offer_id=offer_id, product=None, results=[],
                     error=f"{type(exc).__name__}: {str(exc)[:200]}"))
