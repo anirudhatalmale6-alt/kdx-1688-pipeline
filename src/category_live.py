@@ -29,11 +29,26 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 import catalog
 import paths
 
 MAX_CLIMB = 8  # 1688 is four deep; this is a loop guard, not a limit
+
+# Chinese, Japanese and Korean blocks plus the full-width punctuation that comes
+# with them - the same test src/enrich.py uses on a product title.
+_CJK = re.compile(r"[⺀-鿿豈-﫿＀-￯]+")
+
+# How many category names one run may ask the model to repair. A run learns a
+# few dozen categories; this is a runaway guard, not a quota.
+MAX_TRANSLATIONS = int(os.environ.get("KDX_CATEGORY_TRANSLATIONS", "200"))
+
+
+def is_translated(row: dict) -> bool:
+    """True when nothing a Saudi shopper would read is still Chinese."""
+    return not (_CJK.search(row.get("name_ar") or "")
+                or _CJK.search(row.get("name_en") or ""))
 
 
 def cache_path() -> str:
@@ -51,14 +66,16 @@ class LiveIndex:
     ROUTE = None  # built lazily, so importing this module needs no client
 
     def __init__(self, index, client=None, translate=None, cache: str = "",
-                 max_calls: int = 400):
+                 max_calls: int = 400, max_translations: int = MAX_TRANSLATIONS):
         self.index = index
         self.client = client
         self.translate = translate
         self.cache_file = cache or cache_path()
         self.max_calls = max_calls
+        self.max_translations = max_translations
         self.calls = 0
         self.failures = 0
+        self.translations = 0
         self.learned = self._load()
 
     # -- disk ------------------------------------------------------------
@@ -116,9 +133,49 @@ class LiveIndex:
                     "reason": row.get("reason", "")}
         return self.learned.get(str(category_id))
 
+    def _retranslate(self, row: dict) -> bool:
+        """
+        Put a Saudi name on a category, and say whether it worked.
+
+        Returns False on every failure, which is what makes the failure
+        temporary. The Chinese name stays in the row as a truthful fallback,
+        but it is never recorded as the answer, so the next run asks again.
+        """
+        if self.translate is None or not row.get("name_zh"):
+            return False
+        if self.translations >= self.max_translations:
+            return False
+        self.translations += 1
+        try:
+            names = self.translate(row["name_zh"])
+        except Exception:  # noqa: BLE001
+            return False
+        english = str(names.get("en") or "").strip()
+        arabic = str(names.get("ar") or "").strip()
+        if not english or not arabic:
+            return False
+        if _CJK.search(english) or _CJK.search(arabic):
+            # The model handed the Chinese straight back. That is not a name a
+            # shopper can read, and accepting it here is what put 成人帽 in the
+            # shop menu on 2 September.
+            return False
+        row["name_en"] = english
+        row["name_ar"] = arabic
+        return True
+
     def _learn(self, category_id: str) -> dict | None:
         row = self._known(category_id)
         if row is not None:
+            # A cached row that never got its Arabic name is repaired here, not
+            # left alone. Until 2 September an untranslated name was written to
+            # the cache as though it were the answer, so one failed model call
+            # became permanent: 649 of 902 learned categories were stuck in
+            # Chinese and 24 of 102 published products carried a Chinese
+            # department name. A failure that caches itself is forever.
+            if (str(category_id) in self.learned and not is_translated(row)
+                    and self._retranslate(row)):
+                self.learned[str(category_id)] = row
+                self.save()
             return row
         fetched = self._fetch(category_id)
         if fetched is None:
@@ -128,13 +185,7 @@ class LiveIndex:
         fetched["reason"] = reason
         fetched["name_en"] = fetched["name_zh"]
         fetched["name_ar"] = fetched["name_zh"]
-        if self.translate is not None and fetched["name_zh"]:
-            try:
-                names = self.translate(fetched["name_zh"])
-                fetched["name_en"] = names.get("en") or fetched["name_zh"]
-                fetched["name_ar"] = names.get("ar") or fetched["name_zh"]
-            except Exception:  # noqa: BLE001
-                pass  # the Chinese name is a truthful fallback
+        self._retranslate(fetched)
         self.learned[str(category_id)] = fetched
         # Written through, not at the end of the run. The first live night
         # resolved fourteen products' departments correctly and left no cache
@@ -173,7 +224,16 @@ class LiveIndex:
                 "name_ar": row.get("name_ar") or row["name_zh"]}
 
     def resolve(self, category_id) -> tuple:
-        rows = self.chain(category_id)
+        """
+        The department pair the shop menu will show.
+
+        Only names a Saudi shopper can read are handed over. A category still
+        stuck in Chinese after `_retranslate` has tried is skipped rather than
+        published: the product then sits one shelf higher, which is untidy,
+        where 成人帽 in the menu is broken. The main department comes from the
+        built tree and is always translated, so this only ever narrows the sub.
+        """
+        rows = [row for row in self.chain(category_id) if is_translated(row)]
         if not rows:
             return None, None
         main = self._element(rows[0])
@@ -223,8 +283,10 @@ class LiveIndex:
         return list(self.by_id.values())
 
     def summary(self) -> dict:
+        stuck = [row for row in self.learned.values() if not is_translated(row)]
         return {"gateway_calls": self.calls, "failures": self.failures,
-                "learned": len(self.learned)}
+                "learned": len(self.learned), "translations": self.translations,
+                "still_chinese": len(stuck)}
 
 
 def build(index, client=None, translate=None):

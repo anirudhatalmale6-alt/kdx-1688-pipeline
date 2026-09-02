@@ -71,6 +71,25 @@ def index_with(rows=()):
     return catalog.CategoryIndex(list(rows))
 
 
+# A translator's answer has to be free of Chinese to be an answer at all, so
+# the fake one cannot simply prefix the input the way it used to.
+NAMES = {
+    "办公椅": ("Office Chairs", "كراسي مكتب"),
+    "办公家具": ("Office Furniture", "أثاث مكتبي"),
+    "办公、文化": ("Office & Culture", "مكتب وثقافة"),
+    "串珠": ("Beading", "خرز"),
+    "宗教用品": ("Religious Goods", "مستلزمات دينية"),
+    "电子烟": ("E-cigarettes", "سجائر إلكترونية"),
+    "loop": ("Loop", "حلقة"),
+}
+
+
+def naming(zh):
+    """A translator that always answers, which is what production looks like."""
+    english, arabic = NAMES.get(zh, ("Category", "تصنيف"))
+    return {"en": english, "ar": arabic}
+
+
 def main() -> int:
     tmp = tempfile.mkdtemp(prefix="catlive-")
     os.environ["KDX_STATE_DIR"] = tmp
@@ -82,7 +101,7 @@ def main() -> int:
 
     print("\nan id the tree never walked now resolves")
     client = FakeClient()
-    live = category_live.LiveIndex(index_with(), client=client,
+    live = category_live.LiveIndex(index_with(), client=client, translate=naming,
                                    cache=os.path.join(tmp, "a.json"))
     main_cat, sub = live.resolve("1045585")
     check("the department comes back", main_cat and main_cat["name_original"] == "办公、文化",
@@ -109,6 +128,7 @@ def main() -> int:
 
     print("\nthe climb cannot run away")
     looping = category_live.LiveIndex(index_with(), client=FakeClient(),
+                                      translate=naming,
                                       cache=os.path.join(tmp, "b.json"))
     chain = looping.chain("800001")
     check("a category that is its own parent stops after one",
@@ -116,7 +136,7 @@ def main() -> int:
 
     print("\none unreachable category must not stop a night")
     broken = FakeClient(broken={"1045579"})
-    partial = category_live.LiveIndex(index_with(), client=broken,
+    partial = category_live.LiveIndex(index_with(), client=broken, translate=naming,
                                       cache=os.path.join(tmp, "c.json"))
     main_cat, sub = partial.resolve("1045585")
     check("what was reachable is still returned",
@@ -129,7 +149,8 @@ def main() -> int:
     print("\na category is a fact about 1688, not about tonight")
     path = os.path.join(tmp, "cache.json")
     counting = FakeClient()
-    first = category_live.LiveIndex(index_with(), client=counting, cache=path)
+    first = category_live.LiveIndex(index_with(), client=counting, translate=naming,
+                                    cache=path)
     first.resolve("1045585")
     calls_after_first = len(counting.asked)
     first.resolve("1045585")
@@ -142,7 +163,8 @@ def main() -> int:
           os.path.exists(path) and "1045585" in json.load(open(path, encoding="utf-8")),
           path)
     reopened = FakeClient()
-    second = category_live.LiveIndex(index_with(), client=reopened, cache=path)
+    second = category_live.LiveIndex(index_with(), client=reopened, translate=naming,
+                                     cache=path)
     resolved = second.resolve("1045585")
     check("nor on the next night", reopened.asked == [], str(reopened.asked))
     check("and the answer survives the restart",
@@ -153,6 +175,7 @@ def main() -> int:
              "name_en": "Office & Culture", "name_ar": "مكتب وثقافة",
              "state": "allowed", "reason": ""}]
     mixed = category_live.LiveIndex(index_with(rows), client=FakeClient(),
+                                    translate=naming,
                                     cache=os.path.join(tmp, "d.json"))
     main_cat, _ = mixed.resolve("1045585")
     check("the Arabic name from the built tree is used, not the Chinese one",
@@ -163,9 +186,9 @@ def main() -> int:
     print("\ntranslation is used when present and never fatal when it fails")
     translated = category_live.LiveIndex(
         index_with(), client=FakeClient(), cache=os.path.join(tmp, "e.json"),
-        translate=lambda zh: {"en": f"EN:{zh}", "ar": f"AR:{zh}"})
+        translate=naming)
     main_cat, _ = translated.resolve("1045585")
-    check("the Arabic name is filled in", main_cat["name_ar"] == "AR:办公、文化",
+    check("the Arabic name is filled in", main_cat["name_ar"] == "مكتب وثقافة",
           str(main_cat))
 
     def explode(_zh):
@@ -174,9 +197,68 @@ def main() -> int:
     survives = category_live.LiveIndex(index_with(), client=FakeClient(),
                                        cache=os.path.join(tmp, "f.json"),
                                        translate=explode)
-    main_cat, _ = survives.resolve("1045585")
-    check("CONTROL a dead translator falls back to Chinese rather than failing",
-          main_cat["name_ar"] == "办公、文化", str(main_cat))
+    main_cat, sub = survives.resolve("1045585")
+    check("a dead translator does not fail the run", (main_cat, sub) == (None, None),
+          str((main_cat, sub)))
+    # This is the client's complaint of 2 September, as a check. He saw
+    # "Accessories & Jewelry > 成人帽" in his shop menu with hats inside it. No
+    # department at all is untidy; a Chinese one is broken.
+    check("and no Chinese name reaches the shop menu",
+          survives.chain("1045585") and
+          not any(category_live.is_translated(row) for row in survives.chain("1045585")),
+          str(survives.chain("1045585")))
+    # CONTROL: the ban filter must keep working when the translator is down. It
+    # reads the whole chain, translated or not, so a prohibited department is
+    # still a prohibited department.
+    check("CONTROL the ban filter still blocks with no translator",
+          survives.state_of("900001") == catalog.BLOCKED, survives.state_of("900001"))
+
+    print("\nan untranslated row already on disk is repaired, not served forever")
+    # Until 2 September a failed model call was written to the cache as though
+    # it were the answer, and `_known` served it for good: 649 of 902 learned
+    # categories were stuck in Chinese on the live server.
+    poisoned = os.path.join(tmp, "poisoned.json")
+    with open(poisoned, "w", encoding="utf-8") as handle:
+        json.dump({"1045585": {"id": "1045585", "name_zh": "办公椅",
+                               "name_en": "办公椅", "name_ar": "办公椅",
+                               "is_leaf": True, "parent_id": None,
+                               "state": "allowed", "reason": ""}},
+                  handle, ensure_ascii=False)
+    asked = []
+
+    def counting_translator(zh):
+        asked.append(zh)
+        return naming(zh)
+
+    repairing = category_live.LiveIndex(index_with(), client=FakeClient(),
+                                        cache=poisoned, translate=counting_translator)
+    main_cat, _ = repairing.resolve("1045585")
+    check("the stale Chinese row is translated on the next run",
+          main_cat and main_cat["name_ar"] == "كراسي مكتب", str(main_cat))
+    check("and the repair is written back to disk",
+          json.load(open(poisoned, encoding="utf-8"))["1045585"]["name_ar"] == "كراسي مكتب")
+    repairing.resolve("1045585")
+    check("CONTROL a repaired row is not paid for a second time",
+          asked == ["办公椅"], str(asked))
+
+    print("\na translator that hands the Chinese back is not an answer")
+    # The model returning its input is indistinguishable from success unless
+    # someone looks at what came back. This is what put 浴巾、沙滩巾 in the menu.
+    parroting = category_live.LiveIndex(index_with(), client=FakeClient(),
+                                        cache=os.path.join(tmp, "h.json"),
+                                        translate=lambda zh: {"en": zh, "ar": zh})
+    check("a parroted name is refused", parroting.resolve("1045585") == (None, None),
+          str(parroting.resolve("1045585")))
+    check("and it is not recorded as translated, so the next run retries",
+          parroting.summary()["still_chinese"] == 3, str(parroting.summary()))
+
+    print("\nthe number of model calls is bounded too")
+    budgeted = category_live.LiveIndex(index_with(), client=FakeClient(),
+                                       cache=os.path.join(tmp, "i.json"),
+                                       translate=naming, max_translations=1)
+    budgeted.resolve("1045585")
+    check("it stops at max_translations", budgeted.summary()["translations"] == 1,
+          str(budgeted.summary()))
 
     print("\nwithout a client, nothing changes")
     plain = index_with()
@@ -188,6 +270,7 @@ def main() -> int:
 
     print("\nthe number of gateway calls is bounded")
     capped = category_live.LiveIndex(index_with(), client=FakeClient(),
+                                     translate=naming,
                                      cache=os.path.join(tmp, "g.json"), max_calls=1)
     capped.resolve("1045585")
     check("it stops at max_calls rather than walking all night",
