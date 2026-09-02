@@ -50,6 +50,12 @@ BLOCK_TOKENS = {
     "枪支": "weapons", "武器": "weapons", "催泪": "weapons",
     "宗教": "religious", "佛像": "religious", "佛教": "religious", "基督": "religious",
     "十字架": "religious", "念珠": "religious", "香炉": "religious",
+    # Added 2 September, when the departments the client sells started producing
+    # the search words themselves. These sit under 办公、文化 and 家纺家饰 -
+    # departments he does sell - so nothing above them would have stopped
+    # 圣诞用品 (Christmas goods) or 祭祀 (ancestral offerings) being asked for.
+    "圣诞": "religious", "祭祀": "religious", "佛珠": "religious",
+    "殡葬": "funeral", "骨灰": "funeral", "寿衣": "funeral",
     "白酒": "alcohol", "红酒": "alcohol", "啤酒": "alcohol", "洋酒": "alcohol",
     "葡萄酒": "alcohol", "黄酒": "alcohol", "米酒": "alcohol", "酒类": "alcohol",
     "猪肉": "pork", "猪皮": "pork",

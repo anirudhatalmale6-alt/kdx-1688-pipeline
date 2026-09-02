@@ -1,0 +1,17 @@
+[Unit]
+Description=Run a small KDX batch every twenty minutes, all day
+
+[Timer]
+# The client's words on 2 September: pulling open all day, in small batches, so
+# there is no burst of load on his server and no long idle gap either. Seventy-
+# two batches of five is more than the 300 points a day allows, so the budget -
+# not the timer - is what stops the day; the batches that arrive after the
+# points are gone print "nothing to do until midnight" and exit.
+OnCalendar=*:00/20
+Persistent=false
+# Not on the exact minute, from the same IP, seventy-two times a day.
+RandomizedDelaySec=120
+Unit=kdx-batch.service
+
+[Install]
+WantedBy=timers.target

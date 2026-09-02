@@ -1,0 +1,30 @@
+[Unit]
+Description=KDX: one small batch of 1688 products, priced and published
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=kdx
+WorkingDirectory=/opt/kdx/app
+EnvironmentFile=/etc/kdx/kdx.env
+# Small and often, which is what the client asked for on 2 September: "make it
+# split into small batches", "keep it running all day without stopping". The
+# day's total is still the 300 points in budget.py - this only changes how the
+# day is spread, from one long run at midnight to a batch every twenty minutes.
+ExecStart=/usr/bin/python3 /opt/kdx/app/daily_run.py --channel selected --quota 5
+
+# A batch that meets its predecessor exits 2 and says so. That is the lock
+# working, not a failure, and it must not be reported as one - otherwise every
+# slow batch paints the timer red and a real failure stops standing out.
+SuccessExitStatus=2
+# Twenty minutes is the gap between batches; a batch that has not finished in
+# fifteen has hit something slow, and the next one will start clean.
+TimeoutStartSec=15min
+Nice=10
+
+ProtectSystem=strict
+ReadWritePaths=/opt/kdx
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectHome=true

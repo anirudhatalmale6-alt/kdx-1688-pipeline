@@ -14,15 +14,24 @@ python3 demo_rules.py
 No dependencies, no network, no credentials. It builds ten products that each
 trigger a different rule and prints the audit log the real pipeline would write.
 
-## The nightly run
+## The run
 
 ```bash
-# what the server does at 00:00 Riyadh
-python3 daily_run.py
+# what the server does every twenty minutes, all day
+python3 daily_run.py --channel selected --quota 5
 
 # the same thing without publishing anything
-python3 daily_run.py --dry-run --quota 20
+python3 daily_run.py --channel selected --dry-run --quota 5
 ```
+
+Small and often is the client's choice, made on 2 September: *"make it split
+into small batches"*, *"keep it running all day without stopping"*. The day's
+size did not change — it is still the 300 points in `src/budget.py`, counted
+against his Riyadh day — only how the day is spread. `deploy/kdx-batch.timer`
+fires every twenty minutes; batches that arrive after the points are gone print
+`nothing to do until midnight` and exit. Two batches cannot overlap: the second
+finds the lock, exits 2, and `SuccessExitStatus=2` keeps that out of the failure
+count so a real failure still stands out.
 
 The channel this appKey holds searches by photograph and has no lookup, so the
 night starts from `KDX_SEEDS` — a file of image URLs — and walks outwards.
@@ -179,9 +188,45 @@ the listing serves, not the size of the catalogue:
   pages to exactly 2,000 offers (40 pages of 50, page 41 empty), and 10 offers
   sampled from each of 9 keywords were answered by the detail API every time.
 
-So the words decide the catalogue. They come from the category tree, which is
-already built and already vetted — only leaves marked `allowed` — and the
-starting point rotates with the date so two nights do not walk the same offers.
+So the words decide the catalogue, and where they come from is in
+`src/wordlist.py`. Two things about that were wrong until 2 September.
+
+**The line between "not banned" and "not sold" is the client's, not a
+classifier's.** The words were the tree's `allowed` leaves, and `allowed` only
+means it is not on his ban list: 260 of 452 were industry and services —
+machine tools, chemicals, used equipment — and one rotation landed on
+内衣礼盒装 and put five women's lingerie sets into a Saudi shop. The line now
+lives in `data/departments.json`, one row per 1688 department with
+`sell: true|false` and, where false, a reason in Arabic. He flips a row; nobody
+touches code. He answered on 2 September: the 31 industrial and service
+departments are out, underwear stays, and the 21 retail departments are in.
+
+**Asking for leaves asked for the wrong kind of word.** The built tree is two
+levels deep, so a depth-2 node is a leaf only when 1688 has nothing under it —
+and those are the tail buckets every department ends with: 加工定制,
+项目合作, 代理加盟, 库存. The merchandise has children, so it was never a leaf
+and never became a word, and seven whole retail departments had no allowed leaf
+at all and were invisible: 鞋, 汽车用品, 宠物及园艺, 日用餐厨饮具,
+收纳清洁用具, 居家日用品, 个护/家清.
+
+Words are now the *children* of a selling department, leaf or not:
+
+| | words | what they are |
+|---|---|---|
+| before | 458 | mostly 项目合作 / 代理加盟 / 库存 tail buckets |
+| after | 473 | 连衣裙, 女鞋, 台灯夜灯, 餐具, 毛巾, 文胸 … |
+
+A name is split on 、 and /, a bracketed qualifier is stripped, retired
+categories (`停用`) are dropped, and three lists filter what is left:
+`TAIL_MARKERS`, `NOISE` (a word so broad the pool returns a random slice), and
+`UNSHIPPABLE` — live animals, plants and seed, whole vehicles, antiques
+(export-restricted in China), publications, pesticides, LED components. The ban
+list applies to a word exactly as it does to a category, which is what stops
+圣诞用品 in a department he does sell.
+
+The day's slice rotates by a whole slice, not by one word. With the offset being
+the date read as a number the window moved a single word a day — twelve words
+today, eleven of the same twelve tomorrow.
 
 Not to be confused with `product.keywords.search`, which despite its name is
 **not** a keyword search: asked for 连衣裙, 运动鞋 and a nonsense string it

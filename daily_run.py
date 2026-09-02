@@ -26,7 +26,6 @@ import argparse
 import errno
 import json
 import os
-import re
 import sys
 import time
 from datetime import datetime
@@ -42,6 +41,7 @@ import paths  # noqa: E402
 import pipeline as pipeline_module  # noqa: E402
 import rules  # noqa: E402
 import selected  # noqa: E402
+import wordlist  # noqa: E402
 
 LOCK_PATH = paths.state_path("daily.lock", "KDX_LOCK")
 # A machine that loses power mid-run leaves the lock behind. Twelve hours is
@@ -55,37 +55,16 @@ class Locked(RuntimeError):
 
 def pool_keywords(runner, day: str, count: int) -> list:
     """
-    The Chinese words tonight's pool search will use.
+    The Chinese words this run's pool search will use.
 
-    The pool listing serves 2,000 offers per keyword, so which words are asked
-    decides what the shop can reach. They come from the category tree that is
-    already built and already vetted - only leaves marked `allowed`, so a word
-    from a banned branch is never even asked - and the starting point moves with
-    the date. Without that rotation every night would ask the same first words
-    and walk the same offers it published yesterday.
+    The pool listing serves about 2,000 offers per keyword, so which words are
+    asked decides what the shop can reach. `wordlist` builds them from the
+    departments the client says he sells - `data/departments.json` - and this
+    function only picks the day's slice. The rules, and the two ways the first
+    version got them wrong, are written down in that module.
     """
     rows = getattr(runner.categories, "rows", None) or []
-    words = []
-    for row in rows:
-        if not (row.get("is_leaf") and row.get("state") == catalog.ALLOWED):
-            continue
-        name = str(row.get("name_zh") or "")
-        # 停用 means 1688 retired the category. The name is still in the tree
-        # and still marked allowed, but searching for it is a wasted walk: the
-        # first live keyword run spent four of its eight words on retired
-        # categories and got nothing from any of them.
-        if not name or "停用" in name:
-            continue
-        # A trailing "（...）" is a qualifier on the category, not part of what a
-        # supplier calls a product, and it narrows the search to nothing.
-        name = re.sub(r"[（(][^）)]*[）)]?$", "", name).strip("、/ ")
-        if name:
-            words.append(name)
-    if not words:
-        return []
-    offset = int("".join(ch for ch in day if ch.isdigit()) or "0") % len(words)
-    rotated = words[offset:] + words[:offset]
-    return rotated[:count]
+    return wordlist.slice_for_day(wordlist.build(rows), day, count)
 
 
 def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger",
@@ -247,9 +226,10 @@ def main() -> int:
                 # was asked for searched nothing. That is exactly what happened
                 # on the first live run - the category index in use had no
                 # `rows` attribute.
-                print("  WARNING: no search words - the category table gave none, "
-                      "so this run only sees the default 2,000-offer window. "
-                      "Pass --keywords to search on purpose.")
+                print("  WARNING: no search words - the category table and "
+                      "data/departments.json between them gave none, so this run "
+                      "only sees the default 2,000-offer window. Pass --keywords "
+                      "to search on purpose.")
             harvested, notes = harvest_selected(runner, client, quota, book, words)
             ledger = book.summary()
             print(f"selected pool: {len(harvested)} products worth pricing")
@@ -281,6 +261,11 @@ def main() -> int:
         os.makedirs(products_dir, exist_ok=True)
 
         published = held = skipped = 0
+        # `published` counts variants, because that is what a shop row is. The
+        # count of PRODUCTS is what a person means by "how many went up", and
+        # printing only the first read as the second: a run of five products
+        # reported "40 published". Both are counted, and both are printed.
+        products_published = 0
         photos_dropped = 0
         updated: list = []
         reasons: dict = {}
@@ -315,6 +300,8 @@ def main() -> int:
                     code = result.audit.reason_code
                     reasons[code] = reasons.get(code, 0) + 1
             published += outcome.published
+            if outcome.published:
+                products_published += 1
 
         elapsed = time.time() - started
         report = {
@@ -329,6 +316,7 @@ def main() -> int:
             "dropped_before_pricing": walker.rejected_early if walker else None,
             "gateway_searches": walker.searches if walker else None,
             "published": published,
+            "products_published": products_published,
             "held": held,
             "skipped": skipped,
             "held_reasons": reasons,
@@ -339,7 +327,9 @@ def main() -> int:
             "points": runner.budget.summary(),
             "searches": runner.meter.summary() if runner.meter is not None else None,
         }
-        print(f"\n{published} {'assembled' if args.dry_run else 'published'}, "
+        verb = "assembled" if args.dry_run else "published"
+        print(f"\n{products_published} product(s) {verb} "
+              f"({published} sellable option(s)), "
               f"{held} held, {skipped} skipped, in {elapsed / 60:.1f} min")
         for code, count in sorted(reasons.items(), key=lambda kv: -kv[1]):
             print(f"  held {count:4}  {code}")

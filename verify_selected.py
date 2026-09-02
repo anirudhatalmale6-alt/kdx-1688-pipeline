@@ -296,6 +296,32 @@ capped = selected.SelectedPool(KeywordClient(CATALOGUE))
 check("a limit stops the walk early instead of after every word",
       len(capped.offer_ids_for(["连衣裙", "台灯", "耳机"], limit=25)) == 25)
 
+# ---- how deep a word is walked, now that a run is a batch every 20 minutes ----
+# Walking every word to its last page cost forty calls a word. Multiplied by
+# twelve words and seventy-two batches a day that is a walk of the whole pool,
+# every day, to keep fifty ids.
+shallow = selected.SelectedPool(KeywordClient(CATALOGUE), page_size=10)
+shallow.offer_ids_for(["连衣裙"], limit=15)
+check("a word is walked only as deep as the batch needs",
+      shallow.calls == 2, f"{shallow.calls} listing call(s) for 15 ids at 10 a page")
+
+# ...and the stop counts FRESH ids, not ids. A word whose first pages the shop
+# already carries must keep walking. Counting rows here would stop on page one
+# with nothing to publish, and the run would report a full harvest.
+already = {f"A{n}" for n in range(50)}
+deeper = selected.SelectedPool(KeywordClient(CATALOGUE), page_size=10)
+got = deeper.offer_ids_for(["连衣裙"], limit=15, known=lambda o: o in already)
+check("a page of offers the shop already has does not end the walk",
+      len(got) == 15 and all(o not in already for o in got), str(len(got)))
+check("and it took the pages needed to get past them",
+      deeper.calls == 7, f"{deeper.calls} listing call(s)")
+
+# The early stop must not shrink what a run can reach when nothing is filtered.
+whole = selected.SelectedPool(KeywordClient(CATALOGUE), page_size=10)
+check("CONTROL: with no limit the word is still walked to the end",
+      len(whole.offer_ids(keyword="连衣裙")) == 70,
+      "if this drops below 70 the stop is firing when no one asked for one")
+
 
 # ------------------------------------------------- 4c. where the words come from
 print("\nthe words themselves, which decide what the shop can reach")
@@ -305,18 +331,29 @@ import catalog  # noqa: E402
 import category_live  # noqa: E402
 import daily_run  # noqa: E402
 
+# The rules the words obey are checked in verify_wordlist.py. What is checked
+# here is that daily_run reaches them at all - which is the part that broke.
+#
+# 10166 is 女装, a department the client sells, so its children are searchable.
+# 1426 is 机床 (machine tools), which he does not: 260 of the 452 words the
+# first version produced were industrial, and one rotation put lingerie into a
+# Saudi shop because nothing had ever asked him what his shop sells.
 TREE = [
-    {"id": "1", "name_zh": "台灯", "is_leaf": True, "parent_id": None,
+    {"id": "10166", "name_zh": "女装", "is_leaf": False, "parent_id": None,
      "state": catalog.ALLOWED, "reason": ""},
-    {"id": "2", "name_zh": "指甲油、护甲油", "is_leaf": True, "parent_id": None,
+    {"id": "1", "name_zh": "台灯", "is_leaf": True, "parent_id": "10166",
+     "state": catalog.ALLOWED, "reason": ""},
+    {"id": "2", "name_zh": "指甲油、护甲油", "is_leaf": True, "parent_id": "10166",
      "state": catalog.BLOCKED, "reason": "liquid_personal_care"},
-    {"id": "3", "name_zh": "家居日用", "is_leaf": False, "parent_id": None,
+    {"id": "4", "name_zh": "连衣裙", "is_leaf": False, "parent_id": "10166",
      "state": catalog.ALLOWED, "reason": ""},
-    {"id": "4", "name_zh": "连衣裙", "is_leaf": True, "parent_id": None,
+    {"id": "5", "name_zh": "童皮衣（停用）", "is_leaf": True, "parent_id": "10166",
      "state": catalog.ALLOWED, "reason": ""},
-    {"id": "5", "name_zh": "童皮衣（停用）", "is_leaf": True, "parent_id": None,
+    {"id": "6", "name_zh": "台灯（欧式）", "is_leaf": True, "parent_id": "10166",
      "state": catalog.ALLOWED, "reason": ""},
-    {"id": "6", "name_zh": "台灯（欧式）", "is_leaf": True, "parent_id": None,
+    {"id": "1426", "name_zh": "机床", "is_leaf": False, "parent_id": None,
+     "state": catalog.ALLOWED, "reason": ""},
+    {"id": "7", "name_zh": "数控车床", "is_leaf": True, "parent_id": "1426",
      "state": catalog.ALLOWED, "reason": ""},
 ]
 
@@ -330,13 +367,15 @@ plain = catalog.CategoryIndex(TREE)
 words = daily_run.pool_keywords(Runner(plain), "2026-09-02", 10)
 check("a blocked category is never even searched for",
       "指甲油、护甲油" not in words, str(words))
-check("and a branch that is not a leaf is not a search word either",
-      "家居日用" not in words, str(words))
 check("a category 1688 has retired (停用) is not searched for either",
       not any("停用" in word for word in words), str(words))
 check("a trailing qualifier is stripped, so the word is what a supplier writes",
       "台灯" in words and "台灯（欧式）" not in words, str(words))
-check("the allowed leaves are",
+check("a product category is searched even though it is not a leaf",
+      "连衣裙" in words, str(words))
+check("a department the client does not sell contributes nothing",
+      "数控车床" not in words, str(words))
+check("the words are",
       sorted(set(words)) == sorted(["台灯", "连衣裙"]), str(words))
 
 # The wrapper the live pipeline actually passes in. It presents resolve/state_of

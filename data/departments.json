@@ -1,0 +1,418 @@
+[
+ {
+  "id": 6,
+  "name_zh": "家用电器",
+  "name_en": "Home Appliances",
+  "name_ar": "الأجهزة المنزلية",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 7,
+  "name_zh": "数码、电脑",
+  "name_en": "Digital & Computers",
+  "name_ar": "الرقمية وأجهزة الكمبيوتر",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 15,
+  "name_zh": "居家日用品",
+  "name_en": "Home Daily Necessities",
+  "name_ar": "اللوازم المنزلية اليومية",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 18,
+  "name_zh": "运动户外",
+  "name_en": "Sports & Outdoors",
+  "name_ar": "رياضة ونشاطات خارجية",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 54,
+  "name_zh": "服饰配件、饰品",
+  "name_en": "Accessories & Jewelry",
+  "name_ar": "إكسسوارات ومجوهرات",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 58,
+  "name_zh": "灯饰照明",
+  "name_en": "Lighting",
+  "name_ar": "إضاءة",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 67,
+  "name_zh": "办公、文化",
+  "name_en": "Office & Culture",
+  "name_ar": "مكتب وثقافة",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 96,
+  "name_zh": "家纺家饰",
+  "name_en": "Home Textiles & Decor",
+  "name_ar": "المنسوجات والديكور المنزلي",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 97,
+  "name_zh": "美容护肤/彩妆",
+  "name_en": "Skincare & Makeup",
+  "name_ar": "العناية بالبشرة والمكياج",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 311,
+  "name_zh": "童装",
+  "name_en": "Kids Clothing",
+  "name_ar": "ملابس أطفال",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 312,
+  "name_zh": "内衣",
+  "name_en": "Underwear",
+  "name_ar": "ملابس داخلية",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 1813,
+  "name_zh": "玩具",
+  "name_en": "Toys",
+  "name_ar": "ألعاب",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 10165,
+  "name_zh": "男装",
+  "name_en": "Men's Clothing",
+  "name_ar": "ملابس رجالية",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 10166,
+  "name_zh": "女装",
+  "name_en": "Women's Clothing",
+  "name_ar": "ملابس نسائية",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 1038378,
+  "name_zh": "鞋",
+  "name_en": "Shoes",
+  "name_ar": "أحذية",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 1042954,
+  "name_zh": "箱包皮具",
+  "name_en": "Bags & Leather Goods",
+  "name_ar": "حقائب ومنتجات جلدية",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 122916001,
+  "name_zh": "宠物及园艺",
+  "name_en": "Pets & Gardening",
+  "name_ar": "الحيوانات الأليفة والبستنة",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 122916002,
+  "name_zh": "汽车用品",
+  "name_en": "Car Accessories",
+  "name_ar": "إكسسوارات السيارات",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 130822220,
+  "name_zh": "个护/家清",
+  "name_en": "Personal Care & Home Cleaning",
+  "name_ar": "العناية الشخصية والتنظيف المنزلي",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 201547801,
+  "name_zh": "日用餐厨饮具",
+  "name_en": "Daily Tableware",
+  "name_ar": "أدوات مائدة يومية",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 201547901,
+  "name_zh": "收纳清洁用具",
+  "name_en": "Storage & Cleaning",
+  "name_ar": "أدوات التخزين والتنظيف",
+  "sell": true,
+  "why": ""
+ },
+ {
+  "id": 1,
+  "name_zh": "农业",
+  "name_en": "Agriculture",
+  "name_ar": "زراعة",
+  "sell": false,
+  "why": "زراعة ومستلزمات مزارع"
+ },
+ {
+  "id": 2,
+  "name_zh": "食品酒水",
+  "name_en": "Food & Beverages",
+  "name_ar": "طعام ومشروبات",
+  "sell": false,
+  "why": "الكحول والمواد الغذائية القابلة للتلف"
+ },
+ {
+  "id": 4,
+  "name_zh": "纺织、皮革",
+  "name_en": "Textiles & Leather",
+  "name_ar": "المنسوجات والجلود",
+  "sell": false,
+  "why": "خامات أقمشة وجلود بالجملة"
+ },
+ {
+  "id": 5,
+  "name_zh": "电工电气",
+  "name_en": "Electrical Engineering",
+  "name_ar": "الهندسة الكهربائية",
+  "sell": false,
+  "why": "معدات كهربائية صناعية"
+ },
+ {
+  "id": 8,
+  "name_zh": "化工",
+  "name_en": "Chemical Industry",
+  "name_ar": "الصناعة الكيميائية",
+  "sell": false,
+  "why": "مواد كيميائية"
+ },
+ {
+  "id": 9,
+  "name_zh": "冶金矿产",
+  "name_en": "Metallurgy & Minerals",
+  "name_ar": "المعادن والتعدين",
+  "sell": false,
+  "why": "تعدين ومعادن"
+ },
+ {
+  "id": 10,
+  "name_zh": "能源",
+  "name_en": "Energy",
+  "name_ar": "الطاقة",
+  "sell": false,
+  "why": "طاقة"
+ },
+ {
+  "id": 12,
+  "name_zh": "交通运输",
+  "name_en": "Transportation",
+  "name_ar": "النقل",
+  "sell": false,
+  "why": "خدمات نقل"
+ },
+ {
+  "id": 13,
+  "name_zh": "家装建材",
+  "name_en": "Home Renovation Materials",
+  "name_ar": "مواد تجديد المنزل",
+  "sell": false,
+  "why": "مواد تشطيب ومقاولات"
+ },
+ {
+  "id": 53,
+  "name_zh": "传媒、广电",
+  "name_en": "Media & Broadcasting",
+  "name_ar": "الإعلام والبث",
+  "sell": false,
+  "why": "خدمات إعلامية"
+ },
+ {
+  "id": 55,
+  "name_zh": "橡塑",
+  "name_en": "Rubber & Plastics",
+  "name_ar": "المطاط والبلاستيك",
+  "sell": false,
+  "why": "مطاط وبلاستيك خام"
+ },
+ {
+  "id": 57,
+  "name_zh": "电子元器件",
+  "name_en": "Electronic Components",
+  "name_ar": "مكونات إلكترونية",
+  "sell": false,
+  "why": "مكوّنات صناعية"
+ },
+ {
+  "id": 59,
+  "name_zh": "五金、工具",
+  "name_en": "Hardware & Tools",
+  "name_ar": "أدوات ومعدات",
+  "sell": false,
+  "why": "عدد وأدوات صناعية"
+ },
+ {
+  "id": 64,
+  "name_zh": "环保",
+  "name_en": "Environmental Protection",
+  "name_ar": "حماية البيئة",
+  "sell": false,
+  "why": "معدات بيئية"
+ },
+ {
+  "id": 65,
+  "name_zh": "机械及行业设备",
+  "name_en": "Machinery & Industry Equipment",
+  "name_ar": "آلات ومعدات صناعية",
+  "sell": false,
+  "why": "آلات ومعدات مصانع"
+ },
+ {
+  "id": 66,
+  "name_zh": "医药、保养",
+  "name_en": "Pharmaceuticals & Care",
+  "name_ar": "الأدوية والعناية",
+  "sell": false,
+  "why": "أدوية ومكملات - تحتاج ترخيص"
+ },
+ {
+  "id": 68,
+  "name_zh": "包装",
+  "name_en": "Packaging",
+  "name_ar": "تغليف",
+  "sell": false,
+  "why": "مواد تغليف بالجملة"
+ },
+ {
+  "id": 69,
+  "name_zh": "商务服务",
+  "name_en": "Business Services",
+  "name_ar": "الخدمات التجارية",
+  "sell": false,
+  "why": "خدمات أعمال"
+ },
+ {
+  "id": 70,
+  "name_zh": "安全、防护",
+  "name_en": "Safety & Protection",
+  "name_ar": "السلامة والحماية",
+  "sell": false,
+  "why": "معدات سلامة صناعية"
+ },
+ {
+  "id": 71,
+  "name_zh": "汽摩及配件",
+  "name_en": "Automotive & Parts",
+  "name_ar": "السيارات وقطع الغيار",
+  "sell": false,
+  "why": "قطع غيار وسيارات ومعدات ورش"
+ },
+ {
+  "id": 72,
+  "name_zh": "印刷",
+  "name_en": "Printing",
+  "name_ar": "الطباعة",
+  "sell": false,
+  "why": "خدمات طباعة"
+ },
+ {
+  "id": 509,
+  "name_zh": "通信产品",
+  "name_en": "Communication Products",
+  "name_ar": "منتجات الاتصالات",
+  "sell": false,
+  "why": "أجهزة اتصالات وخدمات"
+ },
+ {
+  "id": 1426,
+  "name_zh": "机床",
+  "name_en": "Machine Tools",
+  "name_ar": "آلات",
+  "sell": false,
+  "why": "مخارط وآلات"
+ },
+ {
+  "id": 2805,
+  "name_zh": "加工",
+  "name_en": "Processing",
+  "name_ar": "تصنيع",
+  "sell": false,
+  "why": "خدمات تصنيع وتفصيل"
+ },
+ {
+  "id": 2829,
+  "name_zh": "二手设备转让",
+  "name_en": "Used Equipment Transfer",
+  "name_ar": "نقل معدات مستعملة",
+  "sell": false,
+  "why": "معدات مستعملة"
+ },
+ {
+  "id": 10208,
+  "name_zh": "仪器仪表",
+  "name_en": "Instruments & Meters",
+  "name_ar": "أجهزة وأدوات قياس",
+  "sell": false,
+  "why": "أجهزة قياس صناعية"
+ },
+ {
+  "id": 123614001,
+  "name_zh": "钢铁",
+  "name_en": "Steel",
+  "name_ar": "فولاذ",
+  "sell": false,
+  "why": "حديد وصلب"
+ },
+ {
+  "id": 130822002,
+  "name_zh": "餐饮生鲜",
+  "name_en": "Fresh Food & Catering",
+  "name_ar": "أطعمة طازجة والتموين",
+  "sell": false,
+  "why": "أطعمة طازجة قابلة للتلف"
+ },
+ {
+  "id": 130823000,
+  "name_zh": "成人用品",
+  "name_en": "Adult Products",
+  "name_ar": "منتجات للكبار",
+  "sell": false,
+  "why": "ممنوع"
+ },
+ {
+  "id": 201346017,
+  "name_zh": "建材",
+  "name_en": "Building Materials",
+  "name_ar": "مواد البناء",
+  "sell": false,
+  "why": "مواد بناء"
+ },
+ {
+  "id": 202052814,
+  "name_zh": "新能源",
+  "name_en": "New Energy",
+  "name_ar": "طاقة جديدة",
+  "sell": false,
+  "why": "طاقة جديدة"
+ }
+]

@@ -178,7 +178,8 @@ class SelectedPool:
 
     # -- walking ------------------------------------------------------------
 
-    def offer_ids(self, limit: int = 0, max_pages: int = 60, keyword: str = "") -> list:
+    def offer_ids(self, limit: int = 0, max_pages: int = 60, keyword: str = "",
+                  known=None, need: int = 0) -> list:
         """
         Distinct offer ids from the pool listing, in the order it serves them.
 
@@ -187,11 +188,22 @@ class SelectedPool:
         nothing new - which is what a page parameter being ignored looks like,
         and the only way to see it - or once `limit` ids are in hand.
 
+        `known` and `need` together are the stop that matters once the run is a
+        batch every twenty minutes instead of one walk a night. `need` is how
+        many ids the caller wants that the ledger has NOT seen, and the walk
+        ends as soon as it has them. Without it every word was walked to its
+        last page - forty calls a word, twelve words a batch, seventy-two
+        batches a day - to collect two thousand ids of which the caller kept
+        fifty. Counting fresh ids rather than ids is the whole point: a word
+        whose first pages the shop already carries must keep walking, not stop
+        at a full page of duplicates.
+
         A keyword with no matches returns an empty first page, and that is a
         legitimate answer rather than a failure: it is exactly what the nonsense
         control returns.
         """
         seen: dict = {}
+        fresh = 0
         for page in range(1, max_pages + 1):
             query = {"pageNum": page, "pageSize": self.page_size}
             if keyword:
@@ -204,12 +216,20 @@ class SelectedPool:
             before = len(seen)
             for row in rows:
                 ident = row.get("itemId") or row.get("offerId")
-                if ident is not None:
-                    seen.setdefault(str(ident), row)
+                if ident is None:
+                    continue
+                ident = str(ident)
+                if ident in seen:
+                    continue
+                seen[ident] = row
+                if known is None or not known(ident):
+                    fresh += 1
             self.pages_walked = page
             if len(seen) == before:
                 break
             if limit and len(seen) >= limit:
+                break
+            if need and fresh >= need:
                 break
         ids = list(seen)
         return ids[:limit] if limit else ids
@@ -231,7 +251,11 @@ class SelectedPool:
         for word in keywords:
             if limit and len(seen) >= limit:
                 break
-            found = self.offer_ids(limit=per_keyword, keyword=word)
+            # Only as deep as this word needs to go. `need` is what is still
+            # missing, so the first word usually answers the whole batch from
+            # its first page or two and the rest are never asked at all.
+            found = self.offer_ids(limit=per_keyword, keyword=word, known=known,
+                                   need=(limit - len(seen)) if limit else 0)
             fresh = 0
             for ident in found:
                 if ident in seen:
