@@ -175,6 +175,21 @@ STOPWORDS = {
 # however similar the photograph.
 SPEC_TOKEN = re.compile(r"^\d+(?:\.\d+)?(?:l|ml|w|kw|kg|g|v|hz|cm|mm|m|inch|gb|tb)$")
 
+# The same specification, written the way a real listing writes it. Ours says
+# "30L 3000W"; Noon's says "30 Litre Capacity". SPEC_TOKEN sees one and not the
+# other, which is why spec agreement needs its own reader.
+SPEC_UNITS = {
+    "l": "l", "litre": "l", "litres": "l", "liter": "l", "liters": "l",
+    "ltr": "l", "ml": "ml",
+    "w": "w", "watt": "w", "watts": "w", "kw": "kw",
+    "kg": "kg", "g": "g", "gram": "g", "grams": "g",
+    "v": "v", "volt": "v", "volts": "v", "hz": "hz",
+    "cm": "cm", "mm": "mm", "m": "m", "meter": "m", "meters": "m",
+    "metre": "m", "metres": "m", "inch": "inch", "inches": "inch",
+    "ft": "ft", "feet": "ft", "gb": "gb", "tb": "tb",
+}
+SPEC_SPLIT = re.compile(r"(\d+(?:\.\d+)?)\s*([a-z]+)")
+
 PRICE_PATTERN = re.compile(r"(\d[\d,\s]*(?:[.,]\d{1,2})?)")
 SAR_MARKERS = ("sar", "﷼", "ر.س", "ريال", "sr")
 
@@ -196,6 +211,30 @@ def tokens(text: str) -> set:
 
 def spec_tokens(words: set) -> set:
     return {word for word in words if SPEC_TOKEN.match(word)}
+
+
+def spec_set(text: str) -> set:
+    """
+    Every specification a title states, in one canonical spelling.
+
+    Reads both "30l" and "30 litre" as `30l`, so two listings that agree on the
+    capacity are seen to agree even when one of them spells it out. Only used to
+    let a row through a bar the words alone would fail - never to let one in
+    that the specification veto already rejected.
+    """
+    lowered = re.sub(r"[^\w.]+", " ", (text or "").lower())
+    found = {token.strip(".") for token in lowered.split()
+             if SPEC_TOKEN.match(token.strip("."))}
+    for number, unit in SPEC_SPLIT.findall(lowered):
+        if unit in SPEC_UNITS:
+            found.add(f"{number.rstrip('.')}{SPEC_UNITS[unit]}")
+    return found
+
+
+def spec_agreement(ours: str, theirs: str) -> bool:
+    """Both titles state a specification, and they share one."""
+    mine, yours = spec_set(ours), spec_set(theirs)
+    return bool(mine and yours and (mine & yours))
 
 
 def text_score(ours: str, theirs: str) -> Decimal:
@@ -347,16 +386,64 @@ def hits_from_results(results: list, our_title: str, variant_sku: str = "") -> l
 # watch: for a telescopic flag pole the cheapest row moves 28.00 -> 19.87 SAR,
 # and because best_match takes the CHEAPEST, the weakest-matching row is the one
 # that sets the price. Its words score is 50.00, sitting exactly on the bar.
+# With the unbacked bar now at 60 the figures that actually ship are 9 -> 16
+# accepted rows, still 1 -> 3 products priced, and that flag pole back at 28.00.
 #
-# The bar is not raised here. Dropping that row would need evidence it is the
-# wrong product, and it is not obviously wrong - a Tazweeq telescopic handheld
-# flagpole is a telescopic handheld flagpole, and a cheap local brand undercutting
-# an import is what a rival price IS. Inventing a threshold to exclude it would
-# repeat the mistake this module was just repaired for. The lever is here instead,
-# defaulting to no change, because a picture-backed row carries two independent
-# signals and an unbacked one carries only the words:
+# The bar was not raised unilaterally: dropping that row needs evidence it is
+# the wrong product, and it is not obviously wrong - a Tazweeq telescopic
+# handheld flagpole is a telescopic handheld flagpole, and a cheap local brand
+# undercutting an import is what a rival price IS. So the number went to the
+# client with the measurement, and on 3 September he chose to tighten it:
+# "نعم اوافق بشدة اشكرك".
+#
+# 60 is where the reading lands, not where preference does. Sweeping the bar
+# over the same recorded responses - 8 products that reached the shopping stage,
+# carrying 16 picture-unbacked rows between them:
+#
+#   bar 50  17 rows  8 unbacked  3/8 products priced  flag pole chosen  19.87
+#   bar 55  16 rows  7 unbacked  3/8 products priced  flag pole chosen  28.00
+#   bar 60  16 rows  7 unbacked  3/8 products priced  flag pole chosen  28.00
+#   bar 65  16 rows  7 unbacked  3/8 products priced  flag pole chosen  28.00
+#   bar 70  13 rows  4 unbacked  1/8 products priced  kazoo and notebook LOST
+#
+# Two things decide it. 55-65 is a plateau that costs exactly the one row in
+# question and nothing else, and 60 sits in the middle of it rather than on the
+# 50.00 boundary the outlier happens to occupy - text_score is coarse here, the
+# real scores are 50.00, 66.67, 75.00, so anything in 51-66 is the same rule.
+# And 70 is where it stops being free: the kazoo's best row is 66.67 and the
+# notebook's is 66.67, so a bar of 70 throws away two thirds of the coverage his
+# other ruling just bought. Tightening past the plateau is not more caution, it
+# is undoing (b) by the back door.
+#
+# n is 16 rows over 8 products. That is enough to see a plateau and not enough
+# to call 60 optimal, which is why it stays an env var.
+#
+# And a bar of 60 on its own was WRONG, which the recorded boiler proved as soon
+# as the number was applied. The 30 litre urn that made the case for the
+# client's change in the first place - Noon, 329.00 SAR, "REFURA Water Urn
+# Boiler, 30 Litre Capacity" - scores exactly 50.00 words against our
+# "Commercial Stainless Steel Electric Water Boiler 30L 3000W", because it
+# shares the capacity and almost none of the vocabulary. It is picture-unbacked
+# too: the image search priced Noon at 689, so the 329.00 row arrives from the
+# shopping search with only its words behind it.
+#
+# So 50.00 is a class holding both the row worth dropping and the row worth
+# keeping, and no threshold on that one number can tell them apart. What can:
+# the urn STATES 30 litres and we state 30L, while the 19.87 flag pole states no
+# specification at all and neither do we. Specification agreement is the client's
+# own identity test - the same rule that vetoes the 25 L kettle at 322.09 - so
+# it stands in for the picture that is missing. Below the 60 bar an unbacked row
+# is kept only if it agrees with us on a specification:
+#
+#   REFURA urn      words 50.00  ours {30l,3000w} theirs {30l,100...} -> KEPT
+#   KOOLEN kettle   words 25.00  25l vs 30l                          -> out (floor)
+#   Tazweeq pole    words 50.00  no specification either side        -> out
+#
+# That is not the bar being softened. It is the bar plus a second signal, which
+# is what a picture-backed row has had all along.
+DEFAULT_UNBACKED_TEXT_MIN = "60"
 UNBACKED_TEXT_THRESHOLD = Decimal(
-    os.environ.get("KDX_UNBACKED_TEXT_MIN", str(DEFAULT_TEXT_THRESHOLD)))
+    os.environ.get("KDX_UNBACKED_TEXT_MIN", DEFAULT_UNBACKED_TEXT_MIN))
 
 # KDX_CROSS_PLATFORM_PRICING=off restores the pre-3-September rule exactly - a
 # price may only come from the platform the picture identified. Kept as one
@@ -409,8 +496,17 @@ def prices_from_shopping(matches: list, rows: list, our_title: str,
         if price is None:
             continue
         backed = platform in identified
-        words = text_score(our_title, str(row.get("title") or ""))
-        if words < (TEXT_THRESHOLD if backed else UNBACKED_TEXT_THRESHOLD):
+        their_title = str(row.get("title") or "")
+        words = text_score(our_title, their_title)
+        # The floor never moves: below it, nothing gets in by any route.
+        if words < TEXT_THRESHOLD:
+            continue
+        # Above the floor but below the tightened bar, an unbacked row needs a
+        # second signal, and a stated specification that AGREES with ours is
+        # one - see the note by UNBACKED_TEXT_THRESHOLD for why the bar alone
+        # cannot separate these two cases.
+        if (not backed and words < UNBACKED_TEXT_THRESHOLD
+                and not spec_agreement(our_title, their_title)):
             continue
         # The score stays the picture's, which is what established identity.
         # The words were a gate, not a contribution.

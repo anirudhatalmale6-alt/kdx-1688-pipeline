@@ -568,12 +568,56 @@ flag pole the cheapest row moves 28.00 → **19.87 SAR**, and since `best_match`
 takes the cheapest, *the weakest-matching row is the one that sets the price*.
 Its words score is 50.00, sitting exactly on the bar.
 
-The bar was **not** raised to exclude it. A Tazweeq telescopic handheld
-flagpole is a telescopic handheld flagpole, and a cheap local brand undercutting
-an import is what a rival price *is*; inventing a threshold to remove an
-inconvenient row is the mistake this module was repaired for a commit earlier.
-`KDX_UNBACKED_TEXT_MIN` is the lever, defaulting to no change, and
-`KDX_CROSS_PLATFORM_PRICING=off` restores the old rule exactly.
+The bar was **not** raised unilaterally to exclude it. A Tazweeq telescopic
+handheld flagpole is a telescopic handheld flagpole, and a cheap local brand
+undercutting an import is what a rival price *is*; inventing a threshold to
+remove an inconvenient row is the mistake this module was repaired for a commit
+earlier. So the number went to the client with the measurement, and he chose to
+tighten it — *"نعم اوافق بشدة اشكرك"*. `KDX_CROSS_PLATFORM_PRICING=off` still
+restores the old rule exactly, and `KDX_UNBACKED_TEXT_MIN=50` restores the old
+bar.
+
+### Choosing that bar, and why a bar alone was wrong
+
+Sweeping the unbacked bar over the same recorded responses — 8 products that
+reached the shopping stage, 16 picture-unbacked rows between them:
+
+| bar | rows | unbacked kept | products priced | flag pole pays |
+|---|---|---|---|---|
+| 50 | 17 | 8 | 3/8 | 19.87 |
+| **55–65** | 16 | 7 | 3/8 | **28.00** |
+| 70 | 13 | 4 | **1/8** | 28.00 |
+
+55–65 is a plateau costing exactly the one row in question. 70 is where it
+stops being free: the kazoo's best row and the notebook's both score 66.67, so
+a bar of 70 throws away two thirds of the coverage the client's other ruling
+just bought. Tightening past the plateau undoes (b) by the back door. **60**
+sits in the middle of the plateau rather than on the 50.00 boundary the outlier
+occupies — `text_score` is coarse here, the real scores being 50.00, 66.67,
+75.00, so anything in 51–66 is the same rule.
+
+Then applying 60 broke a test, which is the useful part. The 30 L urn that made
+the case for the client's change **scores exactly 50.00** against our title, and
+it is picture-unbacked too, so a flat 60 threw away the very row this section
+holds up as the change paying off. 50.00 is a class containing both the row
+worth dropping and the row worth keeping, and no threshold on that one number
+separates them.
+
+What separates them is that the urn **states our capacity** and the flag pole
+states no specification at all:
+
+| row | words | ours | theirs | |
+|---|---|---|---|---|
+| REFURA 30 L urn | 50.00 | `30l 3000w` | `30l` | **kept** |
+| KOOLEN 25 L kettle | 25.00 | `30l 3000w` | `25l 1200w` | out |
+| Tazweeq flag pole | 50.00 | — | — | out |
+
+So below the bar an unbacked row is kept only if it agrees with us on a
+specification — the client's own identity test, the same rule that vetoes the
+25 L kettle, standing in for the picture that is missing. `words < 50` is still
+a floor nothing crosses by any route. Shipped effect on the 8 products: rows
+17 → 16, products priced **unchanged at 3/8**, and exactly one chosen price
+moves — the flag pole, 19.87 → 28.00.
 
 The recorded 30 L boiler shows the same change from the other side, and there
 it plainly pays: the old rule compared against AliExpress at 520 SAR, because

@@ -319,23 +319,61 @@ def main() -> int:
                                                         OUR_TITLE, "s")})
 
         # The words are the only evidence left on an unbacked row, so the bar
-        # for those is its own lever, defaulting to no change. Raising it must
-        # bite the unbacked rows and nothing else.
+        # for those is its own lever. Raising it must bite the unbacked rows and
+        # nothing else.
+        check("the unbacked bar is stricter than the picture-backed one, which "
+              "is the client's 3 September decision",
+              compare.UNBACKED_TEXT_THRESHOLD == Decimal("60")
+              and compare.UNBACKED_TEXT_THRESHOLD > compare.TEXT_THRESHOLD,
+              f"{compare.UNBACKED_TEXT_THRESHOLD} vs {compare.TEXT_THRESHOLD}")
+        os.environ["KDX_UNBACKED_TEXT_MIN"] = "50"
+        importlib.reload(compare)
+        check("CONTROL KDX_UNBACKED_TEXT_MIN=50 restores the pre-tightening bar "
+              "exactly, so the change is reversible without a deploy",
+              compare.UNBACKED_TEXT_THRESHOLD == compare.TEXT_THRESHOLD
+              == Decimal("50"),
+              str(compare.UNBACKED_TEXT_THRESHOLD))
         os.environ["KDX_UNBACKED_TEXT_MIN"] = "95"
         importlib.reload(compare)
         gated = compare.prices_from_shopping(only_noon, live_shopping, OUR_TITLE, "s")
-        check("CONTROL raising the unbacked bar drops the unbacked rows and "
-              "leaves the backed one standing",
-              {hit.platform for hit in gated} == {"Noon"},
-              str(sorted({hit.platform for hit in gated})))
-        check("CONTROL and that survivor is the 329.00 Noon urn, so the lever "
-              "is selective rather than an off switch",
-              [hit.price_sar for hit in gated] == [Decimal("329.00")],
-              str([str(hit.price_sar) for hit in gated]))
+        # Even wound all the way up, the bar governs only rows with nothing but
+        # their words behind them. Three rows survive at 95 and every one of
+        # them states our capacity: Noon's 329.00 "30 Litre" urn and the two
+        # Amazon "20L/30L/40L" catering urns. That is the escape working, not
+        # the bar leaking.
+        survivors = sorted(hit.price_sar for hit in gated)
+        check("CONTROL wound up to 95 the bar keeps exactly the rows that agree "
+              "with us on the specification",
+              survivors == [Decimal("329.00"), Decimal("553.01"), Decimal("800.00")],
+              str([str(price) for price in survivors]))
+        check("CONTROL and every survivor really does state our 30 litres",
+              all(compare.spec_agreement(OUR_TITLE, str(row.get("title")))
+                  for row in live_shopping
+                  if compare.sar_price(row.get("price")) in survivors))
+        # The row the client was shown has no specification on either side, so
+        # it has no second signal and the bar reaches it.
+        pole_ours = "Portable Telescopic Stainless Steel Tour Guide Flag Pole"
+        pole_theirs = ("Tazweeq Telescopic Handheld Flagpoles, Extendable Design "
+                       "for Banners & Flags")
+        check("CONTROL the 19.87 flag pole row has no specification to fall back "
+              "on, on either side, so 60 does drop it",
+              not compare.spec_agreement(pole_ours, pole_theirs)
+              and compare.spec_set(pole_ours) == set(),
+              f"{compare.spec_set(pole_ours)} vs {compare.spec_set(pole_theirs)}")
+        check("CONTROL and the 25 litre kettle is refused even though it is "
+              "cheaper, because 25l is not 30l",
+              not compare.spec_agreement(
+                  OUR_TITLE, "KOOLEN Electric Water Kettle 25 L 1200 W Silver"))
         del os.environ["KDX_UNBACKED_TEXT_MIN"]
         importlib.reload(compare)
-        check("CONTROL the unbacked bar defaults to the same number as the other",
-              compare.UNBACKED_TEXT_THRESHOLD == compare.TEXT_THRESHOLD)
+        # 60 is not free of consequence and the test says so: the flag pole row
+        # measured at exactly 50.00 words is the one it drops, which is the row
+        # the client was shown.
+        at_sixty = compare.prices_from_shopping(only_noon, live_shopping, OUR_TITLE, "s")
+        check("CONTROL at the shipped bar of 60 the unbacked rows are still "
+              "used - the tightening is not an off switch either",
+              len(at_sixty) > 1 and {h.platform for h in at_sixty} > {"Noon"},
+              str(sorted({h.platform for h in at_sixty})))
         compare.TEXT_THRESHOLD = Decimal("60")
         compare.UNBACKED_TEXT_THRESHOLD = Decimal("60")
 
