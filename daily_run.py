@@ -118,7 +118,8 @@ def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger",
                      "return is already published")
         return [], notes
 
-    harvested, dropped, wrong_side, unweighed = [], 0, 0, 0
+    harvested, dropped, wrong_side, unweighed, off_department = [], 0, 0, 0, 0
+    departments_off = catalog.departments_off()
     for product in pool.products(offer_ids=ids):
         if len(harvested) >= quota:
             break
@@ -127,6 +128,18 @@ def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger",
         if state in (catalog.BLOCKED, catalog.REVIEW):
             dropped += 1
             continue
+        # His thirteen switched-off departments, enforced. Until 3 September the
+        # list only chose which words to SEARCH for, so an offer the pool
+        # returned from a department he had turned off would have published.
+        # Counted apart from `dropped` so the two reasons never merge into one
+        # number - and today that count is zero, which is the point: it is a
+        # guard, not the thing that stops the food and the chemicals.
+        if runner.categories is not None:
+            why = runner.categories.department_is_off(product.get("category_id"),
+                                                      departments_off)
+            if why:
+                off_department += 1
+                continue
         try:
             if rules.find_banned_term(pipeline_module.to_rules_product(product)):
                 dropped += 1
@@ -157,6 +170,9 @@ def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger",
         ledger.add_offer(product["offer_id"])
     ledger.save()
     notes.append(f"{dropped} dropped on category or banned term before any spend")
+    notes.append(f"{off_department} dropped as belonging to a department he "
+                 f"switched off - enforced since 3 September, previously the "
+                 f"list only chose search words")
     notes.append(f"{unweighed} passed over with no weight from anywhere - neither "
                  f"the supplier nor their category could answer, so they cannot "
                  f"be filed as fast or free without guessing")

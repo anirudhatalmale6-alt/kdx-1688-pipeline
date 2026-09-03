@@ -41,6 +41,7 @@ REASONS_AR = {
     "published": "تم النشر",
     "updated": "تم التحديث",
     "banned_category": "فئة ممنوعة",
+    "department_off": "قسم مستبعد بطلب العميل",
     "not_mains_compliant": "لا يعمل على 220 فولت 50/60 هرتز",
     "out_of_stock": "غير متوفر في 1688",
     "heavy_unmatched": "أثقل من 2 كجم وغير موجود في المنصات الخمس",

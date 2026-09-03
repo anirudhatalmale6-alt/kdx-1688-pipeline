@@ -400,12 +400,29 @@ def main() -> int:
           all(r.audit.reason_code == "banned_category" for r in by_category.results)
           and "منتجات للبالغين" in by_category.results[0].audit.reason_ar,
           by_category.results[0].audit.reason_ar if by_category.results else "no results")
-    check("CONTROL: the same product in an allowed department publishes",
-          build(offers=banned_category_dir, state="bannedcat2.json",
-                categories=catalog.CategoryIndex(
-                    [dict(row, state="allowed") if row["id"] == 130823000 else row
-                     for row in CATEGORY_ROWS])).run_offer("777000111").published == 3,
-          "otherwise this only proves the fixture is broken")
+    # Since 3 September there are TWO ways this product can be refused on its
+    # department: the tree state, and the client's own sell:false list. 成人用品
+    # is in both. The control has to release both, or it stops proving the
+    # fixture works and starts proving only that the second rule fires.
+    original_off = catalog.departments_off
+    try:
+        catalog.departments_off = lambda path="": {}
+        check("CONTROL: the same product in an allowed department publishes",
+              build(offers=banned_category_dir, state="bannedcat2.json",
+                    categories=catalog.CategoryIndex(
+                        [dict(row, state="allowed") if row["id"] == 130823000 else row
+                         for row in CATEGORY_ROWS])).run_offer("777000111").published == 3,
+              "otherwise this only proves the fixture is broken")
+    finally:
+        catalog.departments_off = original_off
+
+    check("CONTROL: and with the tree allowing it, his own switched-off list "
+          "still refuses it - the second gate is real",
+          all(r.audit.reason_code == "department_off" for r in
+              build(offers=banned_category_dir, state="bannedcat3.json",
+                    categories=catalog.CategoryIndex(
+                        [dict(row, state="allowed") if row["id"] == 130823000 else row
+                         for row in CATEGORY_ROWS])).run_offer("777000111").results))
 
     print("9. the audit file accounts for every variant")
     with open(os.path.join(WORK, "audit.csv"), encoding="utf-8") as handle:

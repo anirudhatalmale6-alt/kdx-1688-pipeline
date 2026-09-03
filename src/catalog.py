@@ -154,6 +154,39 @@ def classify(name_zh: str) -> tuple[str, str, str]:
     return ALLOWED, "", ""
 
 
+def departments_off(path: str = "") -> dict:
+    """
+    The departments the client turned OFF, by Chinese name.
+
+    His choice of 2 September lives in data/departments.json as `sell: false`,
+    and until 3 September that file was read by exactly one caller - wordlist.py,
+    to decide which words to SEARCH for. Nothing enforced it, so a department he
+    switched off could still arrive if the pool handed us an offer filed under
+    one. A list that selects search words is not a filter; this makes it one.
+
+    It is defence in depth and nothing more, which the measurement says plainly:
+    scored over all 241 products assembled so far it catches ZERO. Not choosing
+    the words has been enough in practice. It is here so that "enough in
+    practice" stops being the only thing standing between his decision and the
+    shop.
+
+    In particular it is NOT what caught the thirteen rubber compounds published
+    on 3 September. Those are filed under 橡塑, and 橡塑 has `sell: true` -
+    he asked for it himself on 2 September along with seventeen other industrial
+    departments. They are excluded by the chemicals rule in rules.BANNED_TERMS,
+    on the words of the listing, not by this.
+    """
+    if not path:
+        here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        path = os.path.join(here, "data", "departments.json")
+    if not os.path.exists(path):
+        return {}
+    with open(path, encoding="utf-8") as handle:
+        rows = json.load(handle)
+    return {row["name_zh"]: (row.get("why") or "department off")
+            for row in rows if not row.get("sell")}
+
+
 class NodeCache:
     """
     Every category node ever fetched, kept on disk.
@@ -388,6 +421,27 @@ class CategoryIndex:
         """
         row = self.by_id.get(str(category_id or ""))
         return row["state"] if row else "unknown"
+
+    def department_of(self, category_id) -> str:
+        """The Chinese name of the top-level department, or "" if unknown."""
+        chain = self.chain(category_id)
+        return chain[0]["name_zh"] if chain else ""
+
+    def department_is_off(self, category_id, off: dict | None = None) -> str:
+        """
+        The client's reason for switching this product's department off, or "".
+
+        Answers "" for a department we cannot resolve rather than guessing.
+        That is NOT the same permissive default as state_of's, and the
+        difference is deliberate: state_of guards categories whose children were
+        never walked, while this guards a list of 31 names the client wrote
+        himself. A product whose department cannot be resolved is caught by the
+        product-level rules instead, where the words are read directly.
+        """
+        name = self.department_of(category_id)
+        if not name:
+            return ""
+        return (departments_off() if off is None else off).get(name, "")
 
 
 def summarise(rows: list) -> dict:

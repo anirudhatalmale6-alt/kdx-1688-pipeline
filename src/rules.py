@@ -101,7 +101,48 @@ BANNED_TERMS = {
     "tobacco": ["vape", "e-cigarette", "e-liquid", "shisha", "hookah", "nicotine", "电子烟",
                 "سجائر", "شيشة", "نيكوتين"],
     "counterfeit": ["replica", "1:1 copy", "aaa quality copy", "fake brand", "高仿", "تقليد"],
+    # 3 September, his words: "استبعاد المنتجات التي تحتوي على وجبات سواء كانت
+    # الى الأنسان او كانت الى الحيوان" and "استبعاد المنتجات التي تحتوي على طحين
+    # او مواد كيماوية او كيميائية".
+    #
+    # The department gate in catalog.py already stops 食品酒水 and 化工, which
+    # he switched off on 2 September. These terms exist for what the department
+    # gate CANNOT see: edible goods sitting inside a department he sells. The
+    # freeze-dried chicken cat treats published on 3 September are filed under
+    # 宠物及园艺 - pets and gardening, a department he keeps - so only the
+    # product's own words can catch them.
+    #
+    # The Arabic entries here are deliberately PHRASES, never bare nouns, and
+    # that is a measurement not a preference. Scored over the 183 products
+    # assembled so far, "دقيق" caught a German precision pressure valve - the
+    # word is flour AND "precise" - and the existing "تقليد" caught four
+    # traditional costumes, because تقليدي "traditional" contains it. A bare
+    # noun in Arabic is a different word with the prefix on.
+    "food": ["零食", "食品", "干货", "罐头", "夹心饼", "糖果", "巧克力",
+             "speciality food", "snack food", "مواد غذائية", "وجبات جاهزة"],
+    "animal_food": ["猫粮", "狗粮", "宠物零食", "宠物食品", "冻干鸡", "冻干猫",
+                    "猫条", "猫罐头", "狗罐头", "饲料", "营养膏", "pet treat",
+                    "pet food", "cat treat", "dog treat", "cat food", "dog food",
+                    "طعام قطط", "طعام كلاب", "أعلاف"],
+    "flour": ["面粉", "小麦粉", "玉米粉", "淀粉", "flour", "طحين قمح", "دقيق قمح"],
+    "chemicals": ["化工原料", "化学试剂", "工业原料", "合成橡胶", "氯丁橡胶",
+                  "丁苯橡胶", "丁腈橡胶", "橡胶原料", "塑料颗粒", "树脂原料",
+                  "溶剂", "增塑剂", "固化剂", "催化剂",
+                  "chemical raw", "synthetic rubber", "مواد كيميائية", "كيماوية"],
 }
+
+# Words that contain a banned term but are not the banned thing. Checked first,
+# exactly as catalog.SAFE_PHRASES is, and for the same reason: 食品级硅胶 is
+# food-GRADE silicone, a lunch box, and "食品" would delete the whole aisle.
+# 橡胶 alone is not here because it is not banned alone - a 3M rubber respirator
+# published on 2 September is protective equipment, and only the named synthetic
+# compounds are the raw chemical he means.
+BANNED_SAFE_PHRASES = (
+    "食品级", "食品用", "食品接触", "食品密封", "食品保鲜", "食品收纳",
+    "食品夹", "食品袋", "食品盒", "零食盒", "零食收纳", "零食夹",
+    "宠物食品盒", "宠物碗", "喂食器", "food grade", "food-grade",
+    "food container", "food storage", "درجة غذائية",
+)
 
 
 class Decision(str, Enum):
@@ -179,11 +220,25 @@ class AuditRecord:
 # --------------------------------------------------------------------------
 
 def find_banned_term(product: Product) -> tuple[str, str] | None:
-    """Return (category, term) if the listing hits an excluded category."""
+    """
+    Return (category, term) if the listing hits an excluded category.
+
+    A safe phrase is only allowed to excuse the term it CONTAINS. Removing all
+    of them from the text before searching would let "食品级硅胶食品" through by
+    deleting the very word that condemns it, so each term is checked against a
+    text with only the safe phrases that cover that term taken out.
+    """
     haystack = product.searchable_text().lower()
     for category, terms in BANNED_TERMS.items():
         for term in terms:
-            if term.lower() in haystack:
+            needle = term.lower()
+            if needle not in haystack:
+                continue
+            masked = haystack
+            for phrase in BANNED_SAFE_PHRASES:
+                if needle in phrase.lower():
+                    masked = masked.replace(phrase.lower(), " ")
+            if needle in masked:
                 return category, term
     return None
 

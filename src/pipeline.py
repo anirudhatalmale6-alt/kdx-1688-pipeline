@@ -625,6 +625,30 @@ class Pipeline:
             return OfferOutcome(offer_id=offer_id, product=None, results=results,
                                 points_spent=spent, compared=False)
 
+        # A department he switched off, enforced here as well as in discovery,
+        # because discovery is not the only door - run_pipeline.py takes offer
+        # ids directly. Until 3 September the list only chose search words and
+        # nothing enforced it anywhere.
+        #
+        # BELOW the tree check, not above it. The two overlap - 成人用品 is both
+        # a blocked branch and a department he switched off - and the tree's
+        # reason is the more specific of the two, naming the prohibition rather
+        # than the menu. Put above, this rule silently rewrote the reason code
+        # on every already-blocked branch, which the suite caught.
+        off_reason = (self.categories.department_is_off(normalised.get("category_id"))
+                      if self.categories is not None else "")
+        if off_reason:
+            department = self.categories.department_of(normalised.get("category_id"))
+            results = [
+                self.engine.reject(product, variant, "department_off",
+                                   f"قسم مستبعد بطلب العميل - {department} "
+                                   f"({off_reason})")
+                for variant in product.variants
+            ]
+            self._audit(results, spent)
+            return OfferOutcome(offer_id=offer_id, product=None, results=results,
+                                points_spent=spent, compared=False)
+
         # Sizes and colours, fetched only now: a product the category tree has
         # already refused must not cost a call, which is the same reason the
         # translation and the price search sit below this line too. It happens
