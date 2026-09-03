@@ -102,6 +102,57 @@ def main() -> int:
     check("CONTROL the ceiling is where the measurement put it, not rounder",
           weights.MAX_CREDIBLE_KG == 100.0, str(weights.MAX_CREDIBLE_KG))
 
+    print("\nand the one value that is a required field, not a weight")
+    # 3 September: two electric retractable aluminium gates were published at
+    # 36.26 SAR as FAST shipping, because both declared 0.001 kg. Under the 2 kg
+    # line a product does not have to be found on the five platforms first, so
+    # the sentinel did not merely misprice the carriage - it walked a gate past
+    # the rule that exists to stop exactly that.
+    check("0.001 kg is not a weight - 60 of the 82 sub-10 g declarations in the "
+          "table sit on that one value",
+          weights.declared_weight({"unitWeight": 0.001}) is None,
+          str(weights.declared_weight({"unitWeight": 0.001})))
+    check("nor as a string, which is how the gateway sends it",
+          weights.declared_weight({"unitWeight": "0.001"}) is None)
+    # The distinction that keeps this from being a blanket floor. The other 22
+    # sub-10 g values scatter - 0.005 twelve times, 0.002 five times, singletons
+    # at 0.006, 0.007, 0.008, 0.009 - and a scatter is what a measurement looks
+    # like. Only the pile is refused.
+    check("CONTROL 0.005 IS a weight - a real declaration, twelve of them",
+          weights.declared_weight({"unitWeight": 0.005}) == 0.005)
+    check("CONTROL 0.002 too, so this is a sentinel and not a floor",
+          weights.declared_weight({"unitWeight": 0.002}) == 0.002)
+    check("CONTROL and the sentinel gets no vote on its category either - "
+          "otherwise a leaf answers 'light' unanimously on nothing",
+          table({}).observe("x", 0.001) is False)
+    check("CONTROL while 0.005 does get a vote",
+          table({}).observe("x", 0.005) is True)
+    check("the credible sibling still wins when the sentinel is present",
+          weights.declared_weight({"offerSuttleWeight": 0.001,
+                                   "unitWeight": 12}) == 12)
+    # The table on disk predates the rule, so refusing new sentinels is not
+    # enough - the ones already recorded still vote until they are read out.
+    poisoned = table({"c": [0.001, 1.0, 1.0, 0.001, 1.0]})
+    check("a table loaded from disk drops the sentinels it already holds",
+          poisoned.samples["c"] == [1.0, 1.0, 1.0], str(poisoned.samples["c"]))
+    check("and its median is the one the real declarations give",
+          poisoned.opinion("c")["kg"] == 1.0, str(poisoned.opinion("c")))
+    check("CONTROL a category with nothing BUT sentinels disappears rather than "
+          "answering from an empty list",
+          "d" not in table({"d": [0.001, 0.001]}).samples)
+    check("CONTROL real sub-10 g samples survive the same load",
+          table({"e": [0.005, 0.002, 0.005]}).samples["e"] == [0.005, 0.002, 0.005])
+    # The load filter takes the sentinel and ONLY the sentinel. An over-ceiling
+    # sample is left in on purpose: it makes its category straddle the 2 kg
+    # line, opinion() then refuses to answer, and the product is passed over as
+    # unweighed - which is the conservative outcome, and the check below the
+    # median section tests it. Filtering it here would have turned that refusal
+    # into a confident "light", which is how this control caught the change.
+    check("CONTROL an over-ceiling sample is NOT read out on load - it still "
+          "silences its category, which is the safe answer",
+          table({"f": [0.5, 0.5, 1000.0]}).samples["f"] == [0.5, 0.5, 1000.0],
+          str(table({"f": [0.5, 0.5, 1000.0]}).samples["f"]))
+
     print("\na category only answers when it has earned the right to")
 
     line = weights.light_max_kg()

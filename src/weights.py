@@ -92,10 +92,53 @@ MIN_SAMPLES = int(os.environ.get("KDX_WEIGHT_MIN_SAMPLES", "3"))
 # the category answers instead; nothing is silently rewritten to a number the
 # supplier never gave.
 #
-# There is no floor beyond "greater than zero". 68 offers declare under 10 g and
-# some of them are true - a postage stamp really is a gram - and the ones that
-# are wrong fail in the safe direction: the customer is charged carriage.
+# There is no floor beyond "greater than zero" and SENTINEL_KG below. Sub-10 g
+# declarations that are not the sentinel are left alone: some of them are true -
+# a postage stamp really is a gram - and the ones that are wrong fail in the
+# direction where the customer is charged carriage.
 MAX_CREDIBLE_KG = float(os.environ.get("KDX_MAX_CREDIBLE_WEIGHT_KG", "100"))
+
+# 0.001 is not a weight. It is the smallest number the 1688 form accepts, and it
+# is what a supplier types to get past a required field.
+#
+# The shape of the data says so rather than my opinion of it. Of the 1,086
+# declared weights the table held on 3 September, 82 sit under 10 g - and 60 of
+# those 82 are EXACTLY 0.001, while the remaining 22 scatter: 0.005 twelve
+# times, 0.002 five times, one each at 0.006, 0.007, 0.008, 0.009. A real
+# measurement does not pile 60 observations on one value and leave singletons
+# either side of it. The products carrying it agree: two electric retractable
+# aluminium gates, a men's pilot jacket and a walnut car ornament, all four
+# declared at one gram.
+#
+# This matters for more than the carriage, and that is why the earlier note here
+# was wrong to call the light direction safe. Under the 2 kg line a product is
+# FAST shipping, and a fast-shipping product does not have to be found on the
+# five platforms before it is published. So on 3 September the sentinel took two
+# electric gates - goods his rule says may only be published against a rival
+# price - and published them at 36.26 SAR on a margin instead.
+#
+# Treated as though nothing was declared, exactly like a zero: the category
+# answers, and nothing is rewritten to a number the supplier never gave. A
+# genuinely one-gram product in a category of light goods still comes out light.
+SENTINEL_KG = float(os.environ.get("KDX_WEIGHT_SENTINEL_KG", "0.001"))
+
+
+def is_credible(kilograms) -> bool:
+    """
+    One credibility test, used by the reader and by the table alike.
+
+    They have to agree. If `observe` accepted a value the reader rejects, the
+    sentinel would be voting on what its category weighs even while no product
+    was allowed to carry it - and a leaf with a few of those answers "light",
+    unanimously and with evidence, for every product beneath it.
+    """
+    try:
+        number = float(kilograms)
+    except (TypeError, ValueError):
+        return False
+    if SENTINEL_KG > 0 and number == SENTINEL_KG:
+        return False
+    return 0 < number <= MAX_CREDIBLE_KG
 
 # A ceiling on what one category remembers, so a file read at the start of every
 # batch cannot grow without limit over months of pulling. The newest are kept:
@@ -133,7 +176,7 @@ def declared_weight(shipping: dict):
     prefers the more specific of the two. A zero or a negative is not a weight;
     it is a field somebody left at its default, and treating 0 as "very light"
     would charge carriage on a pallet. Above MAX_CREDIBLE_KG is not a weight
-    either - see the note on that constant.
+    either, and neither is SENTINEL_KG - see the notes on those constants.
     """
     if not isinstance(shipping, dict):
         return None
@@ -141,12 +184,8 @@ def declared_weight(shipping: dict):
         value = shipping.get(key)
         if value is None:
             continue
-        try:
-            number = float(value)
-        except (TypeError, ValueError):
-            continue
-        if 0 < number <= MAX_CREDIBLE_KG:
-            return number
+        if is_credible(value):
+            return float(value)
     return None
 
 
@@ -161,8 +200,26 @@ class WeightTable:
 
     def __init__(self, samples: dict | None = None, path: str = ""):
         self.samples = defaultdict(list)
+        # The SENTINEL is dropped on the way IN, not only in observe(), because
+        # the table on disk predates the rule: 46 of the 848 samples in the
+        # shipped seed are 0.001, spread over 29 of its 170 categories, and
+        # every one of them drags that category's median down - 0.5 kg becomes
+        # 1.0 once they are gone. Refusing them here means the file heals itself
+        # the next time it is read and saved, with no state surgery on a machine
+        # that may be mid-batch.
+        #
+        # Only the sentinel, deliberately, and NOT the whole credibility test.
+        # A sample over MAX_CREDIBLE_KG already declares itself: it straddles
+        # the 2 kg line, so opinion() refuses to answer for that category at all
+        # and the product is passed over as unweighed. That is the conservative
+        # outcome and it is tested as such. The sentinel is the opposite - it
+        # votes "light", quietly and unanimously - which is why it is the one
+        # value that has to be read out.
         for category, weights in (samples or {}).items():
-            self.samples[str(category)] = [float(w) for w in weights]
+            kept = [float(w) for w in weights
+                    if not (SENTINEL_KG > 0 and float(w) == SENTINEL_KG)]
+            if kept:
+                self.samples[str(category)] = kept
         self.path = path or table_path()
         self._dirty = False
 
@@ -213,15 +270,15 @@ class WeightTable:
     def observe(self, category_id, kilograms) -> bool:
         """Record one supplier-declared weight against its leaf category."""
         category = str(category_id or "")
-        try:
-            weight = float(kilograms)
-        except (TypeError, ValueError):
+        # The same credibility test the reader applies, and it is the same
+        # function so it cannot drift. A 10,000 kg trumpet must not get a vote on
+        # what its category weighs, or one typo turns a whole leaf into a
+        # free-shipping department; a 0.001 sentinel must not get one either, or
+        # a leaf answers "light" unanimously on the strength of a required field
+        # nobody filled in.
+        if not category or not is_credible(kilograms):
             return False
-        # The same credibility test the reader applies. A 10,000 kg trumpet must
-        # not get a vote on what its category weighs, or one typo turns a whole
-        # leaf into a free-shipping department.
-        if not category or not (0 < weight <= MAX_CREDIBLE_KG):
-            return False
+        weight = float(kilograms)
         kept = self.samples[category]
         kept.append(weight)
         if MAX_SAMPLES > 0 and len(kept) > MAX_SAMPLES:
