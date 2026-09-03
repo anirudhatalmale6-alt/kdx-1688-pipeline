@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 import compare
+import completeness
 import enrich as enrich_module
 import imagetext
 import mapping
@@ -53,6 +54,21 @@ class OfferOutcome:
     def published(self) -> int:
         return sum(1 for result in self.results
                    if result.decision == rules.Decision.PUBLISH)
+
+
+def _placeholder_variant() -> rules.Variant:
+    """
+    A stand-in so a listing with no purchasable option at all still produces an
+    audit row.
+
+    Every rejection in this pipeline is written one-per-variant, which quietly
+    assumes there is at least one. A listing whose options could not be read is
+    exactly the case where there is not, and it is also the case the client
+    most wants to see counted - a product that vanished without a row in the
+    audit file would read as though it had never been looked at.
+    """
+    return rules.Variant(sku_id="", attributes={}, price_cny=Decimal("0"),
+                         stock=0, weight_kg=Decimal("0"))
 
 
 def to_rules_product(normalised: dict) -> rules.Product:
@@ -603,8 +619,11 @@ class Pipeline:
                 for variant in product.variants
             ]
             self._audit(results, spent)
+            # compared=False said out loud: none of these paths reached the
+            # image search, and an outcome that reports otherwise would count
+            # a refused listing among the ones a rival price was sought for.
             return OfferOutcome(offer_id=offer_id, product=None, results=results,
-                                points_spent=spent)
+                                points_spent=spent, compared=False)
 
         # Sizes and colours, fetched only now: a product the category tree has
         # already refused must not cost a call, which is the same reason the
@@ -619,8 +638,30 @@ class Pipeline:
         if rules.liquids.find_liquid_term(product.searchable_text()):
             results = self.engine.evaluate(product, {})
             self._audit(results, spent)
+            # compared=False said out loud: none of these paths reached the
+            # image search, and an outcome that reports otherwise would count
+            # a refused listing among the ones a rival price was sought for.
             return OfferOutcome(offer_id=offer_id, product=None, results=results,
-                                points_spent=spent)
+                                points_spent=spent, compared=False)
+
+        # "If the product information is unclear the product is excluded" - his
+        # instruction of 3 September. It sits here, above the size lookup, the
+        # translation and the image search, because those are the three calls
+        # that cost him money, and a listing we are not going to publish must
+        # not pay for any of them. See completeness.py for what counts.
+        gap = completeness.missing_before_translation(normalised)
+        if gap:
+            results = [self.engine.reject(product, variant, gap,
+                                          completeness.reason_ar(gap))
+                       for variant in product.variants] or [
+                self.engine.reject(product, _placeholder_variant(), gap,
+                                   completeness.reason_ar(gap))]
+            self._audit(results, spent)
+            # compared=False said out loud: none of these paths reached the
+            # image search, and an outcome that reports otherwise would count
+            # a refused listing among the ones a rival price was sought for.
+            return OfferOutcome(offer_id=offer_id, product=None, results=results,
+                                points_spent=spent, compared=False)
 
         normalised = self._add_skus(normalised)
         if normalised.get("sku_source") == skus.SKU_APPLIED:
@@ -632,10 +673,30 @@ class Pipeline:
         if rejected_early:
             results = self.engine.evaluate(product, {})
             self._audit(results, spent)
+            # compared=False said out loud: none of these paths reached the
+            # image search, and an outcome that reports otherwise would count
+            # a refused listing among the ones a rival price was sought for.
             return OfferOutcome(offer_id=offer_id, product=None, results=results,
-                                points_spent=spent)
+                                points_spent=spent, compared=False)
 
         enriched = self._enrich(product)
+
+        # The listing translated badly or not at all. Until now it was published
+        # anyway, in Chinese, and priced by margin because no rival title can
+        # score against Chinese - compared in name only. He asked on 3 September
+        # for unclear listings to be left out, and this is the clearest case of
+        # unclear there is. Above the search, so it costs nothing.
+        gap = completeness.missing_after_translation(enriched)
+        if gap:
+            results = [self.engine.reject(product, variant, gap,
+                                          completeness.reason_ar(gap))
+                       for variant in product.variants]
+            self._audit(results, spent)
+            # compared=False said out loud: none of these paths reached the
+            # image search, and an outcome that reports otherwise would count
+            # a refused listing among the ones a rival price was sought for.
+            return OfferOutcome(offer_id=offer_id, product=None, results=results,
+                                points_spent=spent, compared=False)
 
         # Cache first, then the meter, then the search - see _compare below.
         hits, searches, from_cache, compared = self._compare(

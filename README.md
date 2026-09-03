@@ -458,6 +458,34 @@ There is no floor beyond "greater than zero". 68 offers declare under 10 g, and
 some of them are true — a postage stamp really is a gram — while the ones that
 are wrong fail in the safe direction.
 
+## "If the information is unclear, exclude it"
+
+He wrote that on 3 September, and it retires a habit this pipeline has had
+since the first night: when a fact was missing, invent a safe one.
+
+> اي منتج سواء الى الشحن السريع ام الشحن المجاني اذا كانت معلومات المنتج غير
+> واضحة يتم استبعاد المنتج لا مشكلة هناك منتجات بالمليارات
+
+The weight is the one that changes the catalogue. Of the corpus above, 848
+offers carry a supplier weight and a confident category can answer for 463
+more; the remaining 382 — 23% — had been getting a blanket "call it light",
+which then decided their shipping type, their price and whether they published
+at all. A blanket default is not a measurement, and he has just said so. Those
+382 are now refused, named `no_weight` in the audit, with an Arabic line
+saying both sources were asked and neither answered.
+
+Five other checks travel with it — no title, no photograph, no category, no
+purchasable option, and a name that would reach the shop still carrying Chinese
+characters. All of them run in `src/completeness.py`, all of them run **before**
+the size lookup, the translation and the image search, because those are the
+three calls that cost him money and a listing we will not publish must not pay
+for any of them.
+
+Two escape hatches, because a check that rejects too much has to be droppable
+without a release: `KDX_REQUIRE_COMPLETE=off` waives all of it, and
+`KDX_COMPLETENESS_SKIP=no_weight,no_photo` drops individual checks by the same
+name that appears in the audit file. `verify_completeness.py` — 39 assertions.
+
 ## Photographs at the size his shop will show them
 
 The CDN resizes on request: `<url>_800x800.jpg`. Measured over 25 first

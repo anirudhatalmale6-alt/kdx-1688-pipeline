@@ -265,6 +265,13 @@ def main() -> int:
           str({r.audit.reason_code for r in narrow.results}))
 
     print("6. skipping translation must not silently change the price")
+    # Two layers, and the order matters. Since 3 September the completeness gate
+    # refuses an untranslated listing outright, so the first pair below waives
+    # that gate by name to reach the layer underneath - the one that decides
+    # what an untranslated product would be priced at IF it were published. Both
+    # still have to hold: the gate can be waived, and when it is, the pricing
+    # underneath must still not pretend a search happened.
+    os.environ["KDX_COMPLETENESS_SKIP"] = "untranslated"
     untranslated = build(translate=False, state="untranslated.json").run_offer(BOILER)
     check("the outcome says the comparison did not run",
           untranslated.compared is False,
@@ -280,6 +287,12 @@ def main() -> int:
     check("with a reason that does not claim a search happened",
           untranslated.results[0].audit.reason_code == "not_compared",
           untranslated.results[0].audit.reason_code)
+    del os.environ["KDX_COMPLETENESS_SKIP"]
+    gated = build(translate=False, state="untranslated-gated.json").run_offer(BOILER)
+    check("CONTROL and with the gate in force it never gets that far",
+          all(r.audit.reason_code == "untranslated" for r in gated.results)
+          and gated.compared is False,
+          str({r.audit.reason_code for r in gated.results}))
     check("CONTROL: the same offer, searched, is rejected for the honest reason instead",
           all(result.audit.reason_code != "not_compared" for result in boiler.results))
     check("while the translated run priced the same offer from Noon",
@@ -840,13 +853,25 @@ def main() -> int:
           len((outcome.product or {}).get("variants", [{}])[0].get("sizes", [])) == 2,
           str((outcome.product or {}).get("variants")))
 
-    # CONTROL. Running with no translator at all is a deliberate mode - names
-    # included - and this guard must not turn "no API key" into "no catalogue".
+    # CONTROL. Running with no translator at all used to publish the Chinese
+    # title. Since 3 September the completeness gate refuses it - his rule, "if
+    # the product information is unclear, exclude it", and a shopper meeting
+    # Chinese characters is the clearest case of unclear there is. The old
+    # behaviour is still reachable by name, and this pair proves the gate is
+    # what changed it rather than something else in the run.
+    os.environ["KDX_COMPLETENESS_SKIP"] = "untranslated"
     untranslated = build(state="points-notranslate.json", translate=False,
                          term_translator=stubborn).run_offer(TSHIRT)
-    check("CONTROL with translation off the old behaviour is unchanged",
+    check("CONTROL with the gate waived, translation off behaves as it always did",
           len((untranslated.product or {}).get("variants", [])) == 2,
           str((untranslated.product or {}).get("variants")))
+    del os.environ["KDX_COMPLETENESS_SKIP"]
+    refused = build(state="points-notranslate2.json", translate=False,
+                    term_translator=stubborn).run_offer(TSHIRT)
+    check("and with the gate in force the same offer is not published at all",
+          refused.product is None
+          and all(r.audit.reason_code == "untranslated" for r in refused.results),
+          str({r.audit.reason_code for r in refused.results}))
 
     print("\nthe label the model hands straight back is cut into its pieces")
     # The second half of the same fix. Asked for the whole SKU string the model

@@ -37,6 +37,7 @@ sys.path.insert(0, os.path.join(HERE, "src"))
 
 import budget as budget_module  # noqa: E402
 import catalog  # noqa: E402
+import completeness  # noqa: E402
 import discover  # noqa: E402
 import paths  # noqa: E402
 import pipeline as pipeline_module  # noqa: E402
@@ -117,7 +118,7 @@ def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger",
                      "return is already published")
         return [], notes
 
-    harvested, dropped, wrong_side = [], 0, 0
+    harvested, dropped, wrong_side, unweighed = [], 0, 0, 0
     for product in pool.products(offer_ids=ids):
         if len(harvested) >= quota:
             break
@@ -132,6 +133,15 @@ def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger",
                 continue
         except Exception:                                 # noqa: BLE001
             pass
+        # A weight nobody stated cannot sort a product into either batch, and
+        # since 3 September it cannot publish one either - his rule, "if the
+        # information is unclear, exclude it". Counted separately from the
+        # wrong-side tally because they are a different fact about the
+        # catalogue: those are products for the other batch, these are products
+        # for neither.
+        if not completeness.has_usable_weight(product):
+            unweighed += 1
+            continue
         if shipping in ("fast", "free"):
             # The same function the payload is built with, so the batch cannot
             # be sorted by one rule and published under another.
@@ -147,6 +157,9 @@ def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger",
         ledger.add_offer(product["offer_id"])
     ledger.save()
     notes.append(f"{dropped} dropped on category or banned term before any spend")
+    notes.append(f"{unweighed} passed over with no weight from anywhere - neither "
+                 f"the supplier nor their category could answer, so they cannot "
+                 f"be filed as fast or free without guessing")
     if shipping in ("fast", "free"):
         notes.append(f"{wrong_side} passed over as {'heavy' if shipping == 'fast' else 'light'}"
                      f" - this batch is {shipping} shipping only, and they stay "
