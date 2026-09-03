@@ -71,7 +71,8 @@ section("a listing with everything present is not touched")
 
 check("the complete offer passes", completeness.missing_before_translation(offer()) is None)
 check("nothing missing after translation either",
-      completeness.missing_after_translation({"name_en": "Bottle"}) is None)
+      completeness.missing_after_translation(
+          {"name_en": "Vacuum Flask 500ml", "name_ar": "ترمس 500 مل"}) is None)
 
 
 # --------------------------------------------------------------------------
@@ -84,8 +85,20 @@ check("no photograph", completeness.missing_before_translation(offer(images=[]))
 check("no category", completeness.missing_before_translation(offer(category_id="")) == "no_category")
 check("no purchasable option",
       completeness.missing_before_translation(offer(variants=[])) == "no_options")
-check("untranslated",
-      completeness.missing_after_translation({"_untranslated": True}) == "untranslated")
+check("untranslated - the Arabic name still carries Chinese",
+      completeness.missing_after_translation(
+          {"name_en": "Vacuum Flask", "name_ar": "ترمس 保温杯"}) == "untranslated")
+check("untranslated - the English name is the Chinese title, which is what a "
+      "run with no translator carries through",
+      completeness.missing_after_translation(
+          {"name_en": "不锈钢保温杯", "name_ar": "不锈钢保温杯"}) == "untranslated")
+check("untranslated - an empty Arabic name",
+      completeness.missing_after_translation(
+          {"name_en": "Vacuum Flask", "name_ar": ""}) == "untranslated")
+check("CONTROL it reads the name that reaches the shop, not the flag: a run "
+      "marked untranslated whose names are clean is not refused",
+      completeness.missing_after_translation(
+          {"name_en": "Vacuum Flask", "name_ar": "ترمس", "_untranslated": True}) is None)
 check("every code has Arabic to go with it",
       all(completeness.reason_ar(code) and code not in completeness.reason_ar(code)
           for code in completeness.REASONS))
@@ -123,7 +136,7 @@ os.environ["KDX_REQUIRE_COMPLETE"] = "off"
 check("nothing is rejected with the gate off",
       completeness.missing_before_translation(offer(title_zh="", images=[])) is None)
 check("and the translation check is off too",
-      completeness.missing_after_translation({"_untranslated": True}) is None)
+      completeness.missing_after_translation({"name_en": "", "name_ar": ""}) is None)
 del os.environ["KDX_REQUIRE_COMPLETE"]
 check("CONTROL back on, the same offer rejects again",
       completeness.missing_before_translation(offer(title_zh="")) == "no_title")

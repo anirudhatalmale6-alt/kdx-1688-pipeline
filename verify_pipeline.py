@@ -167,12 +167,17 @@ def main() -> int:
     print("3. a heavy product priced by undercutting a real match")
     boiler = build().run_offer(BOILER)
     check("it was read and priced", len(boiler.results) == 1)
-    # The recorded image search matches this one on Noon, so it publishes by
-    # undercut rather than being held back for being heavy.
-    check("it published against the Noon match", boiler.published == 1,
+    # The recorded image search matches this one on Noon at 689 and - since the
+    # 3 September rank change - on AliExpress at 520 as well, so it publishes by
+    # undercutting the cheaper of the two rather than being held back for being
+    # heavy.
+    check("it published against the rival match", boiler.published == 1,
           boiler.results[0].audit.reason_ar)
     check("priced by undercutting, not by margin",
-          "Noon" in boiler.results[0].audit.pricing_basis,
+          "ناقص" in boiler.results[0].audit.pricing_basis,
+          boiler.results[0].audit.pricing_basis)
+    check("and against the CHEAPER of the two rivals the picture found",
+          "AliExpress" in boiler.results[0].audit.pricing_basis,
           boiler.results[0].audit.pricing_basis)
     check("12.4 kg makes it free shipping", boiler.product["needs_shipment"] is False)
     # CONTROL for the weight above: a product with no size axis is exactly the
@@ -295,8 +300,9 @@ def main() -> int:
           str({r.audit.reason_code for r in gated.results}))
     check("CONTROL: the same offer, searched, is rejected for the honest reason instead",
           all(result.audit.reason_code != "not_compared" for result in boiler.results))
-    check("while the translated run priced the same offer from Noon",
-          boiler.compared is True and "Noon" in boiler.results[0].audit.pricing_basis,
+    check("while the translated run priced the same offer from a rival",
+          boiler.compared is True
+          and "ناقص" in boiler.results[0].audit.pricing_basis,
           "the two runs must differ, otherwise this check proves nothing")
 
     print("7. the budget stops a run instead of failing every remaining offer")

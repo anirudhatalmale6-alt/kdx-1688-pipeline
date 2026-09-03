@@ -52,10 +52,56 @@ PLATFORM_DOMAINS = {
     "Noon": ("noon.com",),
 }
 
-# Only the top visual matches can qualify. Rank is the provider's own ordering
-# by visual similarity, so this is a decay rather than a hard cut: rank 1 scores
-# 100, rank 3 scores 96, rank 4 falls under the 95 threshold on its own.
-VISUAL_DECAY_PER_RANK = Decimal("2")
+# Rank is not evidence, and a measurement on 3 September is why.
+#
+# The score used to be 100 minus 2 per rank against the client's 95 bar, so only
+# the first three rows of a Lens response could ever be a match. 40 real
+# products were searched, returning 2,394 visual matches, 385 of them on the
+# client's five platforms:
+#
+#   * at least one of the five platforms appears for 39 of the 40 products, so
+#     the platforms are there - they were being thrown away, not missed;
+#   * genuine matches sit at ranks 1, 2, 4, 5, 14, 15, 25, 53 and 56. A PANTUM
+#     M7100DW printer matches its own model number at rank 53;
+#   * one M-VAVE SMK-37 PRO keyboard comes back ELEVEN times in one response,
+#     at ranks 2, 3, 4, 5, 25, 29, 34, 41, 42, 44 and 48. Same product, same
+#     photograph, eleven different "confidences" under the old rule;
+#   * under that rule exactly 1 product of the 40 could be compared at all,
+#     which matches the live figure: 65 of 5,944 rows published in September,
+#     1.1%, carried a rival's price. The other 98.9% were priced by margin.
+#
+# SerpApi's Lens response carries `position` and no similarity score at all, so
+# there is nothing to put in the decay's place. What Lens is actually saying by
+# returning a row is "this is a visual match", and that is now taken as the
+# picture's verdict instead of a number invented from its ordering. Identity is
+# carried by the words below and by the specification veto, which is where it
+# was always really being decided.
+#
+# The decay is kept as a mechanism, not deleted: a provider that does return a
+# real similarity one day should slot in here. KDX_VISUAL_DECAY_PER_RANK=2 puts
+# the old behaviour back exactly, for a run or for a comparison.
+VISUAL_DECAY_PER_RANK = Decimal(os.environ.get("KDX_VISUAL_DECAY_PER_RANK", "0"))
+
+# A hard ceiling on how deep to read, separate from the score. Zero means no
+# limit, which is what the measurement above supports; it exists so depth can be
+# capped without reintroducing a fake confidence.
+VISUAL_RANK_LIMIT = int(os.environ.get("KDX_VISUAL_RANK_LIMIT", "0"))
+
+# Search and category pages wearing a product's title.
+#
+# One false match in the 40 was "decorative pen holder - Qatar" at
+# temu.com/qa/decorative-pen-holder-...-s.html - Temu's search page for the
+# phrase, not a product. Whatever price such a page quotes belongs to whichever
+# listing happens to sit first on it today, which is not a rival's price for
+# anything in particular. Amazon's /clp/ landing pages and AliExpress /w/
+# searches are the same thing under different spellings: 13 more rows in the
+# same 40 products.
+LISTING_PAGE = re.compile(
+    r"(temu\.com/[^?]*-s\.html)"
+    r"|(aliexpress\.[a-z.]+/w/)"
+    r"|(amazon\.[a-z.]+/(clp|s)(/|\?))"
+    r"|(noon\.com/[^?]*/search)",
+    re.IGNORECASE)
 
 # How closely the WORDS have to agree, separately from the picture.
 #
@@ -72,7 +118,25 @@ VISUAL_DECAY_PER_RANK = Decimal("2")
 # here to catch the case where one photo sells two sizes, and the specification
 # veto below does most of that work already. Lowering this does not loosen the
 # picture. KDX_TEXT_MATCH_MIN puts it back to 95 without a code change.
-DEFAULT_TEXT_THRESHOLD = "60"
+#
+# 50 since 3 September, and this one is now carrying the identity on its own -
+# see the rank note below. The number comes from reading all 385 platform rows
+# the 40-product measurement produced, not from preference:
+#
+#   words >= 60   4 products of 40, and it drops a PANTUM M7100DW matching its
+#                 own model number (57.1), a 12-hole alto C ocarina against a
+#                 12-hole alto C ocarina (57.1), and A4 70g copy paper against
+#                 A4 70g copy paper (57.1)
+#   words >= 50   10 products of 40. Read one by one, 8 are the same product,
+#                 including three exact model numbers; 1 is a Temu search page
+#                 (now excluded by LISTING_PAGE below) and 1 is a sunflower
+#                 door sign against a pumpkin one
+#   words >= 40   20 products of 40, and the additions are mostly wrong - a
+#                 milk-tea pencil case against a prism one, an artificial sweet
+#                 pea against a begonia
+#
+# The median across all 385 rows is 14, so 50 sits a long way above the noise.
+DEFAULT_TEXT_THRESHOLD = "50"
 TEXT_THRESHOLD = Decimal(os.environ.get("KDX_TEXT_MATCH_MIN", DEFAULT_TEXT_THRESHOLD))
 
 # One image search per PRODUCT, or one per colour?
@@ -230,11 +294,16 @@ def identity_matches(results: list, our_title: str) -> list:
     """
     found = []
     for rank, result in enumerate(results or [], start=1):
+        if VISUAL_RANK_LIMIT and rank > VISUAL_RANK_LIMIT:
+            break
         if not isinstance(result, dict):
             continue
         link = str(result.get("link") or result.get("url") or "")
         platform = platform_of(link, str(result.get("source") or result.get("seller") or ""))
         if platform is None:
+            continue
+        # A search page is on the right platform and is not a rival's product.
+        if LISTING_PAGE.search(link):
             continue
         # Two separate bars, which is the same conjunctive rule as before: at
         # the default both are 95, so "picture >= 95 and words >= 95" is exactly
@@ -281,9 +350,13 @@ def prices_from_shopping(matches: list, rows: list, our_title: str,
     for row in rows or []:
         if not isinstance(row, dict):
             continue
-        platform = platform_of(str(row.get("product_link") or row.get("link") or ""),
-                               str(row.get("source") or ""))
+        link = str(row.get("product_link") or row.get("link") or "")
+        platform = platform_of(link, str(row.get("source") or ""))
         if platform not in identified:
+            continue
+        # Same guard as identity_matches: a search page's price is whichever
+        # listing happens to sit first on it today.
+        if LISTING_PAGE.search(link):
             continue
         # Only the price STRING is read, because only it states the currency.
         # extracted_price is a bare number: trusting it would quietly turn a

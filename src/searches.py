@@ -73,6 +73,10 @@ def policy_fingerprint() -> str:
         compare.MATCH_THRESHOLD, compare.TEXT_THRESHOLD,
         compare.LENS_SCOPE, compare.SHOPPING_WHEN,
         "off" if os.environ.get("KDX_SHOPPING", "on").strip().lower() == "off" else "on",
+        # How deep the picture is read, and how far down it still counts. Both
+        # changed on 3 September, and a cached answer computed when only the
+        # top three rows could match is an answer to a different question.
+        compare.VISUAL_DECAY_PER_RANK, compare.VISUAL_RANK_LIMIT,
     ))
 
 

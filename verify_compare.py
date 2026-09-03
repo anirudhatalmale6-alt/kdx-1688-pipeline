@@ -19,6 +19,7 @@ against something we are not selling.
 
 from __future__ import annotations
 
+import importlib
 import json
 import os
 import sys
@@ -54,16 +55,40 @@ def main() -> int:
     results = provider.search_by_image(BOILER_IMAGE)
     check("the recorded search loads", len(results) == 5, str(len(results)))
 
-    print("1. only one of five results is safe to price against")
+    print("1. two of five results are safe to price against")
+    # Two since 3 September, not one. The fifth row is an AliExpress listing of
+    # the same boiler at SAR 520 - title agreeing 100, priced in riyals - and it
+    # was being discarded for sitting fifth in the response. Rank was never
+    # evidence; the measurement behind that change is in compare.py.
     hits = compare.hits_from_results(results, OUR_TITLE)
-    check("exactly one hit survives", len(hits) == 1,
+    check("two hits survive", len(hits) == 2,
           str([(h.platform, str(h.price_sar)) for h in hits]))
-    if hits:
-        check("it is the Noon listing", hits[0].platform == "Noon", hits[0].platform)
-        check("at its SAR price", hits[0].price_sar == Decimal("689.00"),
-              str(hits[0].price_sar))
-        check("scoring at or above the client's 95 threshold",
-              hits[0].match_score >= rules.MATCH_THRESHOLD, str(hits[0].match_score))
+    platforms = {h.platform: h for h in hits}
+    check("the Noon listing", "Noon" in platforms, str(list(platforms)))
+    check("at its SAR price", platforms["Noon"].price_sar == Decimal("689.00"),
+          str(platforms["Noon"].price_sar))
+    check("and the AliExpress listing rank five used to hide",
+          "AliExpress" in platforms, str(list(platforms)))
+    check("at ITS SAR price, which is cheaper",
+          platforms["AliExpress"].price_sar == Decimal("520.00"),
+          str(platforms["AliExpress"].price_sar))
+    check("both scoring at or above the client's 95 threshold",
+          all(h.match_score >= rules.MATCH_THRESHOLD for h in hits),
+          str([str(h.match_score) for h in hits]))
+
+    # CONTROL. The old rule is one environment variable away, and putting it
+    # back must restore exactly the old answer - otherwise something else
+    # changed too and this section is measuring the wrong thing.
+    os.environ["KDX_VISUAL_DECAY_PER_RANK"] = "2"
+    importlib.reload(compare)
+    old = compare.hits_from_results(compare.FixtureProvider().search_by_image(BOILER_IMAGE),
+                                    OUR_TITLE)
+    check("CONTROL with the old decay restored, only Noon survives again",
+          [h.platform for h in old] == ["Noon"], str([h.platform for h in old]))
+    del os.environ["KDX_VISUAL_DECAY_PER_RANK"]
+    importlib.reload(compare)
+    check("CONTROL and removing it brings the second one back",
+          len(compare.hits_from_results(results, OUR_TITLE)) == 2)
 
     print("2. why each of the other four was thrown out")
     check("the 20 litre boiler is rejected despite the identical photo",
@@ -74,20 +99,43 @@ def main() -> int:
         {"value": "$118.99", "extracted_value": 118.99, "currency": "USD"}) is None)
     check("eBay is not one of the five platforms",
           compare.platform_of("https://www.ebay.com/itm/225533114400", "eBay") is None)
-    check("a ninth-ranked visual match cannot reach 95 on the picture alone",
-          compare.visual_score(9) < rules.MATCH_THRESHOLD, str(compare.visual_score(9)))
+    check("the eBay row was refused for its platform, not for its rank",
+          compare.visual_score(9) == 100,
+          "rank no longer scores - see the 40-product measurement in compare.py")
 
     print("3. the two signals must agree, not average out")
     check("a perfect title at rank 1 scores 100",
           compare.match_score(OUR_TITLE, OUR_TITLE, 1) == 100)
-    check("a perfect title ranked ninth is still refused",
-          compare.match_score(OUR_TITLE, OUR_TITLE, 9) < rules.MATCH_THRESHOLD)
+    check("a perfect title ranked ninth is now accepted, because rank is not "
+          "evidence", compare.match_score(OUR_TITLE, OUR_TITLE, 9) == 100)
     check("a rank-1 photo with an unrelated title is refused",
           compare.match_score(OUR_TITLE, "Kids Plastic Lunch Box Cartoon", 1)
           < rules.MATCH_THRESHOLD)
     check("the weaker signal decides, never the stronger",
           compare.match_score(OUR_TITLE, OUR_TITLE, 5)
           == min(compare.visual_score(5), Decimal("100")))
+    check("CONTROL the words alone can still refuse a top-ranked row",
+          compare.match_score(OUR_TITLE, "Kids Plastic Lunch Box Cartoon", 1) == 0)
+
+    print("3b. a search page is not a rival's product")
+    for link in ("https://www.temu.com/qa/decorative-pen-holder-5030079551293-s.html",
+                 "https://www.aliexpress.com/w/wholesale-pen-holder.html",
+                 "https://www.amazon.sa/clp/12345",
+                 "https://www.amazon.sa/s?k=pen+holder"):
+        check(f"refused: {link.split('/')[2]}{link.split('/')[3][:12]}",
+              compare.LISTING_PAGE.search(link) is not None)
+    for link in ("https://www.temu.com/sa/g-601.html",
+                 "https://www.aliexpress.com/item/1005006.html",
+                 "https://www.amazon.sa/dp/B0C123",
+                 "https://www.noon.com/saudi-en/x/p/"):
+        check(f"CONTROL kept: {link.split('/')[2]}",
+              compare.LISTING_PAGE.search(link) is None)
+    page = [{"link": "https://www.temu.com/qa/pen-holder-5030079551293-s.html",
+             "source": "Temu", "title": OUR_TITLE,
+             "price": {"value": "SAR 12.00", "extracted_value": 12.0,
+                       "currency": "SAR"}}]
+    check("and identity_matches drops it even with a perfect title and a price",
+          compare.identity_matches(page, OUR_TITLE) == [])
 
     print("4. reading a price")
     check("SAR written as a symbol is read", compare.sar_price("﷼ 689.00") == Decimal("689.00"))
@@ -144,11 +192,16 @@ def main() -> int:
     result = engine.evaluate(product, by_variant)[0]
     check("the product is accepted", result.decision == rules.Decision.PUBLISH,
           f"{result.decision} / {result.audit.reason_ar}")
-    check("priced by undercutting Noon, not by margin",
-          "Noon" in result.audit.pricing_basis, result.audit.pricing_basis)
-    # 689.00 is over 500 SAR, so the client's band is 1% off.
-    check("at Noon's price minus the 1% band for this price range",
-          result.final_price_sar == Decimal("682.11"), str(result.final_price_sar))
+    # AliExpress at 520, not Noon at 689: the client's rule is to undercut the
+    # rival, and best_match takes the cheapest of the ones that are genuinely
+    # the same product. Before 3 September the cheaper one was invisible.
+    check("priced by undercutting the CHEAPEST rival, not by margin",
+          "AliExpress" in result.audit.pricing_basis, result.audit.pricing_basis)
+    # 520.00 is over 500 SAR, so the client's band is still 1% off.
+    check("at AliExpress's price minus the 1% band for this price range",
+          result.final_price_sar == Decimal("514.80"), str(result.final_price_sar))
+    check("CONTROL and that is genuinely below what Noon alone would have given",
+          result.final_price_sar < Decimal("682.11"))
     check("and it stays above our landed cost",
           result.final_price_sar > engine.landed_cost_sar(variant),
           f"{result.final_price_sar} vs {engine.landed_cost_sar(variant)}")
@@ -276,18 +329,20 @@ def main() -> int:
     # August - do not buy a second search when a price is already in hand - this
     # product costs one search and is priced against Noon.
     #
-    # That rule has a price of its own, and it is measurable here rather than
-    # arguable: the shopping engine, if it were asked, finds the same boiler on
-    # Amazon at 553.01 SAR. Undercutting 689 instead of 553 puts us 136 SAR
-    # above the cheapest rival on this one product. Both behaviours are kept,
-    # one environment variable apart, so the choice stays the client's.
+    # That rule had a price of its own, and reading the picture properly has
+    # since paid most of it back. The comment here used to read: the shopping
+    # engine, if asked, finds this boiler on Amazon at 553.01 SAR, so
+    # undercutting Noon's 689 leaves us 136 SAR above the cheapest rival. Since
+    # 3 September the picture itself identifies AliExpress at 520 - cheaper
+    # than the Amazon row the second search would have bought - so the first
+    # search now returns the better answer on this product without the second.
     shopping = CountingShopping(live_shopping)
     cheap = compare.hits_for_product(compare.FixtureProvider(), product, OUR_TITLE,
                                      shopping=shopping)
     check("a price already in hand means no second search is bought",
           shopping.calls == 0, f"{shopping.calls} calls")
-    check("so the product is priced against the rival the picture priced",
-          min(hit.price_sar for hit in cheap["sku-boiler"]) == Decimal("689.00"),
+    check("so the product is priced against the cheapest rival the picture priced",
+          min(hit.price_sar for hit in cheap["sku-boiler"]) == Decimal("520.00"),
           str(sorted(hit.price_sar for hit in cheap["sku-boiler"])))
 
     original_when = compare.SHOPPING_WHEN
@@ -298,19 +353,22 @@ def main() -> int:
                                             shopping=shopping)
         check("the thorough setting looks up the platform that quoted no SAR price",
               shopping.calls == 1, f"{shopping.calls} calls")
-        # And on this product it buys nothing: the picture identified Noon
-        # (priced) and Temu (not priced), and the recorded shopping response
-        # contains no Temu row at all - 5 Amazon rows, 2 Noon, 33 elsewhere.
-        # Amazon quotes 553.01 there, cheaper than Noon's 689, and we still do
+        # And on this product it buys nothing better: the picture identified
+        # Noon (689), AliExpress (520) and Temu (quoting USD, dropped), and the
+        # recorded shopping response contains no Temu row at all - 5 Amazon
+        # rows, 2 Noon, 33 elsewhere. Amazon quotes 553.01 there and we still do
         # not take it, because the picture never identified Amazon for this
         # product and a shopping row on its own is not allowed to establish
-        # identity. That guard is the point, not a shortfall.
+        # identity. That guard is the point, not a shortfall - and here it costs
+        # nothing, because the picture already found something cheaper.
         check("but on this product the extra search changes nothing",
-              min(hit.price_sar for hit in thorough["sku-boiler"]) == Decimal("689.00"),
+              min(hit.price_sar for hit in thorough["sku-boiler"]) == Decimal("520.00"),
               str(sorted(hit.price_sar for hit in thorough["sku-boiler"])))
-        check("CONTROL: the cheaper Amazon row was there and was deliberately not used",
+        check("CONTROL: the Amazon row was there, was not used, and would have "
+              "been worse anyway",
               any(compare.sar_price(row.get("price")) == Decimal("553.01")
-                  for row in live_shopping))
+                  for row in live_shopping)
+              and Decimal("553.01") > Decimal("520.00"))
     finally:
         compare.SHOPPING_WHEN = original_when
 
