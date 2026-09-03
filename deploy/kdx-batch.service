@@ -18,7 +18,17 @@ EnvironmentFile=/etc/kdx/kdx.env
 # minute window and forty was thirty-five - longer than the window and longer
 # than the timeout below, so every batch would have been killed part-published.
 # The full working is in kdx-batch.timer.
-ExecStart=/usr/bin/python3 /opt/kdx/app/daily_run.py --channel selected --quota 10
+# FAST ONLY, from 3 September. He authorised both batches - "يمكنك تشغيل
+# الدفعتين اذا تم حل جميع العواقب" - conditionally, and the condition is met on
+# one side and not the other. A fast-shipping product is requires_shipping=yes:
+# the customer pays carriage, so pricing it on the goods alone is sound. A
+# free-shipping product is requires_shipping=no and we absorb a carriage he
+# prices BY VOLUME, while 1688 supplies no dimension at all (0 of 40 sampled
+# offers) and quotes no freight through any endpoint the app can call. Until
+# his two rate scales arrive there is no floor under a heavy product, so the
+# heavy ones are passed over at discovery and stay in the pool for later.
+# Remove --shipping fast to release them.
+ExecStart=/usr/bin/python3 /opt/kdx/app/daily_run.py --channel selected --shipping fast --quota 10
 
 # A batch that meets its predecessor exits 2 and says so. That is the lock
 # working, not a failure, and it must not be reported as one - otherwise every
