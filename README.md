@@ -305,20 +305,20 @@ does not look.
 
 The same measurement answered a second complaint of his in the same breath.
 Every one of those 230 products came back `needs_shipment: true`. Not most —
-**all of them**. There has never been a free-shipping product in the shop,
-because nothing in reach reports a weight over the 2 kg line:
+**all of them**. There had never been a free-shipping product in the shop.
 
-* the discovery channel returns no weight at all — 3776 offers in the queue, all
-  carrying the assumed 1 kg, not one measured;
-* the selected-pool detail API reports `unitWeight` for 4 offers in 20, and in
-  that sample the largest was 1.0 kg;
-* `alibaba.product.get`, which carries the real shipping weight, is still
-  `gw.APIACLDecline` on both apps.
+> **The paragraph that followed here was wrong, and the correction is measured
+> below in "He refused to fill it, and he was right".** It read that nothing in
+> reach reports a weight over 2 kg, on the strength of "`unitWeight` for 4
+> offers in 20, the largest 1.0 kg". Those twenty offers were all light
+> clothing. Over 1,693 offers drawn across 60 departments on purpose, half
+> declare a weight and 7.2% of those are over the line. The shop had no
+> free-shipping product because the sample I looked at had none, not because
+> the catalogue has none.
 
-So the light/heavy split cannot be derived here. `KDX_CATEGORY_WEIGHTS` is the
-mechanism that exists for it, and it is the client's table to fill: a department
-is a crude unit — hardware holds both a screw and a toolbox — but it is the only
-one he can state and we can act on.
+What remains true from that paragraph: the discovery channel returns no weight
+at all, and `alibaba.product.get`, which carries the real shipping weight, is
+still `gw.APIACLDecline` on both apps.
 
 ### Which key does his importer read it under?
 
@@ -485,6 +485,72 @@ Two escape hatches, because a check that rejects too much has to be droppable
 without a release: `KDX_REQUIRE_COMPLETE=off` waives all of it, and
 `KDX_COMPLETENESS_SKIP=no_weight,no_photo` drops individual checks by the same
 name that appears in the audit file. `verify_completeness.py` — 39 assertions.
+
+## The comparison, measured end to end
+
+His rule of 3 September makes the five-platform comparison the gate on the
+whole free-shipping catalogue: *"if the comparison is done and the product is
+not obtained, the product is excluded and not pasted into our shop. This
+includes the heavy products."* So the only number that matters is how often the
+comparison actually finds a rival — and it was 1.1%.
+
+**Live, from the September audit log:** 5,944 rows published, 65 of them
+(1.1%) priced from a rival, 5,879 priced by margin. 233 more rejected as
+`heavy_and_unmatched`. From the comparison cache: 296 products compared, 1.03
+searches each, 2 with a qualifying hit.
+
+### First: is that the catalogue, or is it me?
+
+40 real products, one Lens search each, every response kept. 2,394 visual
+matches, 385 of them on one of the five platforms, **and at least one platform
+appears for 39 of the 40 products.** The platforms were being thrown away, not
+missed — by a rank rule of my own invention. That fix is its own commit; the
+short version is that Lens returns `position` and no similarity score, one
+M-VAVE SMK-37 PRO keyboard comes back eleven times at eleven different ranks,
+and identity belongs to the words.
+
+### Then: how far does fixing it actually get?
+
+Run down the whole path rather than reasoned about, because fixing the input
+and announcing the feature is the mistake this project already made once with
+the weight:
+
+| stage | products, of 40 |
+|---|---|
+| Lens returned something | 40 |
+| one of the five platforms appeared | 39 |
+| a row that is genuinely the same product — **before** the fix | 1 |
+| a row that is genuinely the same product — **after** | **8** |
+| that row carried a SAR price in the Lens response | 0 |
+| second (Shopping) search bought | 8 |
+| ended with a rival's price | **1** |
+
+So identity improves eight-fold and the end-to-end rate goes from about 1.1% to
+about 2.5%. Better, and not the transformation the identity number alone would
+suggest.
+
+### Why the second search does not rescue it
+
+149 shopping rows across those 8 products, every one classified:
+
+```
+120  not on any of the five platforms
+ 16  on one of the five, but not the one the picture identified
+  9  ACCEPTED
+  4  words below the bar
+```
+
+The 120 are a long tail of small international shops — eBay, Made-in-China,
+office-japan.jp, Raptor Supplies, a Nepali gift shop. Widening the platform
+list to take them was the obvious next idea and the measurement killed it:
+those are not the Saudi market, and a wholesale price from Made-in-China is not
+a rival's shelf price.
+
+**The conclusion is about the goods, not the code.** 1688 sells unbranded
+generics, and an unbranded generic does not exist as an identifiable listing on
+Temu, SHEIN, AliExpress, Amazon or Noon. Where a product has a model number —
+PANTUM M7100DW, M-VAVE SMK-37 PRO — the comparison finds it immediately. Where
+it is "A5 notebook", there is nothing on the other side to find.
 
 ## Photographs at the size his shop will show them
 
