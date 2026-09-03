@@ -33,6 +33,7 @@ import photos
 import rules
 import skus
 import source
+import weights as weights_module
 
 
 @dataclass
@@ -278,42 +279,70 @@ def _drop_posters_from_variants(payload: dict, scores: dict) -> list:
     return dropped
 
 
-def _weigh_by_category(normalised: dict, categories) -> dict:
+def _weigh_by_category(normalised: dict, categories, learned=None) -> dict:
     """
-    Replace an assumed weight with the one his table gives for the department.
+    Fill in a weight nobody measured, from the category rather than from a rule.
 
-    His table is written per department, and 1688 files an offer under a leaf:
-    of 3,776 offers queued on 2 September, 712 distinct leaf ids appeared and
-    only 817 offers - one in five - carried a leaf whose ancestry was already
-    known. A table looked up on the leaf alone would therefore have missed most
-    of the catalogue while looking like it was working, so the whole chain is
-    asked, leaf first: a number typed against a leaf is more specific than one
-    typed against the department above it and wins, and a department number
-    covers everything underneath it.
+    Two sources, in this order, and neither of them ever touches a weight the
+    supplier actually declared - overwriting a real number with a category
+    median would be inventing a lighter box than the one being shipped.
 
-    A weight the source actually measured is never touched. Only the gap this
-    fills is his to fill; overwriting a real number with a category average
-    would be inventing a lighter box than the one being shipped.
+    1. A number the client typed himself. He asked for that table on 2 September
+       and refused to fill it on the 3rd - "the subcategories hold big products
+       and small ones", and 500,000 leaves cannot be filed by hand - so nothing
+       waits for it any more, but a number he does type still wins, because the
+       only reason to type one is to state a real one.
+
+       His table names departments and 1688 files an offer under a leaf: of the
+       3,776 offers queued on 2 September, 712 distinct leaf ids appeared and
+       only 817 - one in five - carried a leaf whose ancestry was known. So the
+       whole chain is asked, leaf first.
+
+    2. What the pool has measured for that category itself, via weights.py.
+       This is the channel-independent half: the image search never reports a
+       weight for anything, and its offers land in the same leaves the pool
+       declares weights for, so a leaf the pool has measured can answer for a
+       search row that carries nothing at all.
+
+    The result stays flagged as assumed either way. A median is a policy, not a
+    scale, and a product held back for being heavy must never read as though the
+    box had been on one.
     """
     if not normalised.get("weight_assumed"):
         return normalised
+
+    rows = []
+    if categories is not None:
+        try:
+            rows = categories.chain(normalised.get("category_id")) or []
+        except Exception:                                   # noqa: BLE001
+            rows = []
+
     table = source.category_weight_table()
-    if not table or categories is None:
+    if table:
+        # Leaf first. chain() answers root first, so it is walked backwards.
+        for row in reversed(rows) if rows else []:
+            known = table.get(str(row.get("id")))
+            if known is not None:
+                normalised = dict(normalised)
+                normalised["weight_kg"] = float(known)
+                normalised["weight_category_id"] = str(row.get("id"))
+                normalised["weight_assumed"] = True
+                normalised.pop("weight_samples", None)
+                return normalised
+
+    if learned is None or normalised.get("weight_samples"):
+        # Already answered by the learned table upstream - the pool channel asks
+        # it while normalising, because that is where it also teaches it.
         return normalised
-    rows = categories.chain(normalised.get("category_id")) or []
-    # Leaf first. chain() answers root first, so the ancestry is walked backwards.
-    for row in reversed(rows):
-        known = table.get(str(row.get("id")))
-        if known is None:
-            continue
-        normalised = dict(normalised)
-        normalised["weight_kg"] = float(known)
-        normalised["weight_category_id"] = str(row.get("id"))
-        # Still assumed: a category average is a policy, not a scale. The audit
-        # line has to keep saying so, or a product held back for being heavy
-        # would read as though the box had been weighed.
-        normalised["weight_assumed"] = True
+    found = learned.estimate(normalised.get("category_id"), rows)
+    if found is None:
         return normalised
+    normalised = dict(normalised)
+    normalised["weight_kg"] = float(found["kg"])
+    normalised["weight_category_id"] = found["category_id"]
+    normalised["weight_samples"] = found["samples"]
+    normalised["weight_assumed"] = True
     return normalised
 
 
@@ -328,25 +357,35 @@ def _restate_assumed_weight(results: list, normalised: dict) -> None:
 
     Same treatment as _restate_uncompared, and for the same reason: the decision
     is untouched, only the sentence the client reads. He needs to be able to
-    tell a product that is genuinely too heavy from one that merely fell through
-    a gap in his category weight table, because those call for different
-    actions - drop the product, or fill in the table.
+    tell a product that is genuinely too heavy from one whose weight nobody
+    stated, because those call for different actions.
+
+    Two different assumptions reach here and they must not read alike. One is a
+    median of other offers measured in the same leaf category, which says how
+    many offers stood behind it; the other is the blanket light-weight policy,
+    which stands on nothing but his decision of 30 August.
     """
     if not normalised.get("weight_assumed"):
         return
     # The category the number actually came from, which is the one he can act
     # on. Naming the leaf when the weight came from the department above it
-    # would send him looking for a row his table does not have.
+    # would send him looking for a row that does not exist.
     category = (normalised.get("weight_category_id")
                 or normalised.get("category_id") or "-")
+    samples = normalised.get("weight_samples")
+    if samples:
+        where = (f"قدّرناه {{kg}} كجم من متوسط {samples} منتجاً موزوناً في نفس "
+                 f"التصنيف {category}")
+    else:
+        where = f"افترضناه {{kg}} كجم للتصنيف {category}"
     for result in results:
         if result.audit.reason_code == "heavy_and_unmatched":
             result.audit.reason_code = "assumed_heavy_and_unmatched"
             result.audit.reason_ar = (
-                f"الوزن غير متوفر في هذه القناة، وافترضناه "
-                f"{result.variant.weight_kg} كجم للتصنيف {category}. "
-                f"بهذا الافتراض يُعد المنتج ثقيلاً، ولم يُعثر له على مطابقة، "
-                f"فلم يُنشر. حدِّد وزن هذا التصنيف لتغيير النتيجة")
+                f"المورّد لم يذكر وزن هذا المنتج، و"
+                f"{where.format(kg=result.variant.weight_kg)}. "
+                f"بهذا التقدير يُعد المنتج ثقيلاً، ولم يُعثر له على مطابقة، "
+                f"فلم يُنشر")
 
 
 def _one_response(responses) -> dict:
@@ -420,8 +459,12 @@ class Pipeline:
                  kdx=None, translate: bool = True, dry_run: bool = True,
                  points_per_offer: int = 1, enricher=None, term_translator=None,
                  categories=None, cache=None, meter=None, photo_checker=None,
-                 sku_client=None):
+                 sku_client=None, weights=None):
         self.source = source
+        # The weights the pool has already declared, per category. None means
+        # "do not guess a weight from the catalogue", which is what most of the
+        # unit checks want; build() loads the real one.
+        self.weights = weights
         # The client product.skuinfo.get is called through, or None to publish
         # the way the shop does today - one option per product. It is a
         # separate handle rather than `source` because the sizes do not come
@@ -535,7 +578,7 @@ class Pipeline:
         # shipping rule calls this light or heavy, and that decision is taken a
         # few lines below. Restating it afterwards would leave the audit and the
         # payload disagreeing about the same box.
-        normalised = _weigh_by_category(normalised, self.categories)
+        normalised = _weigh_by_category(normalised, self.categories, self.weights)
 
         product = to_rules_product(normalised)
 
@@ -902,6 +945,7 @@ def build(*, dry_run: bool = True, translate: bool | None = None, cny_to_sar=Non
         audit_log=audit_module.AuditLog(),
         kdx=kdx,
         photo_checker=photos.PhotoChecker() if photos.ENABLED else None,
+        weights=weights_module.WeightTable.load(),
         translate=translate,
         dry_run=dry_run,
     )

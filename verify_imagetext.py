@@ -135,6 +135,33 @@ def main() -> int:
     finally:
         imagetext.text_percent = original
 
+    print("\nreading the gallery concurrently answers exactly what reading it "
+          "one at a time did")
+    # The whole point of the change is speed, so the thing to prove is that
+    # nothing else moved: same scores, against the same urls, in the same order,
+    # with the repeats still in place.
+    urls = [f"u{index % 7}" for index in range(20)]
+    original = imagetext.text_percent
+    imagetext.text_percent = lambda data: float(len(data))
+    keep_workers = imagetext.OCR_WORKERS
+    try:
+        imagetext.OCR_WORKERS = 1
+        one_at_a_time = imagetext.score_gallery(
+            urls, FakeChecker({url: b"." * (int(url[1:]) + 1) for url in set(urls)}))
+        imagetext.OCR_WORKERS = 4
+        concurrent = imagetext.score_gallery(
+            urls, FakeChecker({url: b"." * (int(url[1:]) + 1) for url in set(urls)}))
+        check("identical, url for url and score for score",
+              concurrent, one_at_a_time)
+        check("CONTROL and the fixture really did score more than one value, "
+              "or this would pass for free",
+              len({score for _u, score in one_at_a_time}) > 1, True)
+        check("CONTROL a gallery with repeats really has them",
+              len(concurrent) > len({url for url, _s in concurrent}), True)
+    finally:
+        imagetext.text_percent = original
+        imagetext.OCR_WORKERS = keep_workers
+
     print("\nreading real photographs")
     if not imagetext.available():
         note(f"tesseract with {imagetext.LANGUAGE} is not installed here, so "

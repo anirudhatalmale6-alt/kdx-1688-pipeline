@@ -82,6 +82,7 @@ import os
 import re
 
 import source as source_module
+import weights as weights_module
 from aop_client import ApiRoute, AopError
 
 LIST_ROUTE = ApiRoute(namespace="com.alibaba.fenxiao", api_name="jxhy.product.getPageList")
@@ -178,8 +179,18 @@ class SelectedPool:
     """
 
     def __init__(self, client, *, page_size: int = PAGE_SIZE, batch: int = BATCH_SIZE,
-                 include_description_images: bool | None = None):
+                 include_description_images: bool | None = None,
+                 weight_table=None, categories=None):
         self.client = client
+        # Only used to walk a leaf's ancestry when the leaf itself has too few
+        # declared weights to have an opinion. Optional: without it the table
+        # answers on the leaf alone, which is where the data is filed anyway.
+        self.categories = categories
+        # The learned weights. Loaded once per pool rather than per product:
+        # a batch of forty would otherwise read the file forty times and, worse,
+        # each read would throw away what the previous product taught it.
+        self.weights = (weights_module.WeightTable.load() if weight_table is None
+                        else weight_table)
         self.page_size = page_size
         self.batch = batch
         if include_description_images is None:
@@ -402,27 +413,57 @@ class SelectedPool:
 
         normalised["source_channel"] = "selected_pool"
 
-        # The weight, and the trap underneath it. Only 8 of 30 sampled offers
-        # declare one; source._weight_of answers 2.5 kg when none is present,
-        # which sits ABOVE the client's 2 kg line, and by his own rule a heavy
-        # product with no price match is never published. Left alone, this
-        # channel would have thrown away roughly two products in three, with
-        # every audit line reading as though the box had been weighed.
+        # The weight, and the trap underneath it. source._weight_of answers
+        # 2.5 kg when none is present, which sits ABOVE the client's 2 kg line,
+        # and by his own rule a heavy product with no price match is never
+        # published. Left alone, this channel would have thrown away every
+        # offer that declares nothing, with each audit line reading as though
+        # the box had been weighed.
         #
-        # So a declared weight is used as declared, and a missing one falls to
-        # the same light-weight policy the image-search channel already runs
-        # under - his decision of 30 August, one place, one number - and the
-        # flag travels so the audit can tell the two apart.
+        # Three answers, in this order, and the audit can tell them apart:
+        #
+        #   1. the supplier's own figure. 153 of 240 offers measured on
+        #      3 September across twelve departments - 64%, not the 8 of 30 an
+        #      earlier all-clothing sample suggested. It is also what teaches
+        #      the table below, so every batch makes the next one better.
+        #   2. the leaf category, but only where its own declared weights all
+        #      sit on one side of the 2 kg line. This is the client's objection
+        #      of 3 September - "the subcategories hold big products and small
+        #      ones" - turned into a test the category has to pass.
+        #   3. his light-weight policy of 30 August, which is the safe side:
+        #      the customer is charged carriage rather than the shop paying it.
         shipping = product_info.get("shippingInfo") or {}
-        declared = shipping.get("offerSuttleWeight") or shipping.get("unitWeight")
-        if declared is None:
-            weight, _assumed = source_module.weight_for_category(
-                normalised.get("category_id", ""))
-            normalised["weight_kg"] = weight
-            normalised["weight_assumed"] = True
-        else:
+        declared = weights_module.declared_weight(shipping)
+        category = normalised.get("category_id", "")
+        if declared is not None:
             normalised["weight_kg"] = float(declared)
             normalised["weight_assumed"] = False
+            self.weights.observe(category, declared)
+            return normalised
+
+        chain = []
+        if self.categories is not None:
+            try:
+                chain = self.categories.chain(category) or []
+            except Exception:                               # noqa: BLE001
+                # A category index that cannot answer must not cost the product
+                # its weight; the leaf alone is still a fair question.
+                chain = []
+        learned = self.weights.estimate(category, chain)
+        if learned is not None:
+            normalised["weight_kg"] = float(learned["kg"])
+            # Still assumed. A median of other offers in the same leaf is a
+            # well-founded policy, not a scale, and an audit that stopped
+            # saying so would let a product held back for being heavy read as
+            # though it had been weighed.
+            normalised["weight_assumed"] = True
+            normalised["weight_category_id"] = learned["category_id"]
+            normalised["weight_samples"] = learned["samples"]
+            return normalised
+
+        weight, _assumed = source_module.weight_for_category(category)
+        normalised["weight_kg"] = weight
+        normalised["weight_assumed"] = True
         return normalised
 
     def products(self, limit: int = 0, offer_ids: list | None = None):

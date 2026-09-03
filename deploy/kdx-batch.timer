@@ -4,12 +4,34 @@ Description=Run a KDX batch every thirty minutes, all day
 [Timer]
 # The client's words on 2 September: pulling open all day, in small batches, so
 # there is no burst of load on his server and no long idle gap either. He asked
-# that day for forty products every half hour, which is 1,920 a day against the
-# 300 points 1688 allows him - so the budget, not the timer, is what ends the
-# day, and the batches that arrive after the points are gone print "nothing to
-# do until midnight" and exit. Raising the rate here cannot raise the ceiling;
-# only his 1688 allowance can.
-OnCalendar=*:00/30
+# that day for forty products every half hour, and on the 3rd for more still.
+#
+# Forty in half an hour is not something this machine can do, and that is
+# measured rather than guessed. Twenty batches of five ran on 2 September in
+# 2.5 to 7.0 minutes, a mean of 4.4 - 53 seconds a product. Forty would take
+# about 35 minutes: past the next batch's start, and past the fifteen-minute
+# TimeoutStartSec on the service, so systemd would kill it part-published every
+# single time. Profiling one batch on 3 September said where the time goes, on a
+# box with two cores and 8 GB:
+#
+#     229 s for five products, of which
+#       72 s  tesseract, 68 photographs read one after another
+#       62 s  fourteen OpenAI requests, one after another
+#       26 s  the price comparison
+#       25 s  fetching the photographs (already concurrent)
+#
+# The two "one after another" lines are now concurrent (KDX_OCR_WORKERS,
+# KDX_LABEL_WORKERS), which is worth roughly a third. The rest is honest work
+# per product and does not compress.
+#
+# So the answer to "more products" is more often, not bigger: ten every twenty
+# minutes is about eight minutes of work in a twenty-minute window, which leaves
+# room for the slow ones and keeps the load flat, which is what he asked for.
+# That is 72 batches and up to 720 products a day, against 240 before.
+#
+# The day's ceiling is still KDX_DAILY_POINTS, and raising the rate here cannot
+# raise it.
+OnCalendar=*:00/20
 Persistent=false
 # Not on the exact minute, from the same IP, forty-eight times a day.
 RandomizedDelaySec=120

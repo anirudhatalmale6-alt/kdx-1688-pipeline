@@ -44,6 +44,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
 
 CJK = re.compile(r"[一-鿿]")
 
@@ -57,6 +58,14 @@ MAX_TEXT_PERCENT = float(os.environ.get("KDX_MAX_CJK_TEXT_PCT", "0"))
 
 LANGUAGE = os.environ.get("KDX_OCR_LANGUAGE", "chi_sim")
 TIMEOUT = int(os.environ.get("KDX_OCR_TIMEOUT", "30"))
+
+# How many photographs are read at once. Profiled 3 September on the live box:
+# a five-product batch spent 229 seconds, of which 72 were tesseract - 68
+# photographs, 1.06 s each, one after another. tesseract is a subprocess, so the
+# GIL is not in the way and the only real ceiling is the cores; that machine has
+# two, which is why the default is two and not eight. Set to 1 to read them one
+# at a time again.
+OCR_WORKERS = max(1, int(os.environ.get("KDX_OCR_WORKERS", str(min(2, os.cpu_count() or 1)))))
 
 
 def available() -> bool:
@@ -148,15 +157,26 @@ def score_gallery(urls, checker) -> list:
     photograph is downloaded once per night and not once per question. Only when
     that check did not keep them - its cache is bounded - is a copy fetched.
     """
-    scored, seen = [], {}
-    for url in urls or []:
-        if url not in seen:
-            data = checker.body(url) if checker is not None else b""
-            if not data:
-                data = _fetch(url)
-            seen[url] = text_percent(data)
-        scored.append((url, seen[url]))
-    return scored
+    distinct = list(dict.fromkeys(url for url in (urls or [])))
+    if not distinct:
+        return []
+
+    def read(url: str):
+        data = checker.body(url) if checker is not None else b""
+        if not data:
+            data = _fetch(url)
+        return text_percent(data)
+
+    # Concurrently, but the ORDER and the CONTENT of the answer are identical to
+    # reading them one at a time: each photograph is scored on its own bytes and
+    # nothing here compares one with another. A gallery of thirty was a wait of
+    # half a minute before this.
+    if OCR_WORKERS > 1 and len(distinct) > 1:
+        with ThreadPoolExecutor(max_workers=min(OCR_WORKERS, len(distinct))) as pool:
+            seen = dict(zip(distinct, pool.map(read, distinct)))
+    else:
+        seen = {url: read(url) for url in distinct}
+    return [(url, seen[url]) for url in urls or []]
 
 
 def cleanest(scores: dict) -> float | None:

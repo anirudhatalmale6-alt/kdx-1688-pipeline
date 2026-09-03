@@ -172,23 +172,37 @@ def _base_price(product: dict) -> Decimal | None:
     return Decimal(str(direct)) if direct is not None else None
 
 
-def _weight_of(product: dict) -> float:
+def declared_weight_of(product: dict):
+    """
+    The weight the supplier states for this offer, or None if it states none.
+
+    offerSuttleWeight is the pool detail API's spelling (their transliteration
+    of "nett"). Measured 3 September over 240 pool offers drawn across twelve
+    departments: `unitWeight` 153 times, `offerSuttleWeight` 18 (never alone),
+    plain `weight` not once. Reading only the obvious names would have thrown
+    every declared weight away and shipped an assumption over the top of real
+    data.
+
+    None and 2.5 are different answers and the caller has to be able to tell
+    them apart, which is why this is separate from _weight_of: a product whose
+    weight nobody stated must not reach the audit looking weighed.
+    """
+    import weights as weights_module
     shipping = _first(product, ("productShippingInfo", "shippingInfo", "logisticsInfo"), {}) or {}
-    # offerSuttleWeight is the pool detail API's spelling (their transliteration
-    # of "nett"): measured on 1 September, 8 of 30 pool offers declared one
-    # there and none used "weight". Reading only the three names below would
-    # have thrown every declared weight away and shipped the 1 kg assumption
-    # over the top of real data.
-    weight = _first(shipping, ("weight", "offerSuttleWeight", "unitWeight", "grossWeight"))
-    if weight is None:
-        weight = _first(product, ("weight", "unitWeight"))
-    try:
-        return float(weight)
-    except (TypeError, ValueError):
-        # Unknown weight must not silently become "light and fast-shipped".
-        # 0 is not a safe default here, so the offer is reported as heavy and
-        # the operator sees a free-shipping flag rather than a wrong charge.
-        return float(os.environ.get("KDX_DEFAULT_WEIGHT_KG", "2.5"))
+    # One definition of "credible", in weights.py, so this and the pool channel
+    # cannot drift into disagreeing about the same number.
+    return (weights_module.declared_weight(shipping)
+            or weights_module.declared_weight(product))
+
+
+def _weight_of(product: dict) -> float:
+    weight = declared_weight_of(product)
+    if weight is not None:
+        return weight
+    # Unknown weight must not silently become "light and fast-shipped".
+    # 0 is not a safe default here, so the offer is reported as heavy and
+    # the operator sees a free-shipping flag rather than a wrong charge.
+    return float(os.environ.get("KDX_DEFAULT_WEIGHT_KG", "2.5"))
 
 
 def _flat_attributes(product: dict) -> dict:
@@ -289,6 +303,11 @@ def normalise(payload: dict) -> dict:
         "description_zh": str(_first(product, ("description", "detail", "descUrl"), "") or ""),
         "category_id": str(_first(product, ("categoryID", "categoryId"), "") or ""),
         "weight_kg": _weight_of(product),
+        # Said out loud rather than left to default to False. Without it a
+        # product nobody weighed arrives at 2.5 kg looking measured, which is
+        # above the 2 kg line: it ships free and the audit reads as though the
+        # box had been on a scale.
+        "weight_assumed": declared_weight_of(product) is None,
         "images": gallery,
         "attributes": _flat_attributes(product),
         "variants": variants,

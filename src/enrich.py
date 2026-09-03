@@ -14,6 +14,7 @@ import os
 import re
 import unicodedata
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 
 API_URL = "https://api.openai.com/v1/chat/completions"
 MODEL = "gpt-4.1-mini"
@@ -21,6 +22,12 @@ MODEL = "gpt-4.1-mini"
 # Option labels per translation call. See _translate_labels for why this is not
 # "all of them".
 LABELS_PER_CALL = int(os.environ.get("KDX_LABELS_PER_CALL", "40"))
+
+# How many of those calls are in flight at once. Four rather than "all of them":
+# a product with 146 colour options would otherwise open four separate
+# conversations' worth of requests in one go, and the point is to stop waiting,
+# not to lean on the API. 1 restores the old one-after-another behaviour.
+LABEL_WORKERS = max(1, int(os.environ.get("KDX_LABEL_WORKERS", "4")))
 
 SYSTEM_PROMPT = """You clean and translate product listings taken from 1688 for a Saudi online store.
 
@@ -287,12 +294,28 @@ def _translate_labels(terms, prompt: str, api_key: str | None, timeout: int) -> 
         # asked for all 146 at once the model answered with far fewer than it
         # was given. Every label it omits keeps its Chinese, so a long list does
         # not fail loudly - it just publishes Chinese.
+        windows = [subset[start:start + LABELS_PER_CALL]
+                   for start in range(0, len(subset), LABELS_PER_CALL)]
+
+        def one(window: list) -> dict:
+            return _chat(prompt, json.dumps(window, ensure_ascii=False),
+                         api_key, timeout).get("terms") or {}
+
+        # The windows do not depend on each other - each asks about its own
+        # labels and the keys coming back are disjoint - so they go together.
+        # Profiled 3 September: a five-product batch spent 62 of its 229 seconds
+        # waiting on fourteen OpenAI requests, one after another, on a machine
+        # with nothing to do but wait. Concurrency here costs no CPU.
+        if len(windows) > 1 and LABEL_WORKERS > 1:
+            with ThreadPoolExecutor(
+                    max_workers=min(LABEL_WORKERS, len(windows))) as pool:
+                results = list(pool.map(one, windows))
+        else:
+            results = [one(window) for window in windows]
+
         answers: dict = {}
-        for start in range(0, len(subset), LABELS_PER_CALL):
-            window = subset[start:start + LABELS_PER_CALL]
-            result = _chat(prompt, json.dumps(window, ensure_ascii=False),
-                           api_key, timeout)
-            answers.update(result.get("terms") or {})
+        for result in results:
+            answers.update(result)
         return answers
 
     translated = ask(wanted)

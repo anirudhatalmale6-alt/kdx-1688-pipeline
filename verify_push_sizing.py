@@ -287,6 +287,48 @@ try:
     check("while the ones that did translate are still translated",
           out["均码"]["en"] == "One size", str(out))
 
+    # Those batches now go out together rather than one after another - profiled
+    # 3 September, a five-product batch spent 62 of 229 seconds waiting on
+    # fourteen of these in a row. What must not change is the answer.
+    keep_workers = enrich.LABEL_WORKERS
+    try:
+        many = [f"色{n}" for n in range(95)] + list(CHINESE)
+
+        def answers_everything():
+            """Every label comes back translated, so there is no retry pass and
+            the batches seen ARE the first pass. `responder` leaves 色N in
+            Chinese, which triggers the retry and would make the count below
+            impossible to reason about."""
+            seen: list = []
+
+            def chat(system, user, api_key, timeout):
+                import json as _json
+                asked = _json.loads(user)
+                seen.append(asked)
+                return {"terms": {term: {"en": f"colour {index}",
+                                         "ar": f"لون {index}"}
+                                  for index, term in enumerate(asked)}}
+            return chat, seen
+
+        enrich.LABEL_WORKERS = 1
+        enrich._chat, serial_batches = answers_everything()
+        serial = enrich._translate_labels(many, "prompt", "key", 30)
+        enrich.LABEL_WORKERS = 4
+        enrich._chat, parallel_batches = answers_everything()
+        parallel = enrich._translate_labels(many, "prompt", "key", 30)
+        check("asking the batches at the same time returns exactly what asking "
+              "them in turn returned", serial == parallel,
+              f"{len(serial)} vs {len(parallel)}")
+        check("CONTROL and there really was more than one batch, or this would "
+              "have proved nothing",
+              len(serial_batches) > 1 and len(parallel_batches) > 1,
+              f"{len(serial_batches)} / {len(parallel_batches)}")
+        check("CONTROL every label is still asked about exactly once",
+              sorted(t for b in parallel_batches for t in b) == sorted(many),
+              str(len(parallel_batches)))
+    finally:
+        enrich.LABEL_WORKERS = keep_workers
+
     calls = {"n": 0}
 
     def exploding(system, user, api_key, timeout):

@@ -40,6 +40,7 @@ import catalog  # noqa: E402
 import discover  # noqa: E402
 import paths  # noqa: E402
 import pipeline as pipeline_module  # noqa: E402
+import mapping  # noqa: E402
 import risk  # noqa: E402
 import rules  # noqa: E402
 import selected  # noqa: E402
@@ -70,7 +71,7 @@ def pool_keywords(runner, day: str, count: int) -> list:
 
 
 def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger",
-                     keywords: list | None = None) -> tuple:
+                     keywords: list | None = None, shipping: str = "any") -> tuple:
     """
     A night's products from the 精选货源 pool instead of the image search.
 
@@ -83,11 +84,24 @@ def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger",
     default window, which is 2,000 offers and repeats itself once the shop has
     them. That is why keywords are the normal path: the window is a shelf, the
     keywords are the catalogue.
+
+    `shipping` is the client's request of 2 September - "please pull two
+    batches, fast shipping and free shipping". It reads the weight the pool has
+    just worked out and keeps only the side asked for. It cannot be done any
+    earlier: the pool listing carries no weight at all, so the detail record has
+    to arrive before the product can be sorted.
     """
-    pool = selected.SelectedPool(client)
+    pool = selected.SelectedPool(client, categories=runner.categories)
     # More ids than the quota, because the two filters below reject some and a
     # night that harvested exactly `quota` ids would publish fewer than asked.
     want = max(quota * 4, 50)
+    if shipping == "free":
+        # Measured 3 September over 848 credible declared weights: 61 of them,
+        # 7.2%, sit over the 2 kg line. A free-shipping batch therefore has to
+        # look at roughly fourteen offers for every one it keeps, and asking for
+        # quota*4 would quietly return two products and look like the pool had
+        # run dry. This is the multiplier that measurement implies, not a guess.
+        want = max(quota * 20, 200)
     if keywords:
         ids = pool.offer_ids_for(keywords, limit=want, known=ledger.knows_offer)
         contributing = [f"{word}:{n}" for word, n in pool.keyword_counts.items() if n]
@@ -103,7 +117,7 @@ def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger",
                      "return is already published")
         return [], notes
 
-    harvested, dropped = [], 0
+    harvested, dropped, wrong_side = [], 0, 0
     for product in pool.products(offer_ids=ids):
         if len(harvested) >= quota:
             break
@@ -118,12 +132,48 @@ def harvest_selected(runner, client, quota: int, ledger: "discover.Ledger",
                 continue
         except Exception:                                 # noqa: BLE001
             pass
+        if shipping in ("fast", "free"):
+            # The same function the payload is built with, so the batch cannot
+            # be sorted by one rule and published under another.
+            fast = mapping.needs_shipment(product.get("weight_kg", 0))
+            if (shipping == "fast") != bool(fast):
+                wrong_side += 1
+                # Deliberately NOT added to the ledger. A heavy product passed
+                # over by the fast batch has not been published, and marking it
+                # known here would hide it from the free batch that is coming
+                # for exactly this product.
+                continue
         harvested.append(product)
         ledger.add_offer(product["offer_id"])
     ledger.save()
     notes.append(f"{dropped} dropped on category or banned term before any spend")
+    if shipping in ("fast", "free"):
+        notes.append(f"{wrong_side} passed over as {'heavy' if shipping == 'fast' else 'light'}"
+                     f" - this batch is {shipping} shipping only, and they stay "
+                     f"available to the other batch")
     if pool.skipped_outside_pool:
         notes.append(f"{len(pool.skipped_outside_pool)} refused as outside the pool")
+
+    # Saved here rather than inside the walk: `products` is a generator and the
+    # loop above breaks out of it as soon as the quota is full, so a save at the
+    # end of the generator would run on exactly the batches that learned least.
+    #
+    # Every offer the walk LOOKED at teaches the table, including the ones
+    # dropped on a banned category and the ones past the quota - their declared
+    # weight is just as true, and throwing it away would mean learning only from
+    # what happened to be published.
+    pool.weights.save()
+    weighed = sum(1 for product in harvested if not product.get("weight_assumed"))
+    learned = sum(1 for product in harvested if product.get("weight_samples"))
+    notes.append(f"weight: {weighed} of {len(harvested)} declared by the supplier, "
+                 f"{learned} from the category's own measurements, "
+                 f"{len(harvested) - weighed - learned} on the light default")
+    table = pool.weights.summary()
+    notes.append(f"weight table now holds {table['samples']} measurements over "
+                 f"{table['categories']} categories; {table['with_an_opinion']} of "
+                 f"them can answer ({table['of_those_heavy']} heavy), "
+                 f"{table['straddling_the_line']} straddle the 2 kg line and are "
+                 f"never asked")
     return harvested, notes
 
 
@@ -177,6 +227,12 @@ def main() -> int:
                         help="where products come from: the LinkPlus image search "
                              "(one photograph per product, all of 1688) or the "
                              "精选货源 pool (four to five photographs, 1,950 offers)")
+    parser.add_argument("--shipping", choices=("any", "fast", "free"), default="any",
+                        help="publish only products that land on one side of the "
+                             "2 kg line: 'fast' is the light ones the customer "
+                             "pays carriage on, 'free' the heavy ones that ship "
+                             "free. The client's two batches. Only 7%% of the "
+                             "pool is heavy, so a free batch walks much further")
     args = parser.parse_args()
 
     started = time.time()
@@ -232,7 +288,8 @@ def main() -> int:
                       "data/departments.json between them gave none, so this run "
                       "only sees the default 2,000-offer window. Pass --keywords "
                       "to search on purpose.")
-            harvested, notes = harvest_selected(runner, client, quota, book, words)
+            harvested, notes = harvest_selected(runner, client, quota, book, words,
+                                                shipping=args.shipping)
             ledger = book.summary()
             print(f"selected pool: {len(harvested)} products worth pricing")
             for note in notes:
@@ -338,6 +395,7 @@ def main() -> int:
             "seconds": round(elapsed, 1),
             "quota": quota,
             "channel": args.channel,
+            "shipping": args.shipping,
             "keywords": words,
             "discovered": len(harvested),
             "from_surplus": walker.from_surplus if walker else 0,

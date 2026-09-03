@@ -367,6 +367,97 @@ the category walk has already paid for it.
 A weight the source actually measured is never overwritten by a table entry, and
 a category average stays marked as assumed — it is a policy, not a scale.
 
+### He refused to fill it, and he was right
+
+On 3 September, having been sent the 39 departments to price up:
+
+> "I cannot give you a weight per category, because every main category has
+> subcategories, and the subcategories hold big products and small ones — some
+> need fast shipping and some need free shipping. […] Let the comparison be done
+> by the system, not by hand. We will pass more than 500,000 subcategories; they
+> cannot be filed by hand."
+
+So the table stops being the plan. `KDX_CATEGORY_WEIGHTS` still wins where he
+types a number — the only reason to type one is to state a real one — but
+nothing waits for it. `src/weights.py` works the number out instead.
+
+**Where the number comes from.** The first thing to check was whether the data
+carries one at all, and the answer already in this file — "8 of 30" — came from a
+30-offer sample of light clothing. Re-measured 3 September over two sweeps of the
+pool, 1,693 distinct offers drawn across 60 departments **on purpose** so the
+sample was not all one shelf:
+
+```
+declared a weight in shippingInfo         851 / 1,693   (50%)
+    under unitWeight                      most of them
+    under offerSuttleWeight               only ever beside unitWeight
+    under plain `weight`                  never once
+credible (see the ceiling below)          848
+    of those, over the 2 kg line           61   (7.2%)
+```
+
+That second line corrects something else this file used to say. Products over
+2 kg **do** exist — one leaf holds fifteen 15 kg factory inspection robots. The
+shop has never had a free-shipping product because the sample that was looked at
+had none in it, not because the catalogue has none. It also sets the expectation
+for his free-shipping batch: about **7% of the pool**, not half of it.
+
+**Learning the rest.** For the offers that declare nothing, the weight is the
+median of what the *same leaf category* declared — and the category is only asked
+when it has at least three measurements **and all of them sit on the same side of
+the 2 kg line**. That second condition is his objection turned into a test: a
+leaf that really does hold a screw and a toolbox straddles the line, fails it,
+and is never asked.
+
+Leave-one-out over the corpus — every declared weight predicted from the other
+offers in its own category, and the light/heavy verdict compared with the truth:
+
+```
+ungated (any category with 3+ samples)   598 right   14 wrong    97.7%
+gated on the category agreeing with itself
+                                         544 right    5 wrong    99.1%
+categories that straddle the line          8 of 170   - never asked
+```
+
+And the five it still gets wrong all fail the same way: **a heavy product called
+light**, so the customer is charged carriage on something that should have
+shipped free. Not once does it put a heavy product on free shipping at the shop's
+expense. That is the direction to fail in, and it is measured, not hoped for.
+
+End to end over those 1,693 offers:
+
+```
+848  carry the supplier's own weight
+463  are answered by their category
+382  fall to the light default                       (23%)
+```
+
+**77% of the catalogue gets a weight from real data and nobody typed a number.**
+The remaining 23% keep his light-weight policy of 30 August, which is the safe
+side: the customer is charged carriage rather than the shop paying it.
+
+`data/category_weights.json` ships that corpus so a fresh machine starts with it
+instead of learning from nothing; every batch adds what it sees, including the
+offers it drops on a banned category, because their declared weight is just as
+true as a published one.
+
+### A declared weight can be a typo, and it fails expensively
+
+Three of the 851 are not weights. Two lots of plastic granulate at 1,000 kg —
+a raw material priced by the tonne — and a brass horn at **10,000 kg**, which is
+a supplier who typed grams. Over 2 kg the product ships *free* and the shop pays
+the carriage, so trusting those costs real money.
+
+Anything above `KDX_MAX_CREDIBLE_WEIGHT_KG` (100 kg, which keeps a believable
+100 kg carbon-steel civil-defence valve) is treated as though nothing had been
+declared: the category answers instead, and nothing is silently rewritten to a
+number the supplier never gave. It gets no vote on its category either, or one
+typo would turn a whole leaf into a free-shipping department.
+
+There is no floor beyond "greater than zero". 68 offers declare under 10 g, and
+some of them are true — a postage stamp really is a gram — while the ones that
+are wrong fail in the safe direction.
+
 ## Photographs at the size his shop will show them
 
 The CDN resizes on request: `<url>_800x800.jpg`. Measured over 25 first

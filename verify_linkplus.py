@@ -264,11 +264,26 @@ results = [Result("heavy_and_unmatched", "2.5")]
 pipeline._restate_assumed_weight(results, {"weight_assumed": True, "category_id": "1031912"})
 check("the code says the weight was assumed",
       results[0].audit.reason_code == "assumed_heavy_and_unmatched")
-check("the Arabic says the weight is unavailable, not that it was weighed",
-      "غير متوفر" in results[0].audit.reason_ar and "افترض" in results[0].audit.reason_ar,
+check("the Arabic says the supplier never stated a weight, not that we weighed it",
+      "لم يذكر" in results[0].audit.reason_ar and "افترض" in results[0].audit.reason_ar,
       results[0].audit.reason_ar)
-check("it names the category so the client knows which row to fill in",
+check("it names the category the number came from",
       "1031912" in results[0].audit.reason_ar)
+
+# Two different assumptions reach this sentence and they must not read alike:
+# one is a median of offers measured in the same category, the other is a
+# blanket default. The client acts differently on each.
+learned = [Result("heavy_and_unmatched", "8.5")]
+pipeline._restate_assumed_weight(learned, {"weight_assumed": True,
+                                           "category_id": "1031912",
+                                           "weight_category_id": "1031912",
+                                           "weight_samples": 7})
+check("a weight taken from the category's own measurements says so, and says "
+      "how many stood behind it",
+      "7" in learned[0].audit.reason_ar and "متوسط" in learned[0].audit.reason_ar,
+      learned[0].audit.reason_ar)
+check("CONTROL the blanket default does NOT claim any measurements",
+      "متوسط" not in results[0].audit.reason_ar)
 
 control = [Result("heavy_and_unmatched", "12.4")]
 pipeline._restate_assumed_weight(control, {"weight_assumed": False, "category_id": "x"})
