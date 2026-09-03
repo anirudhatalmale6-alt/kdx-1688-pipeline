@@ -274,8 +274,8 @@ def main() -> int:
         relaxed = compare.prices_from_shopping(identified, live_shopping, OUR_TITLE, "sku-1")
         check("lowering only the wording bar makes real matches appear",
               len(relaxed) == 3, str(len(relaxed)))
-        check("every one of them is on a platform the picture had identified",
-              all(hit.platform in ("Amazon", "Noon") for hit in relaxed),
+        check("every one of them is on one of the five platforms",
+              all(hit.platform in compare.COMPARISON_PLATFORMS for hit in relaxed),
               str([hit.platform for hit in relaxed]))
         check("the cheapest is Amazon at 553.01 SAR",
               min(hit.price_sar for hit in relaxed) == Decimal("553.01"),
@@ -284,12 +284,60 @@ def main() -> int:
               all(hit.match_score >= rules.MATCH_THRESHOLD for hit in relaxed),
               str([str(hit.match_score) for hit in relaxed]))
 
-        # Controls. Each removes one condition and must kill the match.
+        # The client's change of 3 September: the cheapest of the five wins,
+        # whichever of them the picture happened to land on. Identify ONLY Noon
+        # and the Amazon rows must still price the product.
         only_noon = [dict(identified[1])]
         noon_hits = compare.prices_from_shopping(only_noon, live_shopping, OUR_TITLE, "s")
-        check("CONTROL: a platform the picture did NOT identify is never priced",
-              all(hit.platform == "Noon" for hit in noon_hits),
-              str([hit.platform for hit in noon_hits]))
+        check("a platform the picture did not identify may now set the price",
+              {hit.platform for hit in noon_hits} == {"Amazon"},
+              str(sorted({hit.platform for hit in noon_hits})))
+        check("an unbacked row still inherits a score the engine will accept",
+              all(hit.match_score >= rules.MATCH_THRESHOLD for hit in noon_hits),
+              str([str(hit.match_score) for hit in noon_hits]))
+
+        # CONTROL. The old rule is one variable away and must come back EXACTLY,
+        # or the section above is measuring something other than this change.
+        #
+        # It comes back as NOTHING, and that is the finding rather than a broken
+        # control: with only Noon identified, the recorded response holds two
+        # Noon rows and neither clears the wording bar, so under the rule in
+        # force until 3 September this product got no price from the second
+        # search at all. Every price it could have had was on Amazon.
+        os.environ["KDX_CROSS_PLATFORM_PRICING"] = "off"
+        os.environ["KDX_TEXT_MATCH_MIN"] = "60"
+        importlib.reload(compare)
+        strict_again = compare.prices_from_shopping(only_noon, live_shopping, OUR_TITLE, "s")
+        check("CONTROL with cross-platform off, the second search prices nothing",
+              strict_again == [], str(sorted({h.platform for h in strict_again})))
+        del os.environ["KDX_CROSS_PLATFORM_PRICING"]
+        del os.environ["KDX_TEXT_MATCH_MIN"]
+        importlib.reload(compare)
+        check("CONTROL and removing it brings Amazon back",
+              "Amazon" in {hit.platform for hit in
+                           compare.prices_from_shopping(only_noon, live_shopping,
+                                                        OUR_TITLE, "s")})
+
+        # The words are the only evidence left on an unbacked row, so the bar
+        # for those is its own lever, defaulting to no change. Raising it must
+        # bite the unbacked rows and nothing else.
+        os.environ["KDX_UNBACKED_TEXT_MIN"] = "95"
+        importlib.reload(compare)
+        gated = compare.prices_from_shopping(only_noon, live_shopping, OUR_TITLE, "s")
+        check("CONTROL raising the unbacked bar drops the unbacked rows and "
+              "leaves the backed one standing",
+              {hit.platform for hit in gated} == {"Noon"},
+              str(sorted({hit.platform for hit in gated})))
+        check("CONTROL and that survivor is the 329.00 Noon urn, so the lever "
+              "is selective rather than an off switch",
+              [hit.price_sar for hit in gated] == [Decimal("329.00")],
+              str([str(hit.price_sar) for hit in gated]))
+        del os.environ["KDX_UNBACKED_TEXT_MIN"]
+        importlib.reload(compare)
+        check("CONTROL the unbacked bar defaults to the same number as the other",
+              compare.UNBACKED_TEXT_THRESHOLD == compare.TEXT_THRESHOLD)
+        compare.TEXT_THRESHOLD = Decimal("60")
+        compare.UNBACKED_TEXT_THRESHOLD = Decimal("60")
 
         foreign = [dict(row, price="$99.00", extracted_price=99.0) for row in on_platforms]
         check("CONTROL: a rival price in another currency is dropped, not converted",
@@ -300,6 +348,10 @@ def main() -> int:
         check("CONTROL: a title that disagrees prices nothing even on the right platform",
               wrong_words == [], str(len(wrong_words)))
     finally:
+        # Both, because the reload controls above rebind the module's own
+        # values and leaving the unbacked bar at 60 would silently change every
+        # section after this one.
+        importlib.reload(compare)
         compare.TEXT_THRESHOLD = original
 
     print("12. the second search only happens when it can change something")
@@ -353,22 +405,27 @@ def main() -> int:
                                             shopping=shopping)
         check("the thorough setting looks up the platform that quoted no SAR price",
               shopping.calls == 1, f"{shopping.calls} calls")
-        # And on this product it buys nothing better: the picture identified
-        # Noon (689), AliExpress (520) and Temu (quoting USD, dropped), and the
-        # recorded shopping response contains no Temu row at all - 5 Amazon
-        # rows, 2 Noon, 33 elsewhere. Amazon quotes 553.01 there and we still do
-        # not take it, because the picture never identified Amazon for this
-        # product and a shopping row on its own is not allowed to establish
-        # identity. That guard is the point, not a shortfall - and here it costs
-        # nothing, because the picture already found something cheaper.
-        check("but on this product the extra search changes nothing",
-              min(hit.price_sar for hit in thorough["sku-boiler"]) == Decimal("520.00"),
+        # And since 3 September it buys something real. The picture identified
+        # Noon (689), AliExpress (520) and Temu (quoting USD, dropped). The
+        # recorded shopping response holds 5 Amazon rows and 2 Noon ones, and
+        # under the old rule Amazon was untouchable because the picture had not
+        # named it - so 520 stood.
+        #
+        # With the client's change the cheapest usable row is a Noon listing at
+        # 329.00: "REFURA Water Urn Boiler, 30 Litre Capacity". That is the same
+        # product, at 63% of the price the old rule would have compared against,
+        # and quoting a rival that sits 191 SAR above the real Saudi shelf price
+        # is how a shop lists things nobody buys.
+        cheapest = min(hit.price_sar for hit in thorough["sku-boiler"])
+        check("and the extra search now finds a genuinely cheaper Saudi rival",
+              cheapest == Decimal("329.00"),
               str(sorted(hit.price_sar for hit in thorough["sku-boiler"])))
-        check("CONTROL: the Amazon row was there, was not used, and would have "
-              "been worse anyway",
-              any(compare.sar_price(row.get("price")) == Decimal("553.01")
-                  for row in live_shopping)
-              and Decimal("553.01") > Decimal("520.00"))
+        check("CONTROL it is the 30 litre urn, not the cheaper 25 litre kettle "
+              "sitting seven riyals below it",
+              any(compare.sar_price(row.get("price")) == Decimal("322.09")
+                  and compare.text_score(OUR_TITLE, str(row.get("title"))) < Decimal("60")
+                  for row in live_shopping),
+              "the KOOLEN 25 L kettle must be vetoed on capacity, not bought on price")
     finally:
         compare.SHOPPING_WHEN = original_when
 

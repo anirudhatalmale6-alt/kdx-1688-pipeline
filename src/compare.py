@@ -329,22 +329,63 @@ def hits_from_results(results: list, our_title: str, variant_sku: str = "") -> l
             if match["price"] is not None]
 
 
+# Must a shopping row sit on the very platform the PICTURE identified?
+#
+# It had to until 3 September, and the client removed that condition himself:
+#
+#   "عند المقارنة في التطبيقات 5 سيقوم النظام بأعتماد السعر الافضل بينهم"
+#   "بعد المقارنة النظام يستقبل ويستخدم السعر الارخص بين 5 تطبيقات"
+#
+# So a Noon row may now price a product the picture only found on Amazon. The
+# five platforms are still the whole world - platform_of returns None for
+# anything else and those rows are dropped exactly as before.
+#
+# What this costs is worth writing down, because it is not only upside. Replayed
+# over the shopping responses already bought for the 40-product measurement:
+# accepted rows 9 -> 17, and products ending with a rival price 1 -> 3. Of the 8
+# newly accepted rows, 7 are plainly the same product. The eighth is the one to
+# watch: for a telescopic flag pole the cheapest row moves 28.00 -> 19.87 SAR,
+# and because best_match takes the CHEAPEST, the weakest-matching row is the one
+# that sets the price. Its words score is 50.00, sitting exactly on the bar.
+#
+# The bar is not raised here. Dropping that row would need evidence it is the
+# wrong product, and it is not obviously wrong - a Tazweeq telescopic handheld
+# flagpole is a telescopic handheld flagpole, and a cheap local brand undercutting
+# an import is what a rival price IS. Inventing a threshold to exclude it would
+# repeat the mistake this module was just repaired for. The lever is here instead,
+# defaulting to no change, because a picture-backed row carries two independent
+# signals and an unbacked one carries only the words:
+UNBACKED_TEXT_THRESHOLD = Decimal(
+    os.environ.get("KDX_UNBACKED_TEXT_MIN", str(DEFAULT_TEXT_THRESHOLD)))
+
+# KDX_CROSS_PLATFORM_PRICING=off restores the pre-3-September rule exactly - a
+# price may only come from the platform the picture identified. Kept as one
+# switch so the change can be undone without a deploy, and so a test can prove
+# the old behaviour comes back unchanged rather than approximately.
+CROSS_PLATFORM_PRICING = (
+    os.environ.get("KDX_CROSS_PLATFORM_PRICING", "on").strip().lower() != "off")
+
+
 def prices_from_shopping(matches: list, rows: list, our_title: str,
                          variant_sku: str = "") -> list:
     """
     Put a price on matches the image search identified but did not price.
 
-    A shopping row is only allowed to price a match when it is on a platform
-    the PICTURE already matched and its own title agrees with ours. Both
-    conditions, not either: without the first, a shopping row for some other
-    shop would price our product; without the second, the cheapest unrelated
-    listing on the right platform would.
+    A shopping row must be on one of the five platforms and its own title must
+    agree with ours. It no longer has to be on the SAME platform the picture
+    matched - see the note above, that was the client's own instruction - but
+    when it is not, it is held to UNBACKED_TEXT_THRESHOLD, since there the words
+    are the only evidence that this is our product at all.
     """
     unpriced = [match for match in matches if match["price"] is None]
     if not unpriced:
         return []
     identified = {match["platform"] for match in unpriced}
     by_platform = {match["platform"]: match for match in unpriced}
+    # Identity was established by the picture, on whichever platform it landed.
+    # A row priced off a different platform inherits that same evidence, so it
+    # inherits the score rather than inventing one of its own.
+    best_seen = max(match["score"] for match in unpriced)
 
     hits = []
     for row in rows or []:
@@ -352,7 +393,9 @@ def prices_from_shopping(matches: list, rows: list, our_title: str,
             continue
         link = str(row.get("product_link") or row.get("link") or "")
         platform = platform_of(link, str(row.get("source") or ""))
-        if platform not in identified:
+        if platform is None:
+            continue
+        if not CROSS_PLATFORM_PRICING and platform not in identified:
             continue
         # Same guard as identity_matches: a search page's price is whichever
         # listing happens to sit first on it today.
@@ -365,12 +408,13 @@ def prices_from_shopping(matches: list, rows: list, our_title: str,
         price = sar_price(row.get("price"))
         if price is None:
             continue
+        backed = platform in identified
         words = text_score(our_title, str(row.get("title") or ""))
-        if words < TEXT_THRESHOLD:
+        if words < (TEXT_THRESHOLD if backed else UNBACKED_TEXT_THRESHOLD):
             continue
         # The score stays the picture's, which is what established identity.
         # The words were a gate, not a contribution.
-        score = by_platform[platform]["score"]
+        score = by_platform[platform]["score"] if backed else best_seen
         hits.append(CompetitorHit(platform=platform, price_sar=price, match_score=score,
                                   url=str(row.get("product_link") or row.get("link") or ""),
                                   matched_variant=variant_sku))

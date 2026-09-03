@@ -295,6 +295,31 @@ class Engine:
         self.existing_skus = existing_skus or set()
 
     def landed_cost_sar(self, variant: Variant) -> Decimal:
+        """
+        The 1688 price in riyals. NOT a landed cost, despite the name.
+
+        There is no freight term in here, because nobody has ever given one:
+        no rate card, no per-kilo figure, no volumetric divisor. Every "cost"
+        in this file is therefore the goods alone, and every guard built on it
+        - the loss guard above, the margin bands - protects the goods price and
+        nothing else.
+
+        That is exactly the hole the client described on 3 September, in his
+        reason for wanting the comparison at all:
+
+          "المنتجات الكبيرة هي تحسب بالابعاد وبعض الاحيان يكون سعر الشحن اعلى من
+           سعر المنتج"
+
+        A bulky, light product - a lampshade, a plastic storage bin - is charged
+        on volume, and its freight can exceed everything counted here. The
+        comparison is currently the only thing standing in for that, which is
+        why he will not publish a heavy product without it: a rival's shelf
+        price has the shipping already inside it.
+
+        Filling this in needs two numbers from him, not from me: what he pays
+        per real kilo and per volumetric kilo. Guessing them would put an
+        invented figure underneath every price in the shop.
+        """
         return money(variant.price_cny * self.cny_to_sar)
 
     def evaluate(self, product: Product, hits_by_variant: dict) -> list:
@@ -346,13 +371,45 @@ class Engine:
         if match:
             price, discount = undercut_price(match.price_sar)
             # The client's loss guard: undercutting must never take us below cost.
-            if price <= cost:
+            #
+            # What happens THEN was his answer of 3 September, and it differs by
+            # shipping type:
+            #
+            #   "اذا تمت المقارنة في 5 التطبيقات وكلها تبيع المنتج بخسارة فيتطبق
+            #    هامش الربح الذي ارسلته لك - هذا معتمد في المنتجات الصغيرة التي
+            #    تحتوي على الشحن السريع"
+            #
+            # So a light product is not thrown away for being cheaper abroad; it
+            # falls through to the margin below, priced from our own cost. A
+            # heavy one still stops here, because heavy is where he says the
+            # danger is: shipping is charged on dimensions and can exceed the
+            # goods, so a rival sitting under our cost is the warning itself.
+            if price <= cost and variant.weight_kg > LIGHT_MAX_KG:
                 return self._reject(
                     product, variant, "would_sell_at_loss",
                     f"السعر بعد الخصم ({price}) أقل من التكلفة ({cost}) - لا يتم النشر",
                     cost=cost, match=match, requires_shipping=requires_shipping,
                     shipping_type=shipping_type,
                 )
+            if price <= cost:
+                price, markup = marked_up_price(cost)
+                if price < MIN_PRICE_SAR:
+                    return self._reject(
+                        product, variant, "below_min_price",
+                        f"السعر النهائي ({price} ريال) أقل من الحد الأدنى "
+                        f"({MIN_PRICE_SAR} ريال) - لا يتم النشر",
+                        cost=cost, match=match, requires_shipping=requires_shipping,
+                        shipping_type=shipping_type,
+                    )
+                basis = (f"كل المنصات تبيع بأقل من التكلفة - "
+                         f"التكلفة زائد هامش {int(markup * 100)}%")
+                # The rival is kept on the row even though it did not set the
+                # price: it is the evidence for why the margin was used, and
+                # without it this is indistinguishable from a product nobody
+                # sells. Its own code so the two can be counted apart.
+                return self._accept(product, variant, price, basis, cost, match,
+                                    requires_shipping, shipping_type,
+                                    reason_code="margin_rivals_below_cost")
             if price < MIN_PRICE_SAR:
                 return self._reject(
                     product, variant, "below_min_price",
@@ -389,7 +446,8 @@ class Engine:
     # -- record builders ----------------------------------------------------
 
     def _accept(self, product, variant, price, basis, cost, match,
-                requires_shipping, shipping_type) -> PricingResult:
+                requires_shipping, shipping_type,
+                reason_code: str = "") -> PricingResult:
         decision = Decision.UPDATE if variant.sku_id in self.existing_skus else Decision.PUBLISH
         reason_ar = ("تحديث منتج موجود - السعر والمخزون والصور فقط"
                      if decision is Decision.UPDATE else "مطابق للشروط - يتم النشر")
@@ -397,7 +455,7 @@ class Engine:
             offer_id=product.offer_id,
             sku_id=variant.sku_id,
             decision=decision.value,
-            reason_code="matched" if match else "priced_by_margin",
+            reason_code=reason_code or ("matched" if match else "priced_by_margin"),
             reason_ar=reason_ar,
             cost_sar=str(cost),
             matched_platform=match.platform if match else "",

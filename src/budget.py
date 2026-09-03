@@ -32,7 +32,22 @@ def budget_state_path() -> str:
 
 
 def daily_points() -> int:
-    return int(os.environ.get("KDX_DAILY_POINTS", "300"))
+    # 720 since 3 September, on the client's word. 300 was a deliberately timid
+    # placeholder set while nobody knew what a day of pulling actually costs his
+    # 1688 account, and the plan was to read his balance before and after a day
+    # to find out. He answered that the measurement is not needed, because the
+    # app doing the pulling is not the one that consumes points:
+    #
+    #   "التطبيق الذي يمتلك صلاحيات الذي تستخدمة الان لسحب المنتجات فهو يعمل بدون
+    #    نقاط، هو فقط يعمل على الاستدعاءات ولدينا 100 الف استدعاء، لذا اوافق رفع
+    #    الحد اليومي الى 720"
+    #
+    # 720 is not the largest number that would fit - it is the one the SECOND
+    # ceiling allows. Each product costs about 1.03 SerpApi searches and that
+    # plan is 30,000 a month, so 720 a day is 21,600 with room to spare, where
+    # 1,000 a day would be 30,000 with none. The binding limit is the comparison
+    # allowance, not 1688, and this number is set from the tighter of the two.
+    return int(os.environ.get("KDX_DAILY_POINTS", "720"))
 
 
 # The client's day, not UTC: they asked for the run to start at midnight their

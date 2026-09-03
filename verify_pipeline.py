@@ -192,6 +192,60 @@ def main() -> int:
           and boiler.product["variants"][0]["price"] > 0,
           str(boiler.product["variants"][0]))
 
+    print("3c. when every rival sells below our cost")
+    # His rule of 3 September, and it splits on the shipping type:
+    #
+    #   "اذا تمت المقارنة في 5 التطبيقات وكلها تبيع المنتج بخسارة فيتطبق هامش
+    #    الربح ... هذا معتمد في المنتجات الصغيرة التي تحتوي على الشحن السريع"
+    #
+    # This has to be driven with a made-up rival, and that is the whole reason
+    # the section exists. Across 6,354 real audit rows the old branch fired
+    # ZERO times, so "it never happens" was indistinguishable from "the code is
+    # unreachable". These are the positive controls that tell them apart.
+    engine = rules.Engine(cny_to_sar=Decimal("0.52"))
+    light = rules.Variant(sku_id="sku-light", attributes={}, price_cny=Decimal("400"),
+                          stock=9, weight_kg=Decimal("1"))
+    heavy = rules.Variant(sku_id="sku-heavy", attributes={}, price_cny=Decimal("400"),
+                          stock=9, weight_kg=Decimal("9"))
+    cheap_rival = [compare.CompetitorHit(platform="Noon", price_sar=Decimal("120.00"),
+                                         match_score=Decimal("100"), url="u",
+                                         matched_variant="")]
+    cost = engine.landed_cost_sar(light)
+    check("CONTROL the fixture really is a loss: the rival undercuts our cost",
+          rules.undercut_price(Decimal("120.00"))[0] <= cost,
+          f"rival 120.00 -> {rules.undercut_price(Decimal('120.00'))[0]}, cost {cost}")
+
+    product = rules.Product(offer_id="loss-1", title_zh="x", description_zh="",
+                            images=["i"], variants=[light])
+    light_out = engine.evaluate(product, {"sku-light": cheap_rival})[0]
+    check("a LIGHT product falls through to the margin instead of being dropped",
+          light_out.audit.reason_code == "margin_rivals_below_cost",
+          light_out.audit.reason_code)
+    check("and it is priced from our own cost, above it",
+          light_out.final_price_sar > cost,
+          f"{light_out.final_price_sar} vs cost {cost}")
+    check("the rival stays on the row as the evidence for why",
+          light_out.audit.competitor_price_sar == "120.00",
+          light_out.audit.competitor_price_sar)
+
+    heavy_product = rules.Product(offer_id="loss-2", title_zh="x", description_zh="",
+                                  images=["i"], variants=[heavy])
+    heavy_out = engine.evaluate(heavy_product, {"sku-heavy": cheap_rival})[0]
+    check("a HEAVY one still stops, because that is where the shipping risk is",
+          heavy_out.audit.reason_code == "would_sell_at_loss",
+          heavy_out.audit.reason_code)
+
+    # CONTROL the other way: a rival ABOVE our cost must still be undercut
+    # normally, or the branch above has swallowed the ordinary case.
+    rich_rival = [compare.CompetitorHit(platform="Noon", price_sar=Decimal("900.00"),
+                                        match_score=Decimal("100"), url="u",
+                                        matched_variant="")]
+    normal = engine.evaluate(product, {"sku-light": rich_rival})[0]
+    check("CONTROL a rival above our cost is still undercut, not margined",
+          normal.audit.reason_code == "matched"
+          and "ناقص" in normal.audit.pricing_basis,
+          f"{normal.audit.reason_code} / {normal.audit.pricing_basis}")
+
     print("4. a banned product is stopped before it costs anything else")
     banned_dir = os.path.join(WORK, "offers")
     os.makedirs(banned_dir, exist_ok=True)

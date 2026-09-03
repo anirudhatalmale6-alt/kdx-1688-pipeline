@@ -77,6 +77,10 @@ def policy_fingerprint() -> str:
         # changed on 3 September, and a cached answer computed when only the
         # top three rows could match is an answer to a different question.
         compare.VISUAL_DECAY_PER_RANK, compare.VISUAL_RANK_LIMIT,
+        # Whether a price may come from a platform the picture did not identify.
+        # A cached answer from before this was allowed is missing rows, not
+        # merely stale, so it has to be recomputed rather than reused.
+        compare.UNBACKED_TEXT_THRESHOLD, compare.CROSS_PLATFORM_PRICING,
     ))
 
 

@@ -546,11 +546,80 @@ list to take them was the obvious next idea and the measurement killed it:
 those are not the Saudi market, and a wholesale price from Made-in-China is not
 a rival's shelf price.
 
+### The 16, and what he decided about them (3 September)
+
+The second line of that table was worth something, and he took it:
+
+> عند المقارنة في التطبيقات 5 سيقوم النظام بأعتماد السعر الافضل بينهم
+> — بعد المقارنة النظام يستقبل ويستخدم السعر الارخص بين 5 تطبيقات
+
+A price may now come from any of the five, not only the one the picture landed
+on. Replayed over the shopping responses already bought, at no further cost:
+
+| | before | after |
+|---|---|---|
+| priced rows accepted | 9 | **17** |
+| products ending with a rival's price, of 40 | 1 | **3** |
+
+So the end-to-end rate goes from about 2.5% to about **7.5%**. Seven of the 8
+newly accepted rows are plainly the same product. The eighth is the one to
+watch, and it is recorded here rather than quietly dropped: for a telescopic
+flag pole the cheapest row moves 28.00 → **19.87 SAR**, and since `best_match`
+takes the cheapest, *the weakest-matching row is the one that sets the price*.
+Its words score is 50.00, sitting exactly on the bar.
+
+The bar was **not** raised to exclude it. A Tazweeq telescopic handheld
+flagpole is a telescopic handheld flagpole, and a cheap local brand undercutting
+an import is what a rival price *is*; inventing a threshold to remove an
+inconvenient row is the mistake this module was repaired for a commit earlier.
+`KDX_UNBACKED_TEXT_MIN` is the lever, defaulting to no change, and
+`KDX_CROSS_PLATFORM_PRICING=off` restores the old rule exactly.
+
+The recorded 30 L boiler shows the same change from the other side, and there
+it plainly pays: the old rule compared against AliExpress at 520 SAR, because
+the picture had never named Amazon or Noon. The cheapest genuine row is a Noon
+listing at **329.00** — *"REFURA Water Urn Boiler, 30 Litre Capacity"* — so the
+shop was about to undercut a price 191 SAR above the real Saudi shelf. A KOOLEN
+**25 L** kettle sits seven riyals below that at 322.09 and is correctly vetoed
+on capacity, which is the guard that makes the rest safe.
+
 **The conclusion is about the goods, not the code.** 1688 sells unbranded
 generics, and an unbranded generic does not exist as an identifiable listing on
 Temu, SHEIN, AliExpress, Amazon or Noon. Where a product has a model number —
 PANTUM M7100DW, M-VAVE SMK-37 PRO — the comparison finds it immediately. Where
 it is "A5 notebook", there is nothing on the other side to find.
+
+### When every rival is cheaper than our own cost
+
+His other rule of the same day, and it splits on shipping type:
+
+> اذا تمت المقارنة في 5 التطبيقات وكلها تبيع المنتج بخسارة فيتطبق هامش الربح
+> الذي ارسلته لك — هذا معتمد في المنتجات الصغيرة التي تحتوي على الشحن السريع
+
+A **light** product is no longer thrown away for being cheaper abroad; it falls
+through to the margin, priced from our own cost, and the rival stays on the
+audit row as the evidence (`margin_rivals_below_cost`). A **heavy** one still
+stops at `would_sell_at_loss`, because heavy is where he says the danger lies.
+
+This branch had fired **zero times in 6,354 real audit rows**, which on its own
+cannot tell "never happens" apart from "unreachable". `verify_pipeline.py` §3c
+now drives it with a constructed rival and a control proving the fixture really
+is a loss, plus a control that an ordinary rival above cost is still undercut.
+
+### The hole this leaves, stated plainly
+
+`Engine.landed_cost_sar` is the 1688 price in riyals and **nothing else** — no
+freight, despite the name. So the loss guard protects the goods price only,
+which is precisely the risk he described:
+
+> المنتجات الكبيرة هي تحسب بالابعاد وبعض الاحيان يكون سعر الشحن اعلى من سعر المنتج
+
+A bulky, light product is charged on volume and its freight can exceed
+everything the engine counts. Today the comparison substitutes for that — a
+rival's shelf price has shipping baked in — which is the real reason he will not
+publish a heavy product without a match. Closing it needs two numbers from him,
+his cost per real kilo and per volumetric kilo, and they are deliberately not
+guessed here.
 
 ## Photographs at the size his shop will show them
 
