@@ -55,12 +55,15 @@ def cache_path() -> str:
     return paths.state_path("category_cache.json", "KDX_CATEGORY_CACHE")
 
 
-class LiveIndex:
+class LiveIndex(catalog.DepartmentGate):
     """
     A CategoryIndex that asks the gateway about ids it has not seen.
 
-    Presents exactly the three things the pipeline uses - `resolve`, `state_of`
-    and `by_id` - so nothing downstream knows the difference.
+    Presents exactly the four things the pipeline uses - `resolve`, `state_of`,
+    `by_id` and the inherited `department_is_off` - so nothing downstream knows
+    the difference. The gate is inherited rather than copied precisely because
+    on 3 September it was written onto CategoryIndex only, and this is the class
+    the live run actually holds.
     """
 
     ROUTE = None  # built lazily, so importing this module needs no client

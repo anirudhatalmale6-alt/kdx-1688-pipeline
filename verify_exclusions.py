@@ -161,5 +161,34 @@ check("CONTROL an unresolvable category is not refused by THIS rule - "
       "the words decide those",
       index.department_is_off("999999") == "")
 
+print("\n7. the index the LIVE run holds, not the one the suite builds")
+# This section exists because the suite passed without it and the run died.
+# department_of/department_is_off were written onto CategoryIndex; daily_run
+# hands the pipeline a category_live.LiveIndex, and the first product of the
+# first batch after deploy raised
+#   AttributeError: 'LiveIndex' object has no attribute 'department_is_off'
+# Testing the class I happened to construct is not testing the gate.
+import category_live  # noqa: E402
+
+live = category_live.LiveIndex(index, client=None, cache=os.path.join(
+    HERE, "out", "verify-exclusions-cache.json"))
+check("LiveIndex answers the department gate at all",
+      hasattr(live, "department_is_off") and hasattr(live, "department_of"))
+check("and gives the same answer as the built index for a department that is off",
+      bool(live.department_is_off("20")), live.department_is_off("20"))
+check("and the same answer for one he keeps",
+      live.department_is_off("6") == "")
+check("CONTROL both indexes inherit ONE gate, so they cannot drift apart",
+      type(live).department_is_off is type(index).department_is_off)
+
+# The whole interface, written down. Its limit is honest: a seventh method added
+# to one class and called by the pipeline would still pass until its name is
+# added here. The mixin above is what makes the gate itself undriftable; this is
+# a reminder that pipeline.build() swaps the index underneath the suite.
+for name in ("chain", "resolve", "state_of", "by_id",
+             "department_of", "department_is_off"):
+    check(f"both indexes answer .{name}",
+          hasattr(live, name) and hasattr(index, name))
+
 print(f"\n{passed} passed, {failed} failed")
 sys.exit(1 if failed else 0)

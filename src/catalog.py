@@ -350,7 +350,43 @@ def translate_rows(rows: list, translator, cache_path: str, batch: int = 40,
     return known
 
 
-class CategoryIndex:
+class DepartmentGate:
+    """
+    The client's own department list, asked of any index that can climb a chain.
+
+    It lives here, apart from either index, because on 3 September it did not:
+    the two methods were written onto CategoryIndex alone, and the live run
+    hands the pipeline a category_live.LiveIndex instead. The suite passed - it
+    built a CategoryIndex - and the first real run died at the first product
+    with AttributeError: 'LiveIndex' object has no attribute 'department_is_off'.
+
+    Both classes answer `chain`, so both can answer this. Inheriting it is what
+    makes "the pipeline's index" one thing rather than two that drift.
+    """
+
+    def department_of(self, category_id) -> str:
+        """The Chinese name of the top-level department, or "" if unknown."""
+        chain = self.chain(category_id)
+        return chain[0]["name_zh"] if chain else ""
+
+    def department_is_off(self, category_id, off: dict | None = None) -> str:
+        """
+        The client's reason for switching this product's department off, or "".
+
+        Answers "" for a department we cannot resolve rather than guessing.
+        That is NOT the same permissive default as state_of's, and the
+        difference is deliberate: state_of guards categories whose children were
+        never walked, while this guards a list of 31 names the client wrote
+        himself. A product whose department cannot be resolved is caught by the
+        product-level rules instead, where the words are read directly.
+        """
+        name = self.department_of(category_id)
+        if not name:
+            return ""
+        return (departments_off() if off is None else off).get(name, "")
+
+
+class CategoryIndex(DepartmentGate):
     """
     The built tree, used to answer the two questions a product run asks of it:
     what does KDX show as this product's department, and may we sell it.
@@ -421,27 +457,6 @@ class CategoryIndex:
         """
         row = self.by_id.get(str(category_id or ""))
         return row["state"] if row else "unknown"
-
-    def department_of(self, category_id) -> str:
-        """The Chinese name of the top-level department, or "" if unknown."""
-        chain = self.chain(category_id)
-        return chain[0]["name_zh"] if chain else ""
-
-    def department_is_off(self, category_id, off: dict | None = None) -> str:
-        """
-        The client's reason for switching this product's department off, or "".
-
-        Answers "" for a department we cannot resolve rather than guessing.
-        That is NOT the same permissive default as state_of's, and the
-        difference is deliberate: state_of guards categories whose children were
-        never walked, while this guards a list of 31 names the client wrote
-        himself. A product whose department cannot be resolved is caught by the
-        product-level rules instead, where the words are read directly.
-        """
-        name = self.department_of(category_id)
-        if not name:
-            return ""
-        return (departments_off() if off is None else off).get(name, "")
 
 
 def summarise(rows: list) -> dict:
