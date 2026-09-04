@@ -120,7 +120,63 @@ MAX_CREDIBLE_KG = float(os.environ.get("KDX_MAX_CREDIBLE_WEIGHT_KG", "100"))
 # Treated as though nothing was declared, exactly like a zero: the category
 # answers, and nothing is rewritten to a number the supplier never gave. A
 # genuinely one-gram product in a category of light goods still comes out light.
-SENTINEL_KG = float(os.environ.get("KDX_WEIGHT_SENTINEL_KG", "0.001"))
+#
+# 1.0 IS THE SECOND ONE, and it is the client's complaint of 4 September:
+# "منتجات ثقيلة تسحب كشحن سريع" - heavy products going out as fast shipping. The
+# same shape test finds it, on 1,224 declarations:
+#
+#     value  times  neighbours within +-10%  leaves also holding a >2 kg sample
+#      1.0    409             11                          14
+#      0.3     93             12                           4
+#      0.5     72             18                           5
+#      0.1     54              8                           4
+#
+# A third of every weight 1688 has declared to us is exactly 1.000, and the whole
+# band from 0.9 to 1.1 around it holds eleven. A real mode has shoulders: 15 kg
+# appears 14 times with 10 kg beside it 11 times and 20 kg 9 times. 409 against
+# 11 is a spike standing on nothing.
+#
+# The positive control is the leaf that mixes it. دهانات فنية (art paints,
+# 1036795) holds 15 declarations: 8 are exactly 1.0 and all 7 others are exactly
+# 20.0, with nothing in between. 10252 holds six: five at 1.0, one at 14.0. His
+# own decorative-vase leaf, 201229009, holds nine: five at 1.0 and four between
+# 1.5 and 3.0. No product line weighs 1 kg a third of the time and 20 kg the
+# rest.
+#
+# What it published, all today, all flagged fast: a 16-inch 8K resin 3D printer
+# at 18,910 SAR, a set of ten plastic transport pallets, a warehouse plastic
+# sheet, a supermarket display shelf. Each declared 1.000 kg.
+#
+# It also SILENCES the categories that would have caught it. A leaf holding both
+# 1.0 and 20.0 straddles the 2 kg line, so `opinion` refuses to answer for it -
+# the placeholder does not merely vote light, it takes away the vote of the only
+# thing that knew better. Removing it: 15 straddling leaves fall to 12, and the
+# leaves that answer "heavy" go from 5 to 6.
+#
+# The cost is stated rather than hidden: 1,224 samples become 815 and the leaves
+# that can answer at all fall from 114 to 78. Every product that loses its weight
+# this way is passed over, not published on a guess - which is his own rule of
+# 3 September for anything unclear. Unlike 0.001, some of these 409 are certainly
+# real 1 kg parcels; the claim here is not that the value is always false, it is
+# that it cannot be told apart from the default, and a number that cannot be told
+# apart from a default must not be the only evidence that something is light.
+SENTINEL_VALUES = frozenset(
+    float(piece) for piece in
+    os.environ.get("KDX_WEIGHT_SENTINEL_KG", "0.001,1.0").replace(" ", "").split(",")
+    if piece)
+
+# Kept as a name because the tests and the notes above speak of "the sentinel"
+# in the singular, and because one env var still sets both.
+SENTINEL_KG = min(SENTINEL_VALUES) if SENTINEL_VALUES else 0.0
+
+
+def is_sentinel(kilograms) -> bool:
+    """True for a value that is a form default rather than a measurement."""
+    try:
+        number = float(kilograms)
+    except (TypeError, ValueError):
+        return False
+    return number in SENTINEL_VALUES
 
 
 def is_credible(kilograms) -> bool:
@@ -136,7 +192,7 @@ def is_credible(kilograms) -> bool:
         number = float(kilograms)
     except (TypeError, ValueError):
         return False
-    if SENTINEL_KG > 0 and number == SENTINEL_KG:
+    if is_sentinel(number):
         return False
     return 0 < number <= MAX_CREDIBLE_KG
 
@@ -200,7 +256,7 @@ class WeightTable:
 
     def __init__(self, samples: dict | None = None, path: str = ""):
         self.samples = defaultdict(list)
-        # The SENTINEL is dropped on the way IN, not only in observe(), because
+        # The SENTINELS are dropped on the way IN, not only in observe(), because
         # the table on disk predates the rule: 46 of the 848 samples in the
         # shipped seed are 0.001, spread over 29 of its 170 categories, and
         # every one of them drags that category's median down - 0.5 kg becomes
@@ -216,8 +272,7 @@ class WeightTable:
         # votes "light", quietly and unanimously - which is why it is the one
         # value that has to be read out.
         for category, weights in (samples or {}).items():
-            kept = [float(w) for w in weights
-                    if not (SENTINEL_KG > 0 and float(w) == SENTINEL_KG)]
+            kept = [float(w) for w in weights if not is_sentinel(w)]
             if kept:
                 self.samples[str(category)] = kept
         self.path = path or table_path()

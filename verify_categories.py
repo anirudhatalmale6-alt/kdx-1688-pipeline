@@ -307,6 +307,32 @@ def main() -> int:
     check("a root category is the main department with no sub",
           root_main["id"] == 10 and root_sub is None, str(root_sub))
 
+    # Three deep, which the stub tree above never builds (max_depth=2). This is
+    # the client's vase of 4 September and the rule he approved: the department
+    # shown is the row ABOVE the product, because 1688's own top level bundles
+    # pets with gardening. Pinned here as well as in verify_category_live so the
+    # offline index and the live one cannot drift apart - a product must not be
+    # filed differently depending on which of them the run happens to hold.
+    deep = catalog.CategoryIndex([
+        {"id": 700003, "parent_id": None, "depth": 1, "name_zh": "宠物及园艺",
+         "name_en": "Pets & Gardening", "name_ar": "الحيوانات الأليفة والبستنة",
+         "state": "allowed", "reason": ""},
+        {"id": 700002, "parent_id": 700003, "depth": 2, "name_zh": "花盆、花瓶",
+         "name_en": "Pots & Vases", "name_ar": "أصص وزهريات",
+         "state": "allowed", "reason": ""},
+        {"id": 700001, "parent_id": 700002, "depth": 3, "name_zh": "装饰花瓶",
+         "name_en": "Decorative Vase", "name_ar": "مزهرية زخرفية",
+         "state": "allowed", "reason": ""},
+    ])
+    deep_main, deep_sub = deep.resolve(700001)
+    check("three deep, the middle row is the department",
+          deep_main["name_ar"] == "أصص وزهريات", str(deep_main))
+    check("and the leaf is still the sub department",
+          deep_sub["name_ar"] == "مزهرية زخرفية", str(deep_sub))
+    check("CONTROL the root is still there to be banned on - only not displayed",
+          [row["id"] for row in deep.chain(700001)] == [700003, 700002, 700001],
+          str([row["id"] for row in deep.chain(700001)]))
+
     unknown_main, unknown_sub = index.resolve(999999)
     check("an unwalked category resolves to nothing rather than to a guess",
           unknown_main is None and unknown_sub is None,

@@ -505,12 +505,18 @@ class CategoryIndex(DepartmentGate):
         A category we have never walked returns (None, None) rather than a
         guess. An empty department in KDX is a visible gap; a wrong one is a
         product filed under the wrong menu, which nobody notices.
+
+        The pair is the last two rows of the chain, for the reason set out at
+        LiveIndex.resolve - 1688's top level bundles pets with gardening, and
+        the client asked for the row below it. Kept identical in both indexes on
+        purpose: the live run holds LiveIndex and the offline tools hold this
+        one, and a product must not be filed differently depending on which.
         """
         row = self.by_id.get(str(category_id or ""))
         if row is None:
             return None, None
         chain = self._ancestors(row)
-        main = self._element(chain[0])
+        main = self._element(chain[-2] if len(chain) > 1 else chain[0])
         sub = self._element(chain[-1]) if len(chain) > 1 else None
         return main, sub
 

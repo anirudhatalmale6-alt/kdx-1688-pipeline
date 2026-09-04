@@ -295,11 +295,28 @@ class LiveIndex(catalog.DepartmentGate):
         published: the product then sits one shelf higher, which is untidy,
         where 成人帽 in the menu is broken. The main department comes from the
         built tree and is always translated, so this only ever narrows the sub.
+
+        THE PAIR IS THE LAST TWO ROWS, not the first and the last. 1688's own
+        top level bundles departments that have nothing to do with each other,
+        and the client hit it on 4 September: a decorative vase arrived under
+        "الحيوانات الأليفة والبستنة / مزهرية زخرفية" - pets and gardening in one
+        name - because 宠物及园艺 is where 1688 files gardening. The middle row,
+        花盆、花瓶 ("أصص وزهريات"), is the one a shopper would call the
+        department, and he approved showing it instead: "نعم يمكن ان نعتمدها في
+        جميع الاحوال".
+
+        Chains are at most three deep - measured over the 2,611 categories the
+        live runs have learned: 940 leaves at depth 3, 1,190 at depth 2, one at
+        depth 1 - so rows[-2] is the middle row where there is one and stays the
+        root where there is not. Nothing below decides anything on this pair:
+        `state_of` and `department_is_off` walk the WHOLE chain and are
+        untouched, so a department he switched off stays off no matter which of
+        its rows is displayed.
         """
         rows = [row for row in self.chain(category_id) if is_translated(row)]
         if not rows:
             return None, None
-        main = self._element(rows[0])
+        main = self._element(rows[-2] if len(rows) > 1 else rows[0])
         sub = self._element(rows[-1]) if len(rows) > 1 else None
         return main, sub
 

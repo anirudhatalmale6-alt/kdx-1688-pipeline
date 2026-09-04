@@ -49,6 +49,13 @@ class FakeClient:
         "900003": ("电子烟", True, ["67"]),
         # a chain that never terminates, to prove the climb guard
         "800001": ("loop", True, ["800001"]),
+        # the client's own complaint of 4 September, exactly as 1688 files it
+        "700001": ("装饰花瓶", True, ["700002"]),
+        "700002": ("花盆、花瓶", False, ["700003"]),
+        "700003": ("宠物及园艺", False, []),
+        # a two-row chain, to prove the rule does not eat the only parent there
+        "700004": ("卷帘", True, ["700005"]),
+        "700005": ("窗帘门帘及配件", False, []),
     }
 
     def __init__(self, broken=()):
@@ -77,6 +84,11 @@ NAMES = {
     "办公椅": ("Office Chairs", "كراسي مكتب"),
     "办公家具": ("Office Furniture", "أثاث مكتبي"),
     "办公、文化": ("Office & Culture", "مكتب وثقافة"),
+    "装饰花瓶": ("Decorative Vase", "مزهرية زخرفية"),
+    "花盆、花瓶": ("Pots & Vases", "أصص وزهريات"),
+    "宠物及园艺": ("Pets & Gardening", "الحيوانات الأليفة والبستنة"),
+    "卷帘": ("Roller Blinds", "ستائر رول"),
+    "窗帘门帘及配件": ("Curtains & Fittings", "الستائر وملحقاتها"),
     "串珠": ("Beading", "خرز"),
     "宗教用品": ("Religious Goods", "مستلزمات دينية"),
     "电子烟": ("E-cigarettes", "سجائر إلكترونية"),
@@ -109,7 +121,9 @@ def main() -> int:
     live = category_live.LiveIndex(index_with(), client=client, translate=naming,
                                    cache=os.path.join(tmp, "a.json"))
     main_cat, sub = live.resolve("1045585")
-    check("the department comes back", main_cat and main_cat["name_original"] == "办公、文化",
+    # 办公、文化 > 办公家具 > 办公椅. The department shown is the MIDDLE row, not
+    # the root - see the section on the client's vase further down.
+    check("the department comes back", main_cat and main_cat["name_original"] == "办公家具",
           str(main_cat))
     check("and the leaf is the sub category", sub and sub["name_original"] == "办公椅",
           str(sub))
@@ -118,6 +132,30 @@ def main() -> int:
     # CONTROL: the plain index still answers nothing for the same id
     check("CONTROL the built tree alone still cannot resolve it",
           index_with().resolve("1045585") == (None, None))
+
+    print("\nthe department shown is the row above the product, not 1688's root")
+    # 4 September. He saw "الحيوانات الأليفة والبستنة / مزهرية زخرفية" - pets
+    # and gardening over a decorative vase - because 宠物及园艺 is 1688's top
+    # level and it bundles the two. He approved showing the middle row instead:
+    # "نعم يمكن ان نعتمدها في جميع الاحوال".
+    vase_main, vase_sub = live.resolve("700001")
+    check("his vase is filed under أصص وزهريات, not under pets and gardening",
+          vase_main["name_ar"] == "أصص وزهريات", str(vase_main))
+    check("and the leaf he saw is still the sub category",
+          vase_sub["name_ar"] == "مزهرية زخرفية", str(vase_sub))
+    check("CONTROL the root is still walked - it is only not displayed",
+          [row["name_zh"] for row in live.chain("700001")]
+          == ["宠物及园艺", "花盆、花瓶", "装饰花瓶"],
+          str([row["name_zh"] for row in live.chain("700001")]))
+    # CONTROL: two rows and the parent IS the department. Taking "the row above
+    # the leaf" must not be read as "drop the first row", which on a two-row
+    # chain would leave the leaf as its own department.
+    blind_main, blind_sub = live.resolve("700004")
+    check("CONTROL a two-row chain keeps its only parent as the department",
+          blind_main["name_ar"] == "الستائر وملحقاتها" and blind_sub["name_ar"] == "ستائر رول",
+          str((blind_main, blind_sub)))
+    check("CONTROL the department and the sub category are never the same row",
+          blind_main["id"] != blind_sub["id"] and vase_main["id"] != vase_sub["id"])
 
     print("\na prohibited department blocks the innocent-sounding leaf under it")
     check("串珠 under 宗教用品 is blocked", live.state_of("900001") == catalog.BLOCKED,
@@ -173,7 +211,7 @@ def main() -> int:
     resolved = second.resolve("1045585")
     check("nor on the next night", reopened.asked == [], str(reopened.asked))
     check("and the answer survives the restart",
-          resolved[0]["name_original"] == "办公、文化", str(resolved))
+          resolved[0]["name_original"] == "办公家具", str(resolved))
 
     print("\nthe built tree wins over the gateway where it has an entry")
     rows = [{"id": 67, "parent_id": None, "depth": 1, "name_zh": "办公、文化",
@@ -183,8 +221,15 @@ def main() -> int:
                                     translate=naming,
                                     cache=os.path.join(tmp, "d.json"))
     main_cat, _ = mixed.resolve("1045585")
+    # Asked of the CHAIN, not of the pair. The pair now shows the middle row, so
+    # a check that only looked at `main_cat` would stop exercising the built
+    # tree at all - it would pass on the gateway's row and prove nothing.
+    root = mixed.chain("1045585")[0]
     check("the Arabic name from the built tree is used, not the Chinese one",
-          main_cat["name_ar"] == "مكتب وثقافة", str(main_cat))
+          root["name_ar"] == "مكتب وثقافة", str(root))
+    check("CONTROL and it is the built row that answered, not a fetched one",
+          root["id"] == "67" and root["name_original" if "name_original" in root
+                                      else "name_zh"] == "办公、文化", str(root))
     check("by_id exposes both the built rows and the learned ones",
           "67" in mixed.by_id and "1045585" in mixed.by_id, str(sorted(mixed.by_id)))
 
@@ -193,7 +238,7 @@ def main() -> int:
         index_with(), client=FakeClient(), cache=os.path.join(tmp, "e.json"),
         translate=naming)
     main_cat, _ = translated.resolve("1045585")
-    check("the Arabic name is filled in", main_cat["name_ar"] == "مكتب وثقافة",
+    check("the Arabic name is filled in", main_cat["name_ar"] == "أثاث مكتبي",
           str(main_cat))
 
     def explode(_zh):

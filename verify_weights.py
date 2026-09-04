@@ -132,16 +132,71 @@ def main() -> int:
                                    "unitWeight": 12}) == 12)
     # The table on disk predates the rule, so refusing new sentinels is not
     # enough - the ones already recorded still vote until they are read out.
-    poisoned = table({"c": [0.001, 1.0, 1.0, 0.001, 1.0]})
+    # 1.2 and not 1.0 for the real declarations: 1.0 became a sentinel itself on
+    # 4 September, and a fixture that used it here would have been testing the
+    # filter against the filter.
+    poisoned = table({"c": [0.001, 1.2, 1.2, 0.001, 1.2]})
     check("a table loaded from disk drops the sentinels it already holds",
-          poisoned.samples["c"] == [1.0, 1.0, 1.0], str(poisoned.samples["c"]))
+          poisoned.samples["c"] == [1.2, 1.2, 1.2], str(poisoned.samples["c"]))
     check("and its median is the one the real declarations give",
-          poisoned.opinion("c")["kg"] == 1.0, str(poisoned.opinion("c")))
+          poisoned.opinion("c")["kg"] == 1.2, str(poisoned.opinion("c")))
     check("CONTROL a category with nothing BUT sentinels disappears rather than "
           "answering from an empty list",
           "d" not in table({"d": [0.001, 0.001]}).samples)
     check("CONTROL real sub-10 g samples survive the same load",
           table({"e": [0.005, 0.002, 0.005]}).samples["e"] == [0.005, 0.002, 0.005])
+
+    print("\nand the second one, which is what he complained about on 4 September")
+    # "منتجات ثقيلة تسحب كشحن سريع" - heavy products going out as fast shipping.
+    # 409 of the 1,224 declarations the table held were exactly 1.000, and the
+    # whole band 0.9-1.1 around it held eleven. What it published, all flagged
+    # fast: a 16-inch 8K resin 3D printer at 18,910 SAR, ten plastic transport
+    # pallets, a warehouse plastic sheet, a supermarket display shelf.
+    check("1.0 kg is not a weight either - a third of every declaration sits on "
+          "that one value",
+          weights.declared_weight({"unitWeight": 1.0}) is None,
+          str(weights.declared_weight({"unitWeight": 1.0})))
+    check("nor as a string, nor written 1",
+          weights.declared_weight({"unitWeight": "1.0"}) is None
+          and weights.declared_weight({"unitWeight": 1}) is None)
+    # The same distinction as above, and it is what keeps this from being a
+    # blanket refusal of round numbers: the neighbours of 1.0 are real, they
+    # just have eleven observations between them instead of 409.
+    check("CONTROL 1.2 IS a weight - a real declaration either side of the pile",
+          weights.declared_weight({"unitWeight": 1.2}) == 1.2)
+    check("CONTROL 0.9 too, so this is a sentinel and not a rounding rule",
+          weights.declared_weight({"unitWeight": 0.9}) == 0.9)
+    check("CONTROL and 2.0, which is the line itself and stays readable",
+          weights.declared_weight({"unitWeight": 2.0}) == 2.0)
+    check("CONTROL it gets no vote on its category either",
+          table({}).observe("x", 1.0) is False)
+    check("the credible sibling still wins when 1.0 is present",
+          weights.declared_weight({"offerSuttleWeight": 1.0,
+                                   "unitWeight": 20}) == 20)
+    # His own art-paints leaf, as it stands on the server: eight declarations of
+    # exactly 1.0 and seven of exactly 20.0, nothing between. With the 1.0s in,
+    # the leaf straddles the 2 kg line and refuses to answer at all - so the
+    # placeholder was not only voting light, it was silencing the one thing that
+    # knew better.
+    paints = table({"1036795": [1.0] * 8 + [20.0] * 7})
+    check("his art-paints leaf can speak once the placeholder is out",
+          paints.opinion("1036795") is not None, str(paints.opinion("1036795")))
+    check("and it says heavy, which is what sends the product to the free batch "
+          "and the five-app comparison",
+          paints.opinion("1036795")["kg"] == 20.0, str(paints.opinion("1036795")))
+    # Asked of opinion() itself rather than of a hand-written rule, so the
+    # control cannot pass while the real test is broken: the samples are put in
+    # under a name the filter does not touch (0.999 stands in for the placeholder
+    # here) purely to show what the straddle test does with two such piles.
+    still_mixed = table({"g": [0.999] * 8 + [20.0] * 7})
+    check("CONTROL two piles either side of the line silence the leaf - which is "
+          "what 1.0 was doing to it before today",
+          still_mixed.opinion("g") is None, str(still_mixed.opinion("g")))
+    # The cost, stated rather than hidden. A leaf that holds nothing but the
+    # placeholder loses its opinion entirely, and its products are then passed
+    # over as unweighed instead of published light on a guess.
+    check("CONTROL a leaf of nothing but 1.0 disappears rather than answering",
+          "f" not in table({"f": [1.0, 1.0, 1.0, 1.0]}).samples)
     # The load filter takes the sentinel and ONLY the sentinel. An over-ceiling
     # sample is left in on purpose: it makes its category straddle the 2 kg
     # line, opinion() then refuses to answer, and the product is passed over as
@@ -311,11 +366,11 @@ def main() -> int:
 
     path = os.path.join(tempfile.mkdtemp(), "weights.json")
     saved = weights.WeightTable({}, path=path)
-    saved.observe("a", 1.0)
+    saved.observe("a", 1.4)
     saved.observe("a", 1.2)
     saved.save()
     check("what was written comes back",
-          weights.WeightTable.load(path).samples["a"] == [1.0, 1.2])
+          weights.WeightTable.load(path).samples["a"] == [1.4, 1.2])
     check("CONTROL a save with nothing new does not rewrite the file",
           (lambda before: (weights.WeightTable.load(path).save(),
                            os.path.getmtime(path) == before)[1])(
@@ -323,7 +378,7 @@ def main() -> int:
     check("CONTROL an observation that is not a number is refused rather than "
           "stored as one", saved.observe("a", "heavy") is False)
     check("CONTROL and so is one with no category to file it under",
-          saved.observe("", 1.0) is False)
+          saved.observe("", 1.4) is False)
 
     keep_max = os.environ.get("KDX_WEIGHT_MAX_SAMPLES")
     os.environ["KDX_WEIGHT_MAX_SAMPLES"] = "4"
