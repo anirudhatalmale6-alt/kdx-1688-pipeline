@@ -127,14 +127,48 @@ class LiveIndex(catalog.DepartmentGate):
         """The built tree first - it is already translated and already classified."""
         row = self.index.by_id.get(str(category_id))
         if row is not None:
-            return {"id": str(row["id"]), "name_zh": row["name_zh"],
-                    "name_en": row.get("name_en") or row["name_zh"],
-                    "name_ar": row.get("name_ar") or row["name_zh"],
-                    "parent_id": (str(row["parent_id"])
-                                  if row.get("parent_id") is not None else None),
-                    "state": row.get("state", catalog.ALLOWED),
-                    "reason": row.get("reason", "")}
-        return self.learned.get(str(category_id))
+            return self._rescored(
+                {"id": str(row["id"]), "name_zh": row["name_zh"],
+                 "name_en": row.get("name_en") or row["name_zh"],
+                 "name_ar": row.get("name_ar") or row["name_zh"],
+                 "parent_id": (str(row["parent_id"])
+                               if row.get("parent_id") is not None else None),
+                 "state": row.get("state", catalog.ALLOWED),
+                 "reason": row.get("reason", "")})
+        row = self.learned.get(str(category_id))
+        return self._rescored(row) if row is not None else None
+
+    @staticmethod
+    def _rescored(row: dict) -> dict:
+        """
+        The verdict the rules give TODAY, not the one they gave when this row
+        was first written.
+
+        A category is classified once, at the moment it is learned, and the
+        answer is then kept on disk for ever. That makes every rule added
+        afterwards apply only to categories nobody has looked at yet - and on
+        4 September the consequence was measured: 40 of the 1,072 cached
+        categories disagreed with the code that was running. Twelve were the
+        food and craft rules added that day; the other TWENTY-EIGHT were older -
+        batteries, paint, shampoo, industrial cleaners, live plants, a solar
+        generator, Christmas decorations - each blocked in the source and
+        `allowed` in the cache since before the rule existed.
+
+        None of the twenty-eight had produced a published product yet, which is
+        luck rather than safety. Re-scoring on read is what makes a new rule
+        take effect everywhere instead of only where the tree has not been.
+
+        Names and ids are untouched: translation is expensive and paid for, and
+        this is only the verdict.
+        """
+        state, reason, _ = catalog.classify(row.get("name_zh") or "")
+        if state == row.get("state") and (state == catalog.ALLOWED
+                                          or reason == row.get("reason")):
+            return row
+        fresh = dict(row)
+        fresh["state"] = state
+        fresh["reason"] = reason if state != catalog.ALLOWED else ""
+        return fresh
 
     def _retranslate(self, row: dict, ancestors=()) -> bool:
         """

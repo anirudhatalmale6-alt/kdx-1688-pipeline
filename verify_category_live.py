@@ -295,6 +295,44 @@ def main() -> int:
           isinstance(category_live.build(plain, client=FakeClient()),
                      category_live.LiveIndex))
 
+    print("\na rule added today reaches the categories learned yesterday")
+    # A category is classified once, when it is learned, and the verdict then
+    # lives on disk for ever. On 4 September 40 of the 1,072 cached categories
+    # disagreed with the code that was running: twelve were that day's food and
+    # craft rules, and the other twenty-eight were older - batteries, paint,
+    # shampoo, live plants - blocked in the source and `allowed` in the cache
+    # since before their rule was written. These are four of those real rows,
+    # by their real ids and names, exactly as the cache held them.
+    stale_cache = os.path.join(tmp, "stale.json")
+    with open(stale_cache, "w", encoding="utf-8") as handle:
+        json.dump({
+            "121780002": {"id": "121780002", "name_zh": "狗狗干粮", "is_leaf": True,
+                          "parent_id": None, "state": "allowed", "reason": "",
+                          "name_en": "Dog Dry Food", "name_ar": "طعام جاف للكلاب"},
+            "1717": {"id": "1717", "name_zh": "树脂工艺品", "is_leaf": True,
+                     "parent_id": None, "state": "allowed", "reason": "",
+                     "name_en": "Resin Crafts", "name_ar": "حرف راتنجية"},
+            "10206": {"id": "10206", "name_zh": "锂电池", "is_leaf": True,
+                      "parent_id": None, "state": "allowed", "reason": "",
+                      "name_en": "Lithium Batteries", "name_ar": "بطاريات ليثيوم"},
+            "1045585": {"id": "1045585", "name_zh": "办公椅", "is_leaf": True,
+                        "parent_id": None, "state": "allowed", "reason": "",
+                        "name_en": "Office Chairs", "name_ar": "كراسي مكتب"},
+        }, handle, ensure_ascii=False)
+    stale = category_live.LiveIndex(index_with(), client=FakeClient(),
+                                    translate=naming, cache=stale_cache)
+    for cid, name in (("121780002", "狗狗干粮"), ("1717", "树脂工艺品"),
+                      ("10206", "锂电池")):
+        check(f"{name} is refused now, though the cache says allowed",
+              stale.state_of(cid) == catalog.BLOCKED, stale.state_of(cid))
+    check("CONTROL an office chair cached as allowed is still allowed - the "
+          "re-score is the rules speaking, not a blanket refusal",
+          stale.state_of("1045585") == catalog.ALLOWED,
+          stale.state_of("1045585"))
+    row = stale.by_id.get("121780002") or stale._known("121780002")
+    check("CONTROL and the Saudi name it already paid for is untouched",
+          row.get("name_ar") == "طعام جاف للكلاب", str(row))
+
     print("\nthe number of gateway calls is bounded")
     capped = category_live.LiveIndex(index_with(), client=FakeClient(),
                                      translate=naming,
