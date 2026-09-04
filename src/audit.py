@@ -35,6 +35,18 @@ COLUMNS = [
     "requires_shipping",
     "shipping_type",
     "points_spent",
+    # 5 September, with his rate card. cost_sar now has freight inside it, so
+    # without these three the log stops being able to explain its own numbers.
+    #
+    # Appended strictly LAST, after points_spent, even though they would read
+    # better next to cost_sar. September's file already holds rows written
+    # under the fifteen-column header; anything inserted before the end shifts
+    # every one of those rows by three columns the moment the file is upgraded
+    # or the upgrade is skipped. Put them at the end and both the old rows and
+    # the new ones line up under either header.
+    "freight_sar",
+    "volume_m3",
+    "volume_source",
 ]
 
 REASONS_AR = {
@@ -65,6 +77,38 @@ class AuditLog:
         if not os.path.exists(self.path) or os.path.getsize(self.path) == 0:
             with open(self.path, "w", newline="", encoding="utf-8-sig") as handle:
                 csv.writer(handle).writerow(COLUMNS)
+            return
+        self._widen_header()
+
+    def _widen_header(self) -> None:
+        """
+        Add columns that appeared after this month's file was started.
+
+        Only ever widens, and only when the header on disk is a prefix of the
+        current one - if it is anything else the file is left alone, because a
+        log the client has been reading is evidence, not scratch space, and a
+        rewrite that guesses at a mismatch could destroy it. The old file is
+        kept beside the new one either way.
+        """
+        try:
+            with open(self.path, newline="", encoding="utf-8-sig") as handle:
+                rows = list(csv.reader(handle))
+        except OSError:
+            return
+        if not rows:
+            return
+        header = rows[0]
+        if header == COLUMNS or header != COLUMNS[:len(header)]:
+            return
+
+        backup = f"{self.path}.bak-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        os.replace(self.path, backup)
+        pad = [""] * (len(COLUMNS) - len(header))
+        with open(self.path, "w", newline="", encoding="utf-8-sig") as handle:
+            writer = csv.writer(handle)
+            writer.writerow(COLUMNS)
+            for row in rows[1:]:
+                writer.writerow(row + pad[:max(0, len(COLUMNS) - len(row))])
 
     def write(self, record, points_spent: int = 0) -> dict:
         row = record.as_dict() if hasattr(record, "as_dict") else dict(record)

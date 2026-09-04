@@ -58,11 +58,32 @@ WEIGHT_FIELD = os.environ.get("KDX_WEIGHT_FIELD", "weight")
 # weight - which is why a product arriving without one silently became free.
 LIGHT_MAX_KG = Decimal("2")
 
+# The number to send when NOBODY weighed the thing. His instruction, 5
+# September: "افعل وزن المنتج على الموجود في 1688 او وهمي اكثر من 10 kg حتى
+# اكمل اعداد الشحن المجاني من خلال لوحة التحكم" - the real 1688 weight when
+# there is one, otherwise a made-up figure over 10 kg, so that his control
+# panel can put those products on free shipping.
+#
+# It fills the FIELD and nothing else. The engine's own decisions - which side
+# of the 2 kg line a product falls, whether a heavy unmatched product may be
+# published - keep reading the weight the engine resolved, because a number
+# invented to drive his panel is not evidence about a box. Sending 10.5 into
+# the rules would have re-labelled every unweighed product heavy and stopped
+# it publishing, which is the opposite of what he asked for.
+VIRTUAL_WEIGHT_KG = Decimal(os.environ.get("KDX_VIRTUAL_WEIGHT_KG", "10.5"))
+
 OFFER_URL = "https://detail.1688.com/offer/{offer_id}.html"
 
 
 def needs_shipment(weight_kg) -> bool:
     return Decimal(str(weight_kg)) <= LIGHT_MAX_KG
+
+
+def weight_to_send(weight_kg, assumed: bool = False) -> Decimal:
+    """The figure that goes in the payload: measured if it exists, else his."""
+    if assumed:
+        return VIRTUAL_WEIGHT_KG
+    return Decimal(str(weight_kg))
 
 
 def category_block(main: dict | None, sub: dict | None) -> dict:
@@ -99,7 +120,7 @@ def _money(value) -> float:
     return float(Decimal(str(value)).quantize(Decimal("0.01")))
 
 
-def variant_block(variants) -> list:
+def variant_block(variants, weight_assumed: bool = False) -> list:
     """
     One entry per photo, because that is the unit KDX will render: an image with
     its own price under it.
@@ -131,8 +152,13 @@ def variant_block(variants) -> list:
             if size.get("stock") is not None:
                 entry["stock"] = int(size["stock"])
             if size.get("weight") is not None:
-                entry["weight"] = float(size["weight"])
-                entry["needs_shipment"] = needs_shipment(size["weight"])
+                # The same substitution as the product level, or the two
+                # disagree: a listing nobody weighed would say 10.5 kg on the
+                # card and 2.5 kg on every size under it, and his panel would
+                # read one of them.
+                sent = weight_to_send(size["weight"], weight_assumed)
+                entry["weight"] = float(sent)
+                entry["needs_shipment"] = needs_shipment(sent)
             sizes.append(entry)
 
         # A variant with no size axis still has to carry a price of its own,
@@ -166,7 +192,7 @@ def to_kdx_product(*, offer_id: str, name_ar: str, name_en: str, name_original: 
                    price_sar=None, weight_kg, images: list, sizes=None, variants=None,
                    main_category: dict | None = None, sub_category: dict | None = None,
                    description_ar: str = "", description_en: str = "",
-                   product_url: str = "") -> dict:
+                   product_url: str = "", weight_assumed: bool = False) -> dict:
     """
     Build one product in the client's schema.
 
@@ -188,7 +214,7 @@ def to_kdx_product(*, offer_id: str, name_ar: str, name_en: str, name_original: 
     if not name_en:
         raise ValueError("name_en is required by KDX")
 
-    block = variant_block(variants)
+    block = variant_block(variants, weight_assumed)
     if block:
         card_price = min(entry["price_min"] for entry in block)
         highest = max(entry["price_max"] for entry in block)
@@ -231,8 +257,8 @@ def to_kdx_product(*, offer_id: str, name_ar: str, name_en: str, name_original: 
         # The same number the flag is decided from, so the two can never
         # disagree in his shop: a product marked fast delivery and priced from a
         # heavier weight would overcharge, and the reverse undercharges.
-        WEIGHT_FIELD: float(Decimal(str(weight_kg))),
-        "needs_shipment": needs_shipment(weight_kg),
+        WEIGHT_FIELD: float(weight_to_send(weight_kg, weight_assumed)),
+        "needs_shipment": needs_shipment(weight_to_send(weight_kg, weight_assumed)),
     }
     if block:
         product["variants"] = block
@@ -248,7 +274,7 @@ def to_kdx_product(*, offer_id: str, name_ar: str, name_en: str, name_original: 
 
 
 def from_pricing(result, product, enriched: dict, *, main_category=None,
-                 sub_category=None, images=None) -> dict:
+                 sub_category=None, images=None, weight_assumed: bool = False) -> dict:
     """Adapter from the rules engine's PricingResult to the KDX shape."""
     return to_kdx_product(
         offer_id=product.offer_id,
@@ -257,6 +283,7 @@ def from_pricing(result, product, enriched: dict, *, main_category=None,
         name_original=product.title_zh,
         price_sar=result.final_price_sar,
         weight_kg=result.variant.weight_kg,
+        weight_assumed=weight_assumed,
         images=images if images is not None else product.images,
         sizes=[result.variant.attributes.get("size")] if result.variant.attributes.get("size") else [],
         main_category=main_category,

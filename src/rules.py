@@ -18,6 +18,7 @@ from dataclasses import dataclass, field, asdict
 from decimal import Decimal, ROUND_HALF_UP
 from enum import Enum
 
+import freight
 import liquids
 
 # --------------------------------------------------------------------------
@@ -219,6 +220,14 @@ class AuditRecord:
     pricing_basis: str = ""
     requires_shipping: str = ""
     shipping_type: str = ""
+    # 5 September. His rate card turns freight into part of the cost, so the
+    # log has to show where each figure came from: a shipping charge derived
+    # from a stated size and one derived from a weight through an assumed
+    # density are not the same claim, and he must be able to tell them apart
+    # without reading the code.
+    freight_sar: str = ""
+    volume_m3: str = ""
+    volume_source: str = ""
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -358,33 +367,44 @@ class Engine:
         self.cny_to_sar = Decimal(str(cny_to_sar))
         self.existing_skus = existing_skus or set()
 
-    def landed_cost_sar(self, variant: Variant) -> Decimal:
-        """
-        The 1688 price in riyals. NOT a landed cost, despite the name.
-
-        There is no freight term in here, because nobody has ever given one:
-        no rate card, no per-kilo figure, no volumetric divisor. Every "cost"
-        in this file is therefore the goods alone, and every guard built on it
-        - the loss guard above, the margin bands - protects the goods price and
-        nothing else.
-
-        That is exactly the hole the client described on 3 September, in his
-        reason for wanting the comparison at all:
-
-          "المنتجات الكبيرة هي تحسب بالابعاد وبعض الاحيان يكون سعر الشحن اعلى من
-           سعر المنتج"
-
-        A bulky, light product - a lampshade, a plastic storage bin - is charged
-        on volume, and its freight can exceed everything counted here. The
-        comparison is currently the only thing standing in for that, which is
-        why he will not publish a heavy product without it: a rival's shelf
-        price has the shipping already inside it.
-
-        Filling this in needs two numbers from him, not from me: what he pays
-        per real kilo and per volumetric kilo. Guessing them would put an
-        invented figure underneath every price in the shop.
-        """
+    def goods_cost_sar(self, variant: Variant) -> Decimal:
+        """The 1688 price in riyals, and nothing else."""
         return money(variant.price_cny * self.cny_to_sar)
+
+    def freight_quote(self, product: Product | None, variant: Variant) -> dict:
+        """
+        What it costs to bring this variant in, by the client's rate card of
+        5 September: cubic metres times 1018 SAR, or 1244 if it runs on mains.
+
+        The hole this closes is one he described himself on 3 September, and
+        it is why he would not publish a heavy product without a rival price:
+
+          "المنتجات الكبيرة هي تحسب بالابعاد وبعض الاحيان يكون سعر الشحن اعلى
+           من سعر المنتج"
+
+        Until today there was no freight term anywhere in this engine, because
+        no rate had ever been given. Every guard built on cost - the loss guard,
+        the margin bands - was protecting the goods price alone.
+        """
+        if product is None:
+            return freight.quote(weight_kg=variant.weight_kg, is_electrical=False)
+        return freight.quote(text=product.searchable_text(),
+                             weight_kg=variant.weight_kg,
+                             is_electrical=is_electrical(product))
+
+    def landed_cost_sar(self, variant: Variant, product: Product | None = None) -> Decimal:
+        """
+        Goods plus freight - a landed cost that now deserves the name.
+
+        `product` is optional so that a caller holding only a variant still
+        gets the old, freight-free answer rather than a wrong one: without the
+        listing there is no text to read a size from and no way to tell whether
+        the thing is electrical, and both change the number.
+        """
+        goods = self.goods_cost_sar(variant)
+        if product is None:
+            return goods
+        return money(goods + self.freight_quote(product, variant)["sar"])
 
     def evaluate(self, product: Product, hits_by_variant: dict) -> list:
         """Run every variant of one listing through the rules."""
@@ -428,7 +448,24 @@ class Engine:
             return self._reject(product, variant, "out_of_stock",
                                 "غير متوفر في 1688 - لا يتم النشر")
 
-        cost = self.landed_cost_sar(variant)
+        # Before freight, because freight is about to stop this from being
+        # caught by the floor. A listing quoting zero is broken data, not a
+        # free product; until today its price came out at zero and the minimum
+        # price refused it. With shipping inside the cost it would come out at
+        # the price of its own carriage - a real number, comfortably above the
+        # floor - and a listing with no price would start publishing.
+        if self.goods_cost_sar(variant) <= 0:
+            return self._reject(product, variant, "no_price",
+                                "لا يوجد سعر حقيقي للمنتج في 1688 - لا يتم النشر")
+
+        quote = self.freight_quote(product, variant)
+        # Cost is goods plus freight from here down, so every rule that reads
+        # it moves with the rate card automatically: the loss guard now refuses
+        # a rival price that cannot cover the shipping, and the margin bands
+        # are picked from the price the shipping is already inside - which is
+        # the order he wrote, "ثم يلصق سعر الشحن على سعر المنتج" and only then
+        # "ثم اجعل هامش الربح".
+        cost = money(self.goods_cost_sar(variant) + quote["sar"])
         requires_shipping, shipping_type = shipping_flag(variant.weight_kg)
         match = best_match(hits, variant)
 
@@ -515,6 +552,11 @@ class Engine:
         decision = Decision.UPDATE if variant.sku_id in self.existing_skus else Decision.PUBLISH
         reason_ar = ("تحديث منتج موجود - السعر والمخزون والصور فقط"
                      if decision is Decision.UPDATE else "مطابق للشروط - يتم النشر")
+        # Recomputed rather than threaded through every call site. It is a pure
+        # function of the listing and the variant, so it cannot disagree with
+        # the one the price was built from, and every row - accepted or not -
+        # ends up carrying the same three columns.
+        quote = self.freight_quote(product, variant)
         audit = AuditRecord(
             offer_id=product.offer_id,
             sku_id=variant.sku_id,
@@ -529,6 +571,9 @@ class Engine:
             pricing_basis=basis,
             requires_shipping=requires_shipping,
             shipping_type=shipping_type,
+            freight_sar=str(quote["sar"]),
+            volume_m3=str(quote["m3"]),
+            volume_source=quote["source"],
         )
         return PricingResult(variant, decision, audit, price)
 
@@ -543,6 +588,7 @@ class Engine:
 
     def _reject(self, product, variant, code, reason_ar, cost=None, match=None,
                 requires_shipping="", shipping_type="") -> PricingResult:
+        quote = self.freight_quote(product, variant)
         audit = AuditRecord(
             offer_id=product.offer_id,
             sku_id=variant.sku_id,
@@ -555,5 +601,8 @@ class Engine:
             competitor_price_sar=str(match.price_sar) if match else "",
             requires_shipping=requires_shipping,
             shipping_type=shipping_type,
+            freight_sar=str(quote["sar"]),
+            volume_m3=str(quote["m3"]),
+            volume_source=quote["source"],
         )
         return PricingResult(variant, Decision.REJECT, audit, None)

@@ -808,6 +808,16 @@ class Pipeline:
             name_en=enriched.get("name_en", ""),
             name_original=product.title_zh,
             weight_kg=min(variant.weight_kg for variant in product.variants),
+            # "Assumed" here means the blanket default and nothing else. A
+            # weight the category table produced is an estimate but it is an
+            # estimate from measured siblings, and it is usually the RIGHT side
+            # of the 2 kg line - the two dresses in his own cart came through
+            # it at 0.2 kg. Replacing those with 10.5 kg would throw away the
+            # one substitute that already works and turn the clothing aisle
+            # into free shipping. Only a listing that nobody weighed and whose
+            # category has no opinion gets his made-up number.
+            weight_assumed=bool(normalised.get("weight_assumed"))
+            and not normalised.get("weight_category_id"),
             images=normalised.get("images", []),
             variants=variants,
             description_ar=enriched.get("description_ar", ""),

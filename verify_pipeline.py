@@ -136,13 +136,28 @@ def main() -> int:
 
     # 28.50 CNY x 0.52 = 14.82 SAR landed, no competitor match for a shirt in the
     # recorded searches, so the client's margin band for the cheapest tier applies.
+    # Landed, not goods: since 5 September the cost carries the freight from
+    # his rate card, and the margin band is picked from the number the freight
+    # is already inside. Passing the listing is what makes this the same
+    # arithmetic the pipeline just did - without it the engine deliberately
+    # answers goods-only and this check would be measuring a different rule.
     engine = rules.Engine(cny_to_sar=Decimal("0.52"))
-    expected, _ = rules.marked_up_price(engine.landed_cost_sar(
+    goods_only = engine.goods_cost_sar(
         rules.Variant(sku_id="x", attributes={}, price_cny=Decimal("28.50"),
-                      stock=1, weight_kg=Decimal("0.35"))))
+                      stock=1, weight_kg=Decimal("0.35")))
+    cheapest = min((r for r in outcome.results if r.final_price_sar),
+                   key=lambda r: r.final_price_sar)
+    landed = Decimal(cheapest.audit.cost_sar)
+    expected, band = rules.marked_up_price(landed)
     check("the cheapest size carries the price the rules engine calculated",
           Decimal(str(white["sizes"][0]["price"])) == expected,
           f'{white["sizes"][0]["price"]} vs {expected}')
+    check("and that price is the LANDED cost plus his band, not the goods cost",
+          landed > goods_only and expected == rules.money(landed * (1 + band)),
+          f"goods {goods_only} landed {landed} band {band}")
+    check("CONTROL the freight inside it is the shirt's own, recorded on the row",
+          Decimal(cheapest.audit.freight_sar) == landed - goods_only,
+          f"{cheapest.audit.freight_sar} vs {landed - goods_only}")
     check("the card price is the cheapest published price",
           Decimal(str(product["price"])) == expected, str(product["price"]))
     check("no rejected size leaked a price into the product",
@@ -517,9 +532,17 @@ def main() -> int:
     his = rules.Engine(cny_to_sar=Decimal("0.52"))
     check("at his floor the 0.08 SAR product publishes again",
           his.evaluate(one_variant("0.12"), {})[0].decision == rules.Decision.PUBLISH)
+    # Refused for a better reason than it used to be. Before 5 September a zero
+    # priced itself at zero and the floor caught it; now that freight is part
+    # of the cost, a zero-priced listing has a real cost - its own carriage -
+    # and would have sailed over the floor. The refusal is explicit instead of
+    # incidental, and the log says which of the two it was.
     check("CONTROL and a price of exactly zero is still refused",
-          his.evaluate(one_variant("0"), {})[0].audit.reason_code == "below_min_price",
+          his.evaluate(one_variant("0"), {})[0].audit.reason_code == "no_price",
           str(his.evaluate(one_variant("0"), {})[0].audit.reason_code))
+    check("CONTROL and it is refused for having no price, not for being cheap - "
+          "so freight can never turn a broken listing into a sellable one",
+          "لا يوجد سعر" in his.evaluate(one_variant("0"), {})[0].audit.reason_ar)
 
     print("\none bad product must not cost the night")
     # A SerpApi read timed out at product ~150 of 300 on 30 August and the
