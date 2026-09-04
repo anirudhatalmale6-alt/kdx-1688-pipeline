@@ -204,10 +204,18 @@ truthy("underwear is sold - the client asked for it to stay",
 # seventeen more industrial departments by name.
 truthy("machine tools are sold - he asked for them on 2 September",
        any(str(d["id"]) == "1426" and d["sell"] for d in departments))
-truthy("and so are the other seventeen he named",
+# Fifteen of the other seventeen. 橡塑 (55) and 机械及行业设备 (65) came off on
+# 4 September - he was shown the twenty products they had put in his shop and
+# answered "اوافقك". The rest of that list is untouched, and checking it here is
+# what stops a later "close the industrial departments" from quietly taking
+# 五金工具 or 电子元器件 with it.
+truthy("and so are the other fifteen he named",
        all(any(str(d["id"]) == wanted and d["sell"] for d in departments)
-           for wanted in ("1", "5", "9", "4", "13", "55", "57", "59", "64", "65",
+           for wanted in ("1", "5", "9", "4", "13", "57", "59", "64",
                           "68", "70", "71", "72", "509", "10208", "201346017")))
+truthy("rubber and industrial machinery are off - his decision of 4 September",
+       all(any(str(d["id"]) == closed and not d["sell"] for d in departments)
+           for closed in ("55", "65")))
 truthy("chemicals are still off - he did not ask for them",
        any(str(d["id"]) == "8" and not d["sell"] for d in departments))
 truthy("adult products are not",

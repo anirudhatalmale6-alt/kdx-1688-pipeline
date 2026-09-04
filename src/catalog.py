@@ -85,6 +85,30 @@ BLOCK_TOKENS = {
     "加油站": "fuel_system", "发电机": "fuel_system",
     "果树": "live_plants", "苗木": "live_plants", "种苗": "live_plants",
     "养殖动物": "live_animals", "畜牧": "live_animals", "活体": "live_animals",
+    # 4 September, his screenshot: a steel cabinet frame for telecom equipment,
+    # "±0.1 mm precision", published at 6.46 SAR - "رجاءاً استبعد هذهي المنتجات".
+    #
+    # It is not a product. 机械五金加工 is contract MANUFACTURING: you send a
+    # drawing and the factory quotes. Its five children are 钣金加工 (sheet
+    # metal), CNC加工, 冲压加工 (stamping), 激光加工 (laser) and 其他机械五金加工,
+    # and not one of them is something a shop can put in a box - the price shown
+    # is a per-piece rate at some unstated quantity, which is why a steel
+    # enclosure came out at six riyals.
+    #
+    # The branch, not the leaf. LiveIndex.state_of reads the whole chain, so
+    # blocking the parent takes the five children with it whatever the pool
+    # files a product under.
+    #
+    # NOT the bare word 加工. Measured over the 1,126 cached categories it
+    # appears in eleven, and four of those are ordinary merchandise or machines
+    # he sells - 加工中心 (machining centres, a tool he stocks) and 食品、饮料
+    # 加工及餐饮行业设备 among them. 五金加工 appears in two, both this branch.
+    # 加工定制 appears in two, 面部护理加工定制 and 面部精华加工定制, and both are
+    # the same thing in cosmetics: OEM manufacture to order, not a jar you ship.
+    #
+    # Cost, measured over all 558 products published so far: exactly ONE - the
+    # product in his screenshot, 1080706692044.
+    "五金加工": "made_to_order", "加工定制": "made_to_order",
 }
 
 # Anything edible, 4 September. He banned food for people and for animals on

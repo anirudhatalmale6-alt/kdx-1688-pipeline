@@ -154,13 +154,28 @@ check("data/departments.json yields the departments he switched off",
 check("食品酒水 is one of them - he excluded food and drink on 2 September",
       "食品酒水" in off, str(sorted(off)[:6]))
 check("化工 is one of them", "化工" in off)
-# The correction that matters. My first reading of the 3 September rubber blamed
-# this list, and the list says otherwise: he ASKED for 橡塑 on 2 September along
-# with seventeen other industrial departments. The rubber is excluded by its
-# words, not by its department.
-check("CONTROL 橡塑 is NOT off - he asked for it, so the rubber was never a "
-      "department leak",
-      "橡塑" not in off)
+# 橡塑 has been on both sides of this line and the history is the point.
+#
+# He ASKED for it on 2 September along with seventeen other industrial
+# departments, so the thirteen rubber compounds published on 3 September were
+# never a department leak - they are excluded by their words, in
+# rules.BANNED_TERMS, and that correction still stands.
+#
+# On 4 September he closed it himself. Shown the sixteen products it had put in
+# his shop - raw synthetic rubber by the tonne, one at 27,612 SAR - he answered
+# "اوافقك" to closing the three departments that have nothing to do with a
+# retail shop. So the assertion flips, and the CONTROL below is what keeps the
+# original correction from being lost with it: the words still refuse the
+# rubber even with the department switched off.
+check("橡塑 is off - he closed it on 4 September", "橡塑" in off)
+check("机械及行业设备 is off - closed the same day", "机械及行业设备" in off)
+check("CONTROL and the words still refuse rubber compound on their own, which "
+      "is what actually caught the 3 September thirteen",
+      bool(rules.find_banned_term(listing("丁腈橡胶生胶NBR工业级颗粒"))),
+      str(rules.find_banned_term(listing("丁腈橡胶生胶NBR工业级颗粒"))))
+check("CONTROL 五金工具 stays on - closing the industrial three must not take "
+      "the hand tools with it",
+      "五金工具" not in off)
 
 index = catalog.CategoryIndex([
     {"id": "2", "name_zh": "食品酒水", "name_ar": "طعام", "parent_id": None,
