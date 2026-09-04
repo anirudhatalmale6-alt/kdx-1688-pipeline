@@ -444,11 +444,48 @@ def _publish_trouble(response: dict) -> str:
         # means his shop declined the product for a reason of its own, and that
         # reason is worth reading rather than counting as published.
         return f"KDX skipped this offer: {str(response.get('message'))[:160]}"
+    if is_acknowledgement(response):
+        # Not a result. See is_acknowledgement.
+        return ""
     landed = (int(response.get("imported_count") or 0)
               + int(response.get("updated_count") or 0))
     if landed < 1:
         return f"KDX imported nothing: {str(response)[:200]}"
     return ""
+
+
+# The four counters his endpoint answers with. Their PRESENCE is what says the
+# reply is a result at all.
+COUNTERS = ("imported_count", "updated_count", "skipped_count", "failed_count")
+
+
+def is_acknowledgement(response: dict) -> bool:
+    """
+    Did his shop say "received, I will do it later" rather than "done"?
+
+    On 4 September, between 07:58 and 08:05, his developer moved the import to a
+    background job. The reply became
+
+        {"success": true, "message": "تم استلام البيانات بنجاح، وجاري
+         معالجتها وإدخالها في الخلفية."}
+
+    - success, and not one counter. The rule below read "nothing landed" and
+    recorded every product as skipped: six consecutive batches published ZERO
+    while his shop was in fact filling up.
+
+    That is worse than a miscount. A product recorded as not-published can be
+    selected again, and pushing it again is how one product becomes two.
+
+    The test is the ABSENCE of every counter, never the wording of the message.
+    A reply that carries counters is still read exactly as before, so a genuine
+    `imported_count: 0` remains trouble; a reply with none of them is an
+    acknowledgement and the product is treated as accepted - but the run counts
+    these separately and says so, because accepted is not the same as confirmed
+    and nothing here has seen the product land.
+    """
+    if not response or response.get("success") is False:
+        return False
+    return not any(key in response for key in COUNTERS)
 
 
 def was_update(response: dict) -> bool:

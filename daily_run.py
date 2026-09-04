@@ -419,6 +419,11 @@ def main() -> int:
         os.makedirs(products_dir, exist_ok=True)
 
         published = held = skipped = 0
+        # His import went background on 4 September and now answers "received,
+        # processing" with no counters. Those products are accepted, not
+        # confirmed, and they are counted apart so the run never claims to have
+        # seen something land that nobody has looked at.
+        acknowledged = 0
         # `published` counts variants, because that is what a shop row is. The
         # count of PRODUCTS is what a person means by "how many went up", and
         # printing only the first read as the second: a run of five products
@@ -469,6 +474,8 @@ def main() -> int:
             # - a product pushed twice showed 291 colour options where it has
             # 146. Nothing here can undo it, so it is reported by offer id and
             # a person decides.
+            if pipeline_module.is_acknowledgement(outcome.kdx_response or {}):
+                acknowledged += 1
             if pipeline_module.was_update(outcome.kdx_response or {}):
                 updated.append(outcome.offer_id)
                 print(f"  {outcome.offer_id}  UPDATED an existing product - his import "
@@ -507,6 +514,7 @@ def main() -> int:
             "held_reasons": reasons,
             "photos_dropped": photos_dropped,
             "updated_existing": updated,
+            "accepted_not_confirmed": acknowledged,
             "photos": runner.photos.summary() if runner.photos is not None else None,
             "ledger": ledger,
             "points": runner.budget.summary(),
@@ -518,6 +526,12 @@ def main() -> int:
               f"{held} held, {skipped} skipped, in {elapsed / 60:.1f} min")
         for code, count in sorted(reasons.items(), key=lambda kv: -kv[1]):
             print(f"  held {count:4}  {code}")
+        if acknowledged:
+            print(f"  note: {acknowledged} of them were ACCEPTED but not "
+                  f"confirmed - his import answers 'received, processing in the "
+                  f"background' and reports no counts, so nothing here has seen "
+                  f"them land. They are not pushed again, because a second push "
+                  f"is how one product becomes two.")
 
         path = args.report or paths.state_path("reports", "KDX_REPORT_DIR")
         if not path.endswith(".json"):

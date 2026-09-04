@@ -338,9 +338,46 @@ def main() -> int:
     check("success:false is trouble",
           pipeline._publish_trouble({"success": False, "message": "no"}) != "")
     check("imported nothing at all is trouble",
-          pipeline._publish_trouble({"success": True}) != "")
+          pipeline._publish_trouble(dict(ok, imported_count=0)) != "",
+          pipeline._publish_trouble(dict(ok, imported_count=0)))
     check("no answer at all is not invented into one",
           pipeline._publish_trouble({}) == "")
+
+    print("\n'received, processing' is an acknowledgement, not a result")
+    # His developer moved the import to a background job between 07:58 and 08:05
+    # on 4 September. This is the reply, verbatim from the run log. The old rule
+    # read it as "nothing landed" and six consecutive batches published ZERO
+    # while his shop was in fact filling up - and a product recorded as
+    # not-published can be selected and pushed AGAIN, which is how one product
+    # becomes two.
+    ACK = {"success": True,
+           "message": "تم استلام البيانات بنجاح، وجاري معالجتها وإدخالها في الخلفية."}
+    check("his background reply is recognised as an acknowledgement",
+          pipeline.is_acknowledgement(ACK) is True)
+    check("and is therefore not counted as trouble",
+          pipeline._publish_trouble(ACK) == "", pipeline._publish_trouble(ACK))
+
+    # CONTROL the test is the ABSENCE of every counter, never the wording. A
+    # message in any language, or none, reads the same way.
+    check("CONTROL a bare success with no counters is the same thing",
+          pipeline.is_acknowledgement({"success": True}) is True)
+
+    # CONTROL a reply that DOES carry counters is still read exactly as before,
+    # so a genuine zero remains trouble rather than being excused as async.
+    for name, response in (
+            ("imported_count 0", dict(ok, imported_count=0)),
+            ("skipped_count 1", dict(ok, imported_count=0, skipped_count=1)),
+            ("failed_count 1", dict(ok, imported_count=0, failed_count=1))):
+        check(f"CONTROL {name} is a RESULT, not an acknowledgement",
+              pipeline.is_acknowledgement(response) is False)
+        check(f"CONTROL {name} is still trouble",
+              pipeline._publish_trouble(response) != "")
+    check("CONTROL a real import is not an acknowledgement either",
+          pipeline.is_acknowledgement(ok) is False)
+    check("CONTROL success:false is never an acknowledgement, whatever it omits",
+          pipeline.is_acknowledgement({"success": False, "message": "no"}) is False)
+    check("CONTROL and no answer at all is not one",
+          pipeline.is_acknowledgement({}) is False)
 
     print("\nthe response list is unwrapped without guessing")
     check("one batch, one response", pipeline._one_response([ok]) is ok)
