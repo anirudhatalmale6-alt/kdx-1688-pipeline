@@ -120,10 +120,19 @@ BANNED_TERMS = {
     # noun in Arabic is a different word with the prefix on.
     "food": ["零食", "食品", "干货", "罐头", "夹心饼", "糖果", "巧克力",
              "speciality food", "snack food", "مواد غذائية", "وجبات جاهزة"],
+    # 4 September: goat milk powder for cats and dogs reached the shop at 22:30
+    # on the 3rd, after this list already existed. Nothing here described it -
+    # it is not 粮, not 零食, not 罐头 - so the powders and supplements are named
+    # now. The category gate in catalog.FOOD_TOKENS is the wider net and blocks
+    # 狗狗保健品 and 猫猫保健品 outright; these words are what catches the same
+    # thing filed somewhere else.
     "animal_food": ["猫粮", "狗粮", "宠物零食", "宠物食品", "冻干鸡", "冻干猫",
                     "猫条", "猫罐头", "狗罐头", "饲料", "营养膏", "pet treat",
                     "pet food", "cat treat", "dog treat", "cat food", "dog food",
-                    "طعام قطط", "طعام كلاب", "أعلاف"],
+                    "羊奶粉", "宠物奶粉", "猫奶粉", "狗奶粉", "幼犬奶粉",
+                    "宠物益生菌", "猫咪益生菌", "狗狗益生菌", "宠物营养品",
+                    "goat milk powder", "puppy milk", "kitten milk",
+                    "طعام قطط", "طعام كلاب", "أعلاف", "حليب الماعز"],
     "flour": ["面粉", "小麦粉", "玉米粉", "淀粉", "flour", "طحين قمح", "دقيق قمح"],
     "chemicals": ["化工原料", "化学试剂", "工业原料", "合成橡胶", "氯丁橡胶",
                   "丁苯橡胶", "丁腈橡胶", "橡胶原料", "塑料颗粒", "树脂原料",

@@ -59,7 +59,7 @@ def tree(banned_branch_name: str = "成人用品") -> dict:
                "childCategorys": [{"id": 21, "name": "情趣内衣", "isLeaf": True}]},
         "30": {"categoryID": 30, "name": "食品酒水", "isLeaf": False, "childCategorys": [
             {"id": 31, "name": "白酒", "isLeaf": True},
-            {"id": 32, "name": "零食", "isLeaf": True},
+            {"id": 32, "name": "餐具", "isLeaf": True},
         ]},
     }
 
@@ -138,11 +138,67 @@ def main() -> int:
     check("but it was still expanded", "30" in stub.calls)
     check("and the bottle underneath it is blocked outright",
           rows_by_id[31]["state"] == catalog.BLOCKED and rows_by_id[31]["reason"] == "alcohol")
-    check("while the snacks beside it stay allowed",
+    # This was 零食 until 4 September, and it stood here as the example of a
+    # perfectly ordinary category sitting under a flagged branch. It is food, so
+    # it is now blocked and cannot make that point any more - the tableware
+    # beside it can. The snacks have their own section below.
+    check("while the tableware beside it stays allowed",
           rows_by_id[32]["state"] == catalog.ALLOWED)
     check("the toy water pistol survived next to the replica gun",
           rows_by_id[11]["state"] == catalog.ALLOWED
           and rows_by_id[12]["state"] == catalog.BLOCKED)
+
+    print("3b. food is refused by its aisle, not only by its label")
+    # 4 September. He banned food for people and animals on the 3rd; the words
+    # went into rules.BANNED_TERMS the same night, and at 22:30 goat milk powder
+    # for cats and dogs was published anyway. It is not 粮, not 零食, not 罐头 -
+    # no word on the list described it. These are the five leaves the live tree
+    # actually carried on 4 September, by their real ids and names.
+    for name in ("猫猫零食", "狗狗罐头、零食", "狗狗干粮",
+                 "狗狗保健品", "猫猫保健品"):
+        state, reason, _ = catalog.classify(name)
+        check(f"{name} is refused", state == catalog.BLOCKED
+              and reason in ("food", "animal_food"), f"{state}/{reason}")
+
+    # CONTROL the aisles either side of them. The pets department stays open -
+    # he sells it - and these are the nine other pet leaves in the same cache.
+    for name in ("猫猫玩具", "猫抓板", "猫猫服饰", "狗狗服装", "宠物帽子",
+                 "宠物智能喂养设备", "电子宠物"):
+        state, _, _ = catalog.classify(name)
+        check(f"CONTROL {name} is still sold", state == catalog.ALLOWED, state)
+
+    # CONTROL the human aisles the obvious shorter token would have taken. These
+    # are orthopaedic braces, not supplements, which is why it is 保健品 not 保健.
+    for name in ("保健护具", "保健器具配件"):
+        state, _, _ = catalog.classify(name)
+        check(f"CONTROL {name} is a knee brace, not a supplement",
+              state == catalog.ALLOWED, state)
+
+    # CONTROL the container is not its contents - the reason these tokens sit
+    # below the safe phrases rather than in BLOCK_TOKENS above them.
+    for name in ("奶粉罐", "罐头瓶", "粮桶", "食品保鲜盒"):
+        state, _, _ = catalog.classify(name)
+        check(f"CONTROL {name} is an empty container", state == catalog.ALLOWED,
+              state)
+
+    print("3c. crafts, the aisle the hand-made-looking lamp came from")
+    # He sent a resin turbine table lamp on 4 September and asked to refuse
+    # improvised goods. The photograph could not tell it apart - see the note in
+    # catalog.CRAFT_TOKENS - but 1688 had already filed it under 树脂工艺品.
+    for name in ("树脂工艺品", "陶瓷工艺品", "金属工艺品", "木质工艺品",
+                 "软陶工艺品", "塑料工艺品", "石膏、石料工艺品"):
+        state, reason, _ = catalog.classify(name)
+        check(f"{name} is refused",
+              state == catalog.BLOCKED and reason == "handicraft",
+              f"{state}/{reason}")
+
+    # CONTROL ornaments are NOT crafts. 家纺家饰 is a department he chose to
+    # sell and these three are its merchandise; closing them was three more
+    # products and a decision he has not made.
+    for name in ("其他装饰摆件", "汽车摆件", "电视柜摆件", "户外/庭院摆件"):
+        state, _, _ = catalog.classify(name)
+        check(f"CONTROL {name} is decoration he sells, not a craft",
+              state == catalog.ALLOWED, state)
 
     print("4. paths and parents agree with each other")
     check("a child's path is its parent's path plus its name",
@@ -189,10 +245,10 @@ def main() -> int:
 
     def translator(chunk):
         calls.append(list(chunk))
-        # Deliberately omits 零食 and renames a key, which is what a model
+        # Deliberately omits 餐具 and renames a key, which is what a model
         # actually does wrong. Neither may cause a category to lose its name.
         out = {name: {"en": f"en:{name}", "ar": f"ar:{name}"}
-               for name in chunk if name != "零食"}
+               for name in chunk if name != "餐具"}
         out.pop("玩具", None)
         out["玩 具"] = {"en": "toys", "ar": "ألعاب"}
         return out
@@ -205,7 +261,7 @@ def main() -> int:
     check("a translated name arrives in both languages",
           rows_by_id[11]["name_en"] == "en:水枪" and rows_by_id[11]["name_ar"] == "ar:水枪")
     check("an omitted name falls back to the original, it does not vanish",
-          rows_by_id[32]["name_en"] == "零食" and rows_by_id[32]["name_ar"] == "零食")
+          rows_by_id[32]["name_en"] == "餐具" and rows_by_id[32]["name_ar"] == "餐具")
     check("a renamed key falls back too, rather than taking someone else's name",
           rows_by_id[10]["name_en"] == "玩具", rows_by_id[10]["name_en"])
 
@@ -216,12 +272,12 @@ def main() -> int:
           calls == [], str(calls))
     check("and still fills every name in", all(row.get("name_ar") for row in again))
     check("the failures are recorded as failures, not as good translations",
-          json.load(open(name_cache, encoding="utf-8"))["零食"].get("fallback") is True)
+          json.load(open(name_cache, encoding="utf-8"))["餐具"].get("fallback") is True)
 
     calls.clear()
     catalog.translate_rows(again, translator, name_cache, batch=3, retry_fallbacks=True)
     check("CONTROL: asking for a retry re-sends exactly the two that failed",
-          sorted(sum(calls, [])) == sorted(["玩具", "零食"]), str(calls))
+          sorted(sum(calls, [])) == sorted(["玩具", "餐具"]), str(calls))
 
     print("8. the summary adds up")
     summary = catalog.summarise(rows)

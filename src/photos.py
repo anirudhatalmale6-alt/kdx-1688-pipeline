@@ -13,9 +13,13 @@ are all dead is held rather than published half-made.
 
 Two things this deliberately does NOT do:
 
-  - it does not decide the picture is good. A 200 with image bytes is all that
-    can be checked from here; whether the photograph shows the product is the
-    supplier's business.
+  - it does not decide the picture is good. Whether the photograph flatters the
+    product is the supplier's business. It does now decide whether there is a
+    photograph at all - see BLANK_SPREAD below - because on 4 September the
+    client sent a screenshot of a product in his shop with an empty frame, and
+    the empty frame was ours: the URL answered 200 with a real JPEG whose every
+    pixel was 255,255,255. "A 200 with image bytes", which is what this note
+    used to say was the most that could be checked, is exactly what a blank is.
   - it does not send a Referer. His shop's pages carry
     `strict-origin-when-cross-origin`, so a browser asking alicdn directly for
     the image sends `https://kdx-sa.com/` and alicdn answers 403 - measured on
@@ -28,6 +32,7 @@ Two things this deliberately does NOT do:
 from __future__ import annotations
 
 import hashlib
+import io
 import os
 import threading
 import urllib.error
@@ -60,6 +65,47 @@ KEEP_BYTES = int(os.environ.get("KDX_IMAGE_CACHE_BYTES", str(48 * 1024 * 1024)))
 # waiting, not to hammer theirs.
 WORKERS = int(os.environ.get("KDX_IMAGE_WORKERS", "8"))
 
+# How much a photograph must vary across its widest channel before it counts as
+# a photograph at all. A picture of a product on a white background spreads the
+# full 0-255; a placeholder does not move at all.
+#
+# The number comes from the catalogue rather than from taste. Of the 2,906
+# distinct image URLs behind the 367 products published up to 4 September,
+# exactly one is flat - O1CN01K4bsgT20A7ZQywdag, served under two URLs, 800x800,
+# every pixel 255,255,255 - and it is shared by FIVE unrelated offers, which is
+# what a placeholder looks like rather than a corrupt upload. Widening the
+# candidate band from 20 kB to 60 kB (7 files to 278) found no others, so this
+# is a small, sharp fault and not the thin end of a distribution.
+#
+# Eight, not zero, because JPEG is lossy and a flat field comes back with a
+# little ringing. Measured against the real file, whose spread is 0.
+#
+# Deliberately colour-blind: black, grey and any other flat field are equally
+# not a photograph, and the rule should not have to be told which colours the
+# next supplier will use.
+BLANK_SPREAD = int(os.environ.get("KDX_IMAGE_BLANK_SPREAD", "8"))
+
+
+def spread_of(body: bytes):
+    """
+    The widest range of values in any channel of this image, or None.
+
+    None means "could not look" - no Pillow, or bytes that are not an image -
+    and is never treated as blank. Not having looked is not evidence.
+    """
+    if not body:
+        return None
+    try:
+        from PIL import Image
+    except ImportError:
+        return None
+    try:
+        with Image.open(io.BytesIO(body)) as image:
+            extrema = image.convert("RGB").getextrema()
+    except Exception:  # noqa: BLE001
+        return None
+    return max(high - low for low, high in extrema)
+
 
 class PhotoChecker:
     """Answers 'can this URL be fetched' once per URL per run."""
@@ -75,6 +121,8 @@ class PhotoChecker:
         self.held_bytes = 0
         self.checked = 0
         self.dead = 0
+        self.blanks: dict = {}
+        self.blank_count = 0
         self.workers = max(1, workers)
         # The cache and the byte budget are touched from several threads once
         # warm() runs. Without this two threads can both see room for the last
@@ -172,11 +220,33 @@ class PhotoChecker:
             kept.append(url)
         return kept
 
+    def blank(self, url: str) -> bool:
+        """
+        Is this an empty frame rather than a photograph?
+
+        Judged on the bytes reachable() already downloaded, so it costs nothing
+        extra. Where the bytes were not kept - the checker holds only as many as
+        its budget allows - the answer is False, exactly as fingerprint() returns
+        None there: this can only report on photographs it has actually seen.
+        """
+        with self._lock:
+            if url in self.blanks:
+                return self.blanks[url]
+        spread = spread_of(self.bodies.get(url))
+        verdict = spread is not None and spread <= BLANK_SPREAD
+        with self._lock:
+            self.blanks[url] = verdict
+            if verdict:
+                self.blank_count += 1
+        return verdict
+
     def keep(self, urls) -> list:
-        return [url for url in (urls or []) if self.reachable(url)]
+        return [url for url in (urls or [])
+                if self.reachable(url) and not self.blank(url)]
 
     def summary(self) -> dict:
-        return {"urls_checked": len(self.seen), "urls_dead": self.dead}
+        return {"urls_checked": len(self.seen), "urls_dead": self.dead,
+                "urls_blank": self.blank_count}
 
 
 # The CDN will resize a picture for us if the URL asks. Measured on 25 first
@@ -289,5 +359,9 @@ def prune(payload: dict, checker: PhotoChecker) -> dict:
         if variant.get("image") not in variant["images"]:
             variant["image"] = variant["images"][0] if variant["images"] else ""
 
-    return {"had": len(before), "kept": len(kept),
-            "dropped": [url for url in before if url not in kept]}
+    dropped = [url for url in before if url not in kept]
+    return {"had": len(before), "kept": len(kept), "dropped": dropped,
+            # Separated because the two failures need different answers: a dead
+            # URL may be a network that will work next time, while a blank one
+            # answers perfectly and always will.
+            "blank": [url for url in dropped if checker.blank(url)]}

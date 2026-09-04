@@ -784,8 +784,12 @@ class Pipeline:
                     points_spent=spent, compared=compared,
                     searches_spent=searches, from_cache=from_cache,
                     photos=report,
-                    error=f"no reachable photograph ({report['had']} URL(s) "
-                          f"offered, none answered with an image)")
+                    error=(
+                        f"no usable photograph ({report['had']} URL(s) offered, "
+                        f"{len(report['blank'])} of them blank)"
+                        if report["blank"] else
+                        f"no reachable photograph ({report['had']} URL(s) "
+                        f"offered, none answered with an image)"))
 
             # Then the clean photographs first. The client asked on 30 August
             # about Chinese writing printed inside the picture; it cannot be

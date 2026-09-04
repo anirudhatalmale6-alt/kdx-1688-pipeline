@@ -90,6 +90,34 @@ GOOD = "https://cbu01.alicdn.com/img/ibank/good.jpg"
 GONE = "https://cbu01.alicdn.com/img/ibank/gone.jpg"
 HTML = "https://cbu01.alicdn.com/img/ibank/html.jpg"
 SLOW = "https://cbu01.alicdn.com/img/ibank/slow.jpg"
+BLANK = "https://cbu01.alicdn.com/img/ibank/blank.jpg"
+
+
+def placeholder_bytes() -> bytes:
+    """
+    The actual blank the client photographed, not an imitation of one.
+
+    O1CN01K4bsgT20A7ZQywdag_!!2220793886808-0-cib.jpg_800x800.jpg - 7,784 bytes,
+    sha256 155edfed73f38e4b..., every pixel 255,255,255 - kept base64 in
+    samples/ rather than as a .jpg because .gitignore excludes image files to
+    stop the client's console screenshots from ever being committed, and that
+    rule is worth more than the convenience of a second file extension.
+    """
+    import base64
+    path = os.path.join(HERE, "samples", "blank_placeholder.jpg.b64")
+    with open(path, "r", encoding="utf-8") as handle:
+        return base64.b64decode(handle.read())
+
+
+def drawn(colour=(255, 255, 255), mark=True) -> bytes:
+    """An 800x800 JPEG, with a shape on it unless asked for a flat field."""
+    from PIL import Image, ImageDraw
+    image = Image.new("RGB", (800, 800), colour)
+    if mark:
+        ImageDraw.Draw(image).ellipse((200, 200, 600, 600), fill=(30, 60, 120))
+    buffer = io.BytesIO()
+    image.save(buffer, format="JPEG", quality=90)
+    return buffer.getvalue()
 
 
 def main() -> int:
@@ -100,6 +128,76 @@ def main() -> int:
     check("a 404 is not", checker.reachable(GONE) is False)
     check("an empty URL is not, without a request",
           checker.reachable("") is False and len(opener.calls) == 2)
+
+    print("\na 200 that IS an image can still be an empty frame")
+    # 4 September: the client sent a screenshot of a product in his shop with a
+    # white square where the picture should be, and asked whether it was his
+    # shop's fault. It was not. The URL answered 200 with a real 800x800 JPEG in
+    # which every pixel was 255,255,255 - one placeholder shared by five
+    # unrelated offers among the 2,906 images published up to that day.
+    real_blank = placeholder_bytes()
+    check("the placeholder really is flat, which is what this whole rule rests on",
+          photos.spread_of(real_blank) == 0, str(photos.spread_of(real_blank)))
+    opener = FakeOpener({BLANK: 200, GOOD: 200},
+                        bodies={BLANK: real_blank, GOOD: drawn()})
+    checker = photos.PhotoChecker(opener=opener)
+    check("it is reachable - that was never the problem",
+          checker.reachable(BLANK) is True)
+    check("and it is refused anyway, because there is no photograph in it",
+          checker.blank(BLANK) is True)
+    check("so keep() drops it", checker.keep([BLANK]) == [])
+    check("CONTROL a real photograph on a white background is kept",
+          checker.keep([GOOD]) == [GOOD])
+    check("CONTROL and is not called blank", checker.blank(GOOD) is False)
+    check("the count is reported, not silent",
+          checker.summary()["urls_blank"] == 1, str(checker.summary()))
+
+    # CONTROL colour-blind: the rule is "no picture", not "not white". A flat
+    # black or flat grey field is equally empty and the next supplier should not
+    # need a new rule.
+    for name, colour in (("black", (0, 0, 0)), ("grey", (128, 128, 128))):
+        url = f"https://cbu01.alicdn.com/img/ibank/flat-{name}.jpg"
+        flat = photos.PhotoChecker(
+            opener=FakeOpener({url: 200}, bodies={url: drawn(colour, mark=False)}))
+        flat.reachable(url)
+        check(f"CONTROL a flat {name} field is empty too", flat.blank(url) is True)
+
+    # CONTROL not having looked is not evidence. Bytes it could not decode, and
+    # bytes it never kept, are both "no opinion" - never "blank".
+    junk = photos.PhotoChecker(opener=FakeOpener({GOOD: 200}))
+    junk.reachable(GOOD)
+    check("CONTROL bytes that are not an image at all are not called blank",
+          junk.blank(GOOD) is False)
+    check("CONTROL and spread_of says so by refusing to answer",
+          photos.spread_of(b"\xff\xd8not-a-jpeg") is None)
+    starved = photos.PhotoChecker(
+        opener=FakeOpener({BLANK: 200}, bodies={BLANK: real_blank}), keep_bytes=0)
+    starved.reachable(BLANK)
+    check("CONTROL a photograph whose bytes the budget refused to keep is not "
+          "called blank on no evidence", starved.blank(BLANK) is False)
+
+    print("\na product left with nothing but blanks is held, and says why")
+    payload = {"images": [BLANK], "variants": []}
+    held = photos.PhotoChecker(opener=FakeOpener({BLANK: 200},
+                                                 bodies={BLANK: real_blank}))
+    report = photos.prune(payload, held)
+    check("the blank is pruned out of the gallery", payload["images"] == [])
+    check("and the report separates blank from dead, because a dead URL might "
+          "work next time and a blank one never will",
+          report["blank"] == [BLANK] and report["kept"] == 0, str(report))
+    mixed = {"images": [BLANK, GOOD], "variants": [{"image": BLANK,
+                                                    "images": [BLANK, GOOD]}]}
+    both = photos.PhotoChecker(
+        opener=FakeOpener({BLANK: 200, GOOD: 200},
+                          bodies={BLANK: real_blank, GOOD: drawn()}))
+    photos.prune(mixed, both)
+    check("CONTROL a product that also has a real photograph keeps it and is "
+          "published, not thrown away",
+          mixed["images"] == [GOOD], str(mixed["images"]))
+    check("CONTROL and the variant swatch moves off the blank too",
+          mixed["variants"][0]["image"] == GOOD
+          and mixed["variants"][0]["images"] == [GOOD],
+          str(mixed["variants"][0]))
 
     print("\na 200 that is not an image is not a photograph")
     # His importer converts to webp. Handed an HTML error page with a 200 it
@@ -126,7 +224,8 @@ def main() -> int:
         checker.reachable(GOOD)
     check("five asks, one request", len(opener.calls) == 1, str(len(opener.calls)))
     check("and the summary counts URLs, not asks",
-          checker.summary() == {"urls_checked": 1, "urls_dead": 0},
+          checker.summary() == {"urls_checked": 1, "urls_dead": 0,
+                                "urls_blank": 0},
           str(checker.summary()))
 
     print("\na timeout is retried, a 404 is not")
@@ -151,7 +250,10 @@ def main() -> int:
     check("the gallery loses the dead one", payload["images"] == [GOOD],
           str(payload["images"]))
     check("the report says what was dropped",
-          report == {"had": 2, "kept": 1, "dropped": [GONE]}, str(report))
+          report == {"had": 2, "kept": 1, "dropped": [GONE], "blank": []},
+          str(report))
+    check("and a dead URL is not filed as a blank one - they are different "
+          "faults with different answers", report["blank"] == [])
     # A variant is a colour swatch on his page. Left pointing at a dead URL it
     # renders an empty frame next to a live price, which is the same defect
     # one level down.

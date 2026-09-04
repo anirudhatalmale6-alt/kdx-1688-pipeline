@@ -50,11 +50,75 @@ import wordlist  # noqa: E402
 LOCK_PATH = paths.state_path("daily.lock", "KDX_LOCK")
 # A machine that loses power mid-run leaves the lock behind. Twelve hours is
 # longer than any plausible run and shorter than the gap to the next midnight.
+#
+# Twelve hours turned out to be twelve hours of silence. On 4 September the
+# 01:21 batch hit the unit's 15-minute TimeoutStartSec, systemd killed it, and
+# the lock it was holding outlived it. Every batch from 01:41 to 07:22 - twenty
+# of them - started, read the lock, and exited in one second. The pull was dead
+# for six hours and nothing said so, because from systemd's side each of those
+# runs "Finished" successfully.
+#
+# So age is the wrong question to ask first. The lock records the pid that took
+# it; ask the operating system whether that pid is still there.
 STALE_LOCK_SECONDS = int(os.environ.get("KDX_LOCK_STALE_SECONDS", str(12 * 3600)))
 
 
 class Locked(RuntimeError):
     pass
+
+
+def process_start_time(pid: int) -> str:
+    """
+    The boot-clock tick at which this pid started, or "" if it cannot be read.
+
+    Field 22 of /proc/<pid>/stat. It is what makes a pid an identity rather than
+    a number: pids are recycled, start times are not, so a pid that matches AND
+    started when we said it did is the same process we wrote down.
+
+    Field 2 is the executable name in brackets and may itself contain spaces or
+    brackets, so the split is anchored on the LAST ")" rather than on the first
+    space - the usual way this parse goes wrong.
+    """
+    try:
+        with open(f"/proc/{pid}/stat", "r", encoding="utf-8") as handle:
+            raw = handle.read()
+    except OSError:
+        return ""
+    try:
+        fields = raw[raw.rindex(")") + 2:].split()
+        return fields[19]           # field 22 overall; 20th after the two skipped
+    except (ValueError, IndexError):
+        return ""
+
+
+def lock_holder_alive(path: str) -> bool:
+    """
+    Is the process that wrote this lock still running?
+
+    Deliberately one-sided: every answer it cannot make confidently is True,
+    "assume held". Clearing a lock that IS held would put two runs on one ledger
+    - the failure this whole mechanism exists to prevent - while refusing to
+    clear one that is not held costs only the twelve-hour rule already in place.
+
+    Identity is pid + start time, never the process's name. The first version of
+    this function matched "daily_run" in /proc/<pid>/cmdline and the suite caught
+    it immediately: verify_discover.py takes a real lock to prove a second run is
+    refused, and by that rule its own living process read as dead. A lock is held
+    by whoever took it, whatever that program happens to be called.
+    """
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            parts = handle.read().split()
+        pid = int(parts[0])
+        recorded = parts[2]
+    except (OSError, ValueError, IndexError):
+        return True  # unreadable, or written by a version that stored no start
+    if pid <= 0:
+        return True
+    started = process_start_time(pid)
+    if not started:
+        return False  # no such pid (or no /proc entry for it): the run is gone
+    return started == recorded
 
 
 def pool_keywords(runner, day: str, count: int) -> list:
@@ -216,17 +280,23 @@ def take_lock(path: str = LOCK_PATH) -> int:
         if exc.errno != errno.EEXIST:
             raise
         age = time.time() - os.path.getmtime(path)
-        if age < STALE_LOCK_SECONDS:
+        if not lock_holder_alive(path):
+            # The holder is gone - killed, crashed, or the machine restarted.
+            # Nothing is running, so nothing can be raced, whatever the age.
+            print(f"clearing the lock of a run that is no longer there "
+                  f"({age / 3600:.1f} h old): {path}")
+        elif age < STALE_LOCK_SECONDS:
             raise Locked(
                 f"another run holds {path} (started {age / 3600:.1f} h ago). "
                 f"If that run is really dead, delete the file.") from exc
-        # Old enough that the process cannot still be running. Say so in the
-        # log rather than clearing it silently: a stale lock means a run died.
-        print(f"clearing a stale lock, {age / 3600:.1f} h old: {path}")
+        else:
+            # Old enough that the process cannot still be running. Say so in the
+            # log rather than clearing it silently: a stale lock means a run died.
+            print(f"clearing a stale lock, {age / 3600:.1f} h old: {path}")
         os.unlink(path)
         handle = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
-    os.write(handle, f"{os.getpid()} {datetime.now().isoformat(timespec='seconds')}\n"
-             .encode("utf-8"))
+    os.write(handle, f"{os.getpid()} {datetime.now().isoformat(timespec='seconds')} "
+                     f"{process_start_time(os.getpid())}\n".encode("utf-8"))
     return handle
 
 

@@ -87,6 +87,61 @@ BLOCK_TOKENS = {
     "养殖动物": "live_animals", "畜牧": "live_animals", "活体": "live_animals",
 }
 
+# Anything edible, 4 September. He banned food for people and for animals on
+# 3 September and it was implemented in rules.BANNED_TERMS, on the words of the
+# LISTING - and on 4 September he sent a screenshot of goat milk powder for cats
+# and dogs, published at 22:30 that night, hours after the words went in. Words
+# alone were never going to be enough: the ban list has to guess how the next
+# supplier writes 奶粉, while the category the supplier filed it under is
+# already the shop's own answer to "is this food".
+#
+# These five leaves are what the tokens reach in the live tree, and they are the
+# whole of it: 猫猫零食, 狗狗罐头、零食, 狗狗干粮, 狗狗保健品, 猫猫保健品 - 5 of
+# the 1,072 categories cached on 4 September. The other nine pet leaves (猫猫玩具,
+# 猫抓板, 猫猫服饰, 狗狗服装, 宠物帽子, 宠物智能喂养设备, 电子宠物) stay open,
+# and so do the two HUMAN ones the obvious shorter token would have taken with
+# it: 保健护具 and 保健器具配件 are orthopaedic braces, which is why the token is
+# 保健品 and not 保健.
+#
+# Scored over the 367 products published up to 4 September these refuse exactly
+# five, and all five are animal food - the three freeze-dried cat treats and two
+# dog foods already in his shop. No other product is touched.
+#
+# Kept apart from BLOCK_TOKENS and applied BELOW the safe phrases, in the same
+# position as the liquids rule and for the same reason it is there: 奶粉罐 is a
+# tin, 罐头瓶 is a jar, and a ban checked before the exemptions cannot tell a
+# container from its contents.
+FOOD_TOKENS = {
+    "零食": "food", "罐头": "food", "保健品": "food", "奶粉": "food",
+    "干粮": "animal_food", "主粮": "animal_food", "猫粮": "animal_food",
+    "狗粮": "animal_food", "饲料": "animal_food",
+}
+
+# 4 September, his words: "منتج مبتكر او منتج مستخدم هل ممكن حظرة فقط نستقبل
+# المنتجات الحقيقية" - can we ban the improvised or used-looking thing, we only
+# want real products - sent with a resin turbine table lamp photographed on a
+# dark surface at home rather than shot on white.
+#
+# What that lamp is NOT is used: its own title says 跨境新品, new. And it is not
+# detectable from the photograph either, which is worth writing down because it
+# was the obvious idea and it failed. Measured on the first photograph of all
+# 367 published products, the pale border a catalogue shot has: the median
+# product scores 13.8% and HIS example scores enough to rank 272nd of 367 - more
+# catalogue-like than 271 products he has not complained about. There is no
+# threshold there. Photograph style cannot carry this rule.
+#
+# What separates it is the aisle. 1688 filed it under 树脂工艺品, resin CRAFTS,
+# and craft is the closest thing the tree has to "made by hand, one at a time".
+# The seven 工艺品 leaves cost him exactly ONE of 367 published products.
+#
+# 摆件 - ornaments - is deliberately NOT here even though 其他装饰摆件, 汽车摆件
+# and 电视柜摆件 sit right beside them and would cost three more. He sells
+# 家纺家饰, home decoration, and an ornament is that department's merchandise.
+# Crafts are a class he asked about; decoration is a department he chose.
+CRAFT_TOKENS = {
+    "工艺品": "handicraft", "手工艺": "handicraft",
+}
+
 # Ambiguous: the word is banned in some names and ordinary merchandise in
 # others. Never blocks by itself - it flags for the client to decide.
 REVIEW_TOKENS = {
@@ -111,6 +166,12 @@ SAFE_PHRASES = (
     "烟灰缸", "抽油烟机", "烟感", "排烟", "油烟",
     "药箱", "药盒", "医药箱", "药膏贴", "制药设备", "制药辅料", "药用包装",
     "猪笼草",
+    # The containers, not the contents. A tin is not milk powder and a jar is
+    # not jam - the same distinction 食品级 already makes above. None of these
+    # appears in the 1,072 categories cached today; they are here so that the
+    # food tokens added on 4 September cannot delete a storage aisle later.
+    "罐头瓶", "罐头盒", "奶粉罐", "奶粉盒", "奶粉分装", "粮桶", "粮箱",
+    "保健护具", "保健器具",
 )
 
 ALLOWED, BLOCKED, REVIEW = "allowed", "blocked", "review"
@@ -146,6 +207,13 @@ def classify(name_zh: str) -> tuple[str, str, str]:
     liquid = liquids.find_liquid_term(name)
     if liquid:
         return BLOCKED, f"liquid_{liquid[0]}", liquid[1]
+
+    # Food and crafts, 4 September. Below the safe phrases for the same reason
+    # as liquids: 奶粉罐 is an empty tin and 保健护具 is a knee brace.
+    for tokens in (FOOD_TOKENS, CRAFT_TOKENS):
+        for token, reason in tokens.items():
+            if token in name:
+                return BLOCKED, reason, token
 
     for token, reason in REVIEW_TOKENS.items():
         if token in name:

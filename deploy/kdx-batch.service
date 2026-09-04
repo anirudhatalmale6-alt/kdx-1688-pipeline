@@ -40,11 +40,19 @@ ExecStart=/usr/bin/python3 /opt/kdx/app/daily_run.py --channel selected --shippi
 # slow batch paints the timer red and a real failure stops standing out.
 SuccessExitStatus=2
 # Twenty minutes is the gap between batches; a batch that has not finished in
-# fifteen has hit something slow, and the next one will start clean. Ten
-# products is about eight minutes, and the slowest five-product batch observed
-# ran at 84 s a product, which would be fourteen - so fifteen is a real ceiling
-# with a little room, not a number that trips on a normal run.
-TimeoutStartSec=15min
+# seventeen has hit something slow, and the next one will start clean.
+#
+# It was fifteen, and fifteen was measured before his import started answering
+# slowly. Over the night of 3-4 September the batches ran 8.4, 12.3, 9.1, 13.0,
+# 12.1, 7.8, 13.6 and 13.5 minutes: the ceiling was inside the normal range, not
+# above it, and at 01:21 a batch reached it and was killed. Seventeen sits above
+# every one of those and still cannot meet the next batch three minutes later.
+#
+# The kill itself was survivable. What was not is that it left daily.lock behind
+# and the twenty batches after it exited in one second - six hours of silence.
+# That is fixed in daily_run.take_lock, which now asks whether the process that
+# took the lock is still there rather than how old the file is.
+TimeoutStartSec=17min
 Nice=10
 
 ProtectSystem=strict

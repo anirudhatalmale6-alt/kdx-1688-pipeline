@@ -62,6 +62,25 @@ for title in (CAT_TREATS, DOG_FOOD, SOFT_DOG_FOOD):
 
 check("human food is refused too - his rule names both",
       rules.find_banned_term(listing("休闲零食大礼包夹心饼干糖果")) is not None)
+
+# 4 September. The three titles above went in on the 3rd and the shop still got
+# goat milk powder for cats and dogs at 22:30 that same night: a supplement is
+# not 粮, not 零食, not 罐头, so not one word on the list described it. The
+# category gate (catalog.FOOD_TOKENS) is the wider net and blocks 狗狗保健品 and
+# 猫猫保健品 outright; these words are the second line, for the same goods filed
+# somewhere else.
+for title in ("宠物羊奶粉幼犬幼猫补充营养山羊奶粉",
+              "猫咪狗狗益生菌调理肠胃宠物益生菌",
+              "犬猫通用宠物营养品微量元素片"):
+    hit = rules.find_banned_term(listing(title))
+    check(f"a pet supplement is refused: {title[:14]}",
+          hit is not None and hit[0] in ("food", "animal_food"), str(hit))
+
+# CONTROL milk powder for a BABY is human food, refused by the same rule for the
+# other half of his sentence, and the tin it comes in is neither.
+check("CONTROL a baby formula tin is a container, not a meal",
+      rules.find_banned_term(listing("奶粉罐密封储存罐防潮奶粉盒便携")) is None,
+      str(rules.find_banned_term(listing("奶粉罐密封储存罐防潮奶粉盒便携"))))
 check("and the reason names the exact word, so the audit row can be read",
       rules.find_banned_term(listing(CAT_TREATS))[1] in ("零食", "猫粮", "冻干猫"),
       str(rules.find_banned_term(listing(CAT_TREATS))))

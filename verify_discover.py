@@ -360,6 +360,71 @@ handle = daily_run.take_lock(stale)
 check("a lock left behind by a dead run is cleared, not obeyed for ever",
       os.path.exists(stale))
 daily_run.release_lock(handle, stale)
+
+# On 4 September the twelve-hour rule was twelve hours of silence: systemd
+# killed the 01:21 batch at its 15-minute wall, the lock outlived it, and the
+# twenty batches from 01:41 to 07:22 each read a lock two hours old, exited in
+# one second, and reported success. Age was the wrong question.
+import subprocess  # noqa: E402
+
+departed = subprocess.Popen([sys.executable, "-c", "pass"])
+departed.wait()
+fresh = os.path.join(work6, "killed.lock")
+with open(fresh, "w", encoding="utf-8") as fh:
+    fh.write(f"{departed.pid} 2026-09-04T01:21:26 99999999\n")
+check("a lock is not believed just because it is recent - the run that took "
+      "this one is gone, so the next batch takes it",
+      not daily_run.lock_holder_alive(fresh))
+handle = daily_run.take_lock(fresh)
+check("and taking it really succeeds, which is the six hours that were lost",
+      os.path.exists(fresh))
+daily_run.release_lock(handle, fresh)
+
+# CONTROL a lock a LIVE run holds must still be obeyed, or the fix above trades
+# six silent hours for two runs on one ledger. This is the case the first
+# version of lock_holder_alive got wrong, and the case section 11 above already
+# exercises with this very process: it took a real lock a few lines up.
+holder = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+try:
+    held = os.path.join(work6, "held.lock")
+    with open(held, "w", encoding="utf-8") as fh:
+        fh.write(f"{holder.pid} now "
+                 f"{daily_run.process_start_time(holder.pid)}\n")
+    check("CONTROL a lock whose run IS alive is obeyed, whatever that run is "
+          "called - identity is the pid and when it started, not a name",
+          daily_run.lock_holder_alive(held))
+    try:
+        daily_run.take_lock(held)
+    except daily_run.Locked:
+        check("CONTROL so a second run still refuses to start", True)
+    else:
+        check("CONTROL so a second run still refuses to start", False,
+              "it started alongside a living run")
+finally:
+    holder.kill()
+    holder.wait()
+
+# CONTROL a pid we wrote hours ago can be recycled. pid 1 is alive on every
+# Linux box; the start time we claim for it is not the one it has.
+recycled = os.path.join(work6, "recycled.lock")
+with open(recycled, "w", encoding="utf-8") as fh:
+    fh.write("1 2026-09-04T01:21:26 12345\n")
+check("CONTROL a recycled pid is not mistaken for the run that took the lock",
+      not daily_run.lock_holder_alive(recycled))
+check("CONTROL and pid 1 really is alive, so that is a start-time mismatch and "
+      "not an absent process",
+      daily_run.process_start_time(1) != "",
+      daily_run.process_start_time(1))
+
+# CONTROL anything unreadable is assumed HELD - including the two-field format
+# this very version replaced, which is what is sitting on the server right now.
+for name, body in (("garbage.lock", "written by an older version\n"),
+                   ("oldformat.lock", "167504 2026-09-04T01:21:26\n")):
+    older = os.path.join(work6, name)
+    with open(older, "w", encoding="utf-8") as fh:
+        fh.write(body)
+    check(f"CONTROL a lock it cannot read is assumed held ({name})",
+          daily_run.lock_holder_alive(older))
 shutil.rmtree(work6)
 
 print("\n8. forty-nine departments must not become four")
