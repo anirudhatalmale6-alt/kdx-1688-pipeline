@@ -231,22 +231,32 @@ def spec_set(text: str) -> set:
     return found
 
 
-def spec_agreement(ours: str, theirs: str) -> bool:
-    """Both titles state a specification, and they share one."""
-    mine, yours = spec_set(ours), spec_set(theirs)
-    return bool(mine and yours and (mine & yours))
-
-
-def text_score(ours: str, theirs: str) -> Decimal:
+def our_titles(ours) -> tuple:
     """
-    How much of the shorter title the two share, 0-100.
+    Our title in every language we hold it in, as a tuple.
 
-    Coverage of the shorter title rather than Jaccard overlap, because
-    competitor titles are padded with keywords: a genuine match is one where
-    nearly everything the shorter title says also appears in the longer one.
-
-    A disagreement between specification tokens vetoes the match outright.
+    Accepts a plain string so every existing caller keeps working.
     """
+    if isinstance(ours, str):
+        return (ours,) if ours else ()
+    return tuple(str(title) for title in (ours or ()) if title)
+
+
+def spec_agreement(ours, theirs: str) -> bool:
+    """
+    Both titles state a specification, and they share one.
+
+    Takes the same several-languages `ours` as text_score, and for the same
+    reason: this is the second signal an unbacked row is allowed to lean on, so
+    it must not be blind in the language the rival actually writes in.
+    """
+    yours = spec_set(theirs)
+    if not yours:
+        return False
+    return any(spec_set(mine) & yours for mine in our_titles(ours))
+
+
+def _one_text_score(ours: str, theirs: str) -> Decimal:
     mine, yours = tokens(ours), tokens(theirs)
     if not mine or not yours:
         return Decimal("0")
@@ -259,6 +269,52 @@ def text_score(ours: str, theirs: str) -> Decimal:
 
     shared = len(mine & yours)
     return money(Decimal(shared) * 100 / Decimal(min(len(mine), len(yours))))
+
+
+def text_score(ours, theirs: str) -> Decimal:
+    """
+    How much of the shorter title the two share, 0-100.
+
+    Coverage of the shorter title rather than Jaccard overlap, because
+    competitor titles are padded with keywords: a genuine match is one where
+    nearly everything the shorter title says also appears in the longer one.
+
+    A disagreement between specification tokens vetoes the match outright.
+
+    `ours` may be several titles - the same product named in more than one
+    language - and the best of them wins. That is not a refinement, it is the
+    difference between measuring similarity and measuring alphabet.
+
+    4 September, measured on the client's own catalogue: we send the ENGLISH
+    title, and Amazon.sa and Noon answer with ARABIC ones. Every one of the
+    seven priced rival rows in an eight-product sample scored exactly 0.00
+    against our English title. The same rows against our Arabic title, which we
+    have already paid to produce and were not using here, score 28.57, 33.33,
+    18.18, 16.67, 12.50.
+
+    It also explains which products ever did match before this: printers and
+    keyboards - the ones whose model number is Latin in both languages, and so
+    the only ones whose titles could share a token at all.
+    """
+    scores = [_one_text_score(mine, theirs) for mine in our_titles(ours)]
+    if not scores:
+        return Decimal("0")
+    # The veto is not subject to the max. If ANY of our titles states a
+    # specification the rival contradicts, the match dies - even when another
+    # of our titles agrees with it.
+    #
+    # The suite caught this the moment the max went in: our English "20L" and
+    # our Arabic "30L" cannot both be right, and a rival matching whichever one
+    # happened to agree is the "same photo, two sizes" mistake arriving through
+    # the front door. Two of our own titles disagreeing is a reason to refuse,
+    # not a second chance to match.
+    if any(score == 0 for score in scores) and len(scores) > 1:
+        theirs_specs = spec_set(theirs)
+        for mine in our_titles(ours):
+            my_specs = spec_set(mine)
+            if my_specs and theirs_specs and not (my_specs & theirs_specs):
+                return Decimal("0")
+    return max(scores)
 
 
 def visual_score(rank: int) -> Decimal:
@@ -708,7 +764,13 @@ def main_image(product) -> str:
     return ""
 
 
-def hits_for_product(provider, product, title_en: str, max_images_per_variant: int = 1,
+def query_title(titles) -> str:
+    """The one title a search engine is asked with - the first we hold."""
+    names = our_titles(titles)
+    return names[0] if names else ""
+
+
+def hits_for_product(provider, product, title_en, max_images_per_variant: int = 1,
                      shopping=None, scope: str = "") -> dict:
     """
     Search by photo and return {sku_id: [CompetitorHit]}.
@@ -740,7 +802,11 @@ def hits_for_product(provider, product, title_en: str, max_images_per_variant: i
                  for m in matches if m["price"] is not None]
         if shopping is not None and needs_price_search(matches):
             if shopping_rows is None:
-                shopping_rows = shopping.search_by_title(title_en)
+                # The QUERY stays English: measured on 4 September, an Arabic
+                # query reached his five platforms LESS often, not more - 4
+                # priced rows against 7 over the same eight products. Only the
+                # scoring is bilingual, because only the scoring was broken.
+                shopping_rows = shopping.search_by_title(query_title(title_en))
             found.extend(prices_from_shopping(matches, shopping_rows, title_en, sku))
         return found
 

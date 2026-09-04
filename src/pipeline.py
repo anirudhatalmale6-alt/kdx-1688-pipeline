@@ -723,8 +723,13 @@ class Pipeline:
                                 points_spent=spent, compared=False)
 
         # Cache first, then the meter, then the search - see _compare below.
+        # Both languages go to the comparison, not just the English one. Amazon
+        # and Noon answer a Saudi search in Arabic, and scoring an English title
+        # against an Arabic one returned exactly 0.00 for every priced rival row
+        # in an eight-product sample on 4 September. See compare.text_score.
         hits, searches, from_cache, compared = self._compare(
-            product, enriched.get("name_en", ""),
+            product,
+            (enriched.get("name_en", ""), enriched.get("name_ar", "")),
             translated=not enriched.get("_untranslated"))
 
         results = self.engine.evaluate(product, hits)

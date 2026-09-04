@@ -90,6 +90,59 @@ def main() -> int:
     check("CONTROL and removing it brings the second one back",
           len(compare.hits_from_results(results, OUR_TITLE)) == 2)
 
+    print("1b. the words gate must not be a test of which alphabet we sent")
+    # 4 September. We search with the English name; Amazon.sa and Noon answer a
+    # Saudi search in Arabic. Every one of the seven priced rival rows in an
+    # eight-product sample scored exactly 0.00 - not "no match", no shared
+    # character. These are real strings from that measurement.
+    OURS_EN = "Loose Zen Style Long Flowing Dress"
+    OURS_AR = "فستان واسع فضفاض بأسلوب الزن طويل وأنيق"
+    THEIRS_AR = "فستان أنيق واسع فضفاض بأسلوب طويل للنساء"
+    check("our English title against an Arabic rival scores zero - this is the "
+          "bug, not a near miss",
+          compare.text_score(OURS_EN, THEIRS_AR) == 0,
+          str(compare.text_score(OURS_EN, THEIRS_AR)))
+    both = compare.text_score((OURS_EN, OURS_AR), THEIRS_AR)
+    check("handed both of our titles, the Arabic one answers",
+          both > 0, str(both))
+    check("and it clears the bar the English title could never reach",
+          both >= compare.TEXT_THRESHOLD, str(both))
+
+    # CONTROL the English side must not be lost by gaining the Arabic one.
+    THEIRS_EN = "Women's Loose Long Flowing Zen Style Dress"
+    check("CONTROL an English rival still scores off the English title",
+          compare.text_score((OURS_EN, OURS_AR), THEIRS_EN)
+          == compare.text_score(OURS_EN, THEIRS_EN),
+          str(compare.text_score((OURS_EN, OURS_AR), THEIRS_EN)))
+    check("CONTROL a plain string still works, so every old caller is unchanged",
+          compare.text_score(OUR_TITLE, OUR_TITLE) == 100)
+
+    # CONTROL the specification veto must survive in BOTH languages, or the
+    # bilingual score becomes a way to smuggle a 20-litre boiler past a rule
+    # that only ever read the English title.
+    check("CONTROL a capacity disagreement still vetoes, stated in Arabic",
+          compare.text_score(("Electric Water Boiler 30L", "غلاية ماء كهربائية 30L"),
+                             "غلاية ماء كهربائية 20L") == 0)
+    check("CONTROL and the veto is not escaped by the other language agreeing",
+          compare.text_score(("Electric Water Boiler 20L", "غلاية ماء كهربائية 30L"),
+                             "غلاية ماء كهربائية 20L") == 0,
+          "one of our titles says 20L and matches - but the other says 30L, "
+          "and a contradiction anywhere is still a contradiction")
+
+    check("CONTROL spec_agreement reads both languages too",
+          compare.spec_agreement(("Water Boiler", "غلاية ماء 30L"),
+                                 "غلاية ماء كهربائية 30L") is True)
+    check("CONTROL and still says no when nothing is shared",
+          compare.spec_agreement(("Water Boiler 30L", "غلاية ماء 30L"),
+                                 "غلاية ماء كهربائية 20L") is False)
+
+    # CONTROL the QUERY stays English. Measured the same day: an Arabic query
+    # reached his five platforms LESS often, 4 priced rows against 7.
+    check("CONTROL the search is still asked in English, only the scoring is "
+          "bilingual", compare.query_title((OURS_EN, OURS_AR)) == OURS_EN)
+    check("CONTROL and a plain string is its own query",
+          compare.query_title(OURS_EN) == OURS_EN)
+
     print("2. why each of the other four was thrown out")
     check("the 20 litre boiler is rejected despite the identical photo",
           compare.text_score(OUR_TITLE,
