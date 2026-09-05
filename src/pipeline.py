@@ -164,25 +164,29 @@ def to_kdx_variants(results: list, terms: dict) -> list:
 
 def _restate_uncompared(results: list) -> None:
     """
-    Correct the audit reason on a product that was never searched.
+    Say so, in the audit, when a price was set without anyone comparing.
 
-    The client's rule is that a heavy product with no match is not published, so
-    the engine rejects it as "heavy_and_unmatched" - and that reason says, in
-    Arabic, that the product was not found on any comparison platform. When the
-    monthly search allowance is gone, or the product was not translated, nobody
-    looked, and writing "not found" would be a false statement in the file the
-    client reads to understand why his catalogue is short.
+    Until 5 September a heavy unmatched product was refused, and this function
+    existed to stop the file claiming "not found on any platform" about a
+    product nobody had searched for. He opened that gate on the 5th, so the
+    row is now a published one - and the same lie is available in a new place:
+    a margin price whose basis reads "cost plus margin" looks identical whether
+    the five apps came back empty or were never asked.
 
-    The decision does not change: without a match a heavy product still cannot
-    be published. Only the stated reason changes, from a wrong one to a true
-    one, and it says the product is waiting rather than refused.
+    When the monthly search allowance is gone, or the product was not
+    translated, nobody looked. The decision and the price stand; only the
+    recorded reason changes, so that he can tell a product the market has no
+    price for from one the run simply never got to.
     """
     for result in results:
-        if result.audit.reason_code == "heavy_and_unmatched":
+        if result.audit.reason_code in ("margin_unmatched_heavy",
+                                        "priced_by_margin"):
+            if result.audit.matched_platform:
+                continue
             result.audit.reason_code = "not_compared"
-            result.audit.reason_ar = (
-                "لم تتم المقارنة لهذا المنتج (لم يُبحث عنه). "
-                "المنتج ثقيل ولا يُنشر بدون مقارنة - مؤجَّل وليس مرفوضاً")
+            result.audit.pricing_basis = (
+                f"{result.audit.pricing_basis} (بدون مقارنة - لم يُبحث عنه)"
+                if result.audit.pricing_basis else "بدون مقارنة - لم يُبحث عنه")
 
 
 def _hold_untranslated(results: list, terms: dict) -> None:
@@ -380,6 +384,12 @@ def _restate_assumed_weight(results: list, normalised: dict) -> None:
     median of other offers measured in the same leaf category, which says how
     many offers stood behind it; the other is the blanket light-weight policy,
     which stands on nothing but his decision of 30 August.
+
+    5 September: an assumed weight no longer stops anything being published -
+    the heavy-unmatched gate is open and the freight comes from a box, not a
+    weight. What is left for the weight to decide is the one thing he sets from
+    his own control panel: fast delivery under 2 kg, free shipping over it. So
+    the note now goes on the PUBLISHED row, naming the flag the guess drove.
     """
     if not normalised.get("weight_assumed"):
         return
@@ -395,13 +405,14 @@ def _restate_assumed_weight(results: list, normalised: dict) -> None:
     else:
         where = f"افترضناه {{kg}} كجم للتصنيف {category}"
     for result in results:
-        if result.audit.reason_code == "heavy_and_unmatched":
-            result.audit.reason_code = "assumed_heavy_and_unmatched"
-            result.audit.reason_ar = (
-                f"المورّد لم يذكر وزن هذا المنتج، و"
-                f"{where.format(kg=result.variant.weight_kg)}. "
-                f"بهذا التقدير يُعد المنتج ثقيلاً، ولم يُعثر له على مطابقة، "
-                f"فلم يُنشر")
+        if result.decision is rules.Decision.REJECT:
+            continue
+        flag = ("شحن سريع" if result.variant.weight_kg <= rules.LIGHT_MAX_KG
+                else "شحن مجاني")
+        result.audit.reason_ar = (
+            f"{result.audit.reason_ar} - المورّد لم يذكر وزن هذا المنتج، و"
+            f"{where.format(kg=result.variant.weight_kg)}، "
+            f"وعليه صُنّف: {flag}")
 
 
 def _one_response(responses) -> dict:

@@ -22,6 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "src"))
 
 import pipeline  # noqa: E402
+import rules  # noqa: E402
 import source  # noqa: E402
 
 FIXTURE = os.path.join(HERE, "samples", "linkplus",
@@ -255,25 +256,39 @@ print("\n8. the audit tells the truth about an assumed weight")
 
 
 class Result:
-    def __init__(self, code, weight):
-        self.audit = type("A", (), {"reason_code": code, "reason_ar": ""})()
+    def __init__(self, code, weight, decision="publish", basis=""):
+        self.audit = type("A", (), {"reason_code": code, "reason_ar": "",
+                                    "pricing_basis": basis, "decision": decision,
+                                    "matched_platform": ""})()
         self.variant = type("V", (), {"weight_kg": Decimal(str(weight))})()
+        self.decision = (rules.Decision.REJECT if decision == "reject"
+                         else rules.Decision.PUBLISH)
 
 
-results = [Result("heavy_and_unmatched", "2.5")]
+# 5 September: the heavy-unmatched gate is open, so the product this note used
+# to explain a REFUSAL for is now published, and the note explains the one
+# thing the guessed weight still decides - which shipping type his panel
+# applies. 2.5 kg is over his 2 kg line, so free shipping.
+results = [Result("priced_by_margin", "2.5")]
 pipeline._restate_assumed_weight(results, {"weight_assumed": True, "category_id": "1031912"})
-check("the code says the weight was assumed",
-      results[0].audit.reason_code == "assumed_heavy_and_unmatched")
 check("the Arabic says the supplier never stated a weight, not that we weighed it",
       "لم يذكر" in results[0].audit.reason_ar and "افترض" in results[0].audit.reason_ar,
       results[0].audit.reason_ar)
 check("it names the category the number came from",
       "1031912" in results[0].audit.reason_ar)
+check("and it names the shipping type the guess drove, which is the only thing "
+      "the guess still decides",
+      "شحن مجاني" in results[0].audit.reason_ar, results[0].audit.reason_ar)
+
+light = [Result("priced_by_margin", "0.4")]
+pipeline._restate_assumed_weight(light, {"weight_assumed": True, "category_id": "1"})
+check("CONTROL under 2 kg the same sentence says fast shipping instead",
+      "شحن سريع" in light[0].audit.reason_ar, light[0].audit.reason_ar)
 
 # Two different assumptions reach this sentence and they must not read alike:
 # one is a median of offers measured in the same category, the other is a
 # blanket default. The client acts differently on each.
-learned = [Result("heavy_and_unmatched", "8.5")]
+learned = [Result("priced_by_margin", "8.5")]
 pipeline._restate_assumed_weight(learned, {"weight_assumed": True,
                                            "category_id": "1031912",
                                            "weight_category_id": "1031912",
@@ -285,21 +300,29 @@ check("a weight taken from the category's own measurements says so, and says "
 check("CONTROL the blanket default does NOT claim any measurements",
       "متوسط" not in results[0].audit.reason_ar)
 
-control = [Result("heavy_and_unmatched", "12.4")]
+control = [Result("priced_by_margin", "12.4")]
 pipeline._restate_assumed_weight(control, {"weight_assumed": False, "category_id": "x"})
-check("CONTROL a genuinely weighed product keeps the original reason",
-      control[0].audit.reason_code == "heavy_and_unmatched")
+check("CONTROL a genuinely weighed product keeps the original reason, untouched",
+      control[0].audit.reason_ar == "")
 
-both = [Result("heavy_and_unmatched", "2.5")]
+rejected = [Result("out_of_stock", "2.5", decision="reject")]
+pipeline._restate_assumed_weight(rejected, {"weight_assumed": True, "category_id": "1"})
+check("CONTROL a refused product gets no shipping-type note - it is not being "
+      "shipped at all", rejected[0].audit.reason_ar == "")
+
+both = [Result("priced_by_margin", "2.5")]
 pipeline._restate_uncompared(both)
-pipeline._restate_assumed_weight(both, {"weight_assumed": True, "category_id": "1"})
-check("when nobody searched, THAT stays the explanation",
+check("when nobody searched, THAT is the code",
       both[0].audit.reason_code == "not_compared", both[0].audit.reason_code)
+check("and the basis column says so in Arabic, because the price is real and "
+      "only the comparison behind it is missing",
+      "بدون مقارنة" in both[0].audit.pricing_basis, both[0].audit.pricing_basis)
 
-accepted = [Result("published", "2.5")]
-pipeline._restate_assumed_weight(accepted, {"weight_assumed": True, "category_id": "1"})
-check("CONTROL a published product is left alone",
-      accepted[0].audit.reason_code == "published")
+matched = [Result("matched", "2.5")]
+matched[0].audit.matched_platform = "Noon"
+pipeline._restate_uncompared(matched)
+check("CONTROL a row that DID match is never restated as uncompared",
+      matched[0].audit.reason_code == "matched", matched[0].audit.reason_code)
 
 print(f"\n{PASS} passed, {FAIL} failed")
 raise SystemExit(1 if FAIL else 0)

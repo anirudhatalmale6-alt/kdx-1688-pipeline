@@ -222,12 +222,15 @@ class AuditRecord:
     shipping_type: str = ""
     # 5 September. His rate card turns freight into part of the cost, so the
     # log has to show where each figure came from: a shipping charge derived
-    # from a stated size and one derived from a weight through an assumed
-    # density are not the same claim, and he must be able to tell them apart
-    # without reading the code.
+    # from a size the seller stated and one derived from a default carton are
+    # not the same claim, and he must be able to tell them apart without
+    # reading the code. volume_source is one of override / declared / family /
+    # default, and volume_note carries the box itself - "35x28x6cm (clothing)"
+    # - so a wrong number can be traced to a wrong box in one glance.
     freight_sar: str = ""
     volume_m3: str = ""
     volume_source: str = ""
+    volume_note: str = ""
 
     def as_dict(self) -> dict:
         return asdict(self)
@@ -236,6 +239,19 @@ class AuditRecord:
 # --------------------------------------------------------------------------
 # Individual rules
 # --------------------------------------------------------------------------
+
+def _volume_note(quote: dict) -> str:
+    """The box, plus a flag when a heavy product is riding on a guessed one.
+
+    Nothing is refused and no price moves for the flag - it exists so that the
+    handful of rows where a wrong box costs real money are visible in the file
+    he already reads, and can be answered with four numbers in dims.csv.
+    """
+    note = quote.get("evidence") or ""
+    if quote.get("wants_measuring"):
+        return f"{note} - يُفضّل قياسه يدوياً".strip()
+    return note
+
 
 def find_banned_term(product: Product) -> tuple[str, str] | None:
     """
@@ -390,7 +406,16 @@ class Engine:
             return freight.quote(weight_kg=variant.weight_kg, is_electrical=False)
         return freight.quote(text=product.searchable_text(),
                              weight_kg=variant.weight_kg,
-                             is_electrical=is_electrical(product))
+                             is_electrical=is_electrical(product),
+                             offer_id=product.offer_id,
+                             # A stated size is looked for everywhere, but the
+                             # default box is chosen from what the thing IS -
+                             # its category first, its title only if the
+                             # category names no family - and never from the
+                             # list of places its description says it can be
+                             # used.
+                             family_category=product.category_path,
+                             family_title=product.title_zh)
 
     def landed_cost_sar(self, variant: Variant, product: Product | None = None) -> Decimal:
         """
@@ -524,12 +549,23 @@ class Engine:
                                 requires_shipping, shipping_type)
 
         # Not found on any comparison platform.
-        if variant.weight_kg > LIGHT_MAX_KG:
-            return self._reject(
-                product, variant, "heavy_and_unmatched",
-                f"الوزن {variant.weight_kg} كجم أكبر من 2 كجم ولم يُعثر عليه في أي منصة مقارنة",
-                cost=cost, requires_shipping=requires_shipping, shipping_type=shipping_type,
-            )
+        #
+        # Until 5 September a heavy product stopped here unpublished, because
+        # there was no freight figure anywhere in the engine and pricing one
+        # from the goods alone would have sold the carriage for nothing. His
+        # rate card removed that hole, and he opened the gate himself the same
+        # day, in answer to the question put to him:
+        #
+        #   "نعّم أوافقك مع عدم ايقاف عملية المقارنة يعني العملية هي نفسها
+        #    التي في الشحن السريع اذا لم يحصل المنتج في التطبيقات الخمسة يبدا
+        #    النظام يجعل قيمة الشحن وهامش الربح"
+        #
+        # Note what he did NOT open. The comparison still runs on every product
+        # and a rival that is found still sets the price; this is only what
+        # happens when the five apps come back empty. And a heavy product with
+        # a rival price BELOW its landed cost is still refused above - that
+        # guard is about a rival we found, not about one we never had.
+        heavy_unmatched = variant.weight_kg > LIGHT_MAX_KG
 
         price, markup = marked_up_price(cost)
         if price < MIN_PRICE_SAR:
@@ -541,8 +577,12 @@ class Engine:
                 shipping_type=shipping_type,
             )
         basis = f"التكلفة زائد هامش {int(markup * 100)}%"
+        # Its own reason code so he can count the products this gate let
+        # through, and so the day he wants it shut again is one line, not an
+        # archaeology exercise over the audit file.
         return self._accept(product, variant, price, basis, cost, None,
-                            requires_shipping, shipping_type)
+                            requires_shipping, shipping_type,
+                            reason_code="margin_unmatched_heavy" if heavy_unmatched else "")
 
     # -- record builders ----------------------------------------------------
 
@@ -574,6 +614,7 @@ class Engine:
             freight_sar=str(quote["sar"]),
             volume_m3=str(quote["m3"]),
             volume_source=quote["source"],
+            volume_note=_volume_note(quote),
         )
         return PricingResult(variant, decision, audit, price)
 
@@ -604,5 +645,6 @@ class Engine:
             freight_sar=str(quote["sar"]),
             volume_m3=str(quote["m3"]),
             volume_source=quote["source"],
+            volume_note=_volume_note(quote),
         )
         return PricingResult(variant, Decision.REJECT, audit, None)

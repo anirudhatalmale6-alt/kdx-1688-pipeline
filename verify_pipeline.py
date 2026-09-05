@@ -350,14 +350,19 @@ def main() -> int:
     check("the outcome says the comparison did not run",
           untranslated.compared is False,
           "a Chinese title cannot match an English one, so the search is skipped openly")
-    check("and the heavy product is held back rather than published unpriced",
-          untranslated.results[0].decision == rules.Decision.REJECT,
-          str(untranslated.results[0].decision))
-    # The reason is "nobody looked", not "nothing was found". The engine's own
-    # heavy_and_unmatched reason reads, in Arabic, that the product was not
-    # found on any comparison platform - true after a search, a false statement
-    # before one, and the client reads this file to find out why his catalogue
-    # is short.
+    # Until 5 September this was a refusal. The gate he opened that day means a
+    # heavy unmatched product is published at cost plus freight plus margin -
+    # so what has to hold now is not that it was held back, but that its price
+    # is a real one and the row does not claim a search stood behind it.
+    check("the heavy product is published, at a price above its landed cost",
+          untranslated.results[0].decision == rules.Decision.PUBLISH
+          and untranslated.results[0].final_price_sar
+          > Decimal(untranslated.results[0].audit.cost_sar),
+          f"{untranslated.results[0].decision} "
+          f"{untranslated.results[0].audit.final_price_sar}")
+    # The reason is "nobody looked", not "nothing was found" - true after a
+    # search, a false statement before one, and the client reads this file to
+    # find out how his prices were set.
     check("with a reason that does not claim a search happened",
           untranslated.results[0].audit.reason_code == "not_compared",
           untranslated.results[0].audit.reason_code)
@@ -501,26 +506,42 @@ def main() -> int:
                                     price_cny=Decimal(price_cny), stock=9,
                                     weight_kg=Decimal("0.2"))])
 
+    # 5 September. The stone is no longer priced at 0.08 SAR, and not because
+    # of the floor: with his rate card inside the cost it now carries 6.11 SAR
+    # of its own carriage, and is published at what it actually costs to bring
+    # in. The floor stopped being the thing that catches this - which is worth
+    # a check of its own, because a guard that can no longer fire is a guard
+    # nobody should be relying on.
     engine = engine_with_floor("3")
     cheap = engine.evaluate(one_variant("0.12"), {})[0]
-    check("a product that would sell for pennies is not published",
-          cheap.decision == rules.Decision.REJECT
-          and cheap.audit.reason_code == "below_min_price", str(cheap.audit.reason_code))
-    check("and the reason names both numbers, in Arabic",
-          "الحد الأدنى" in cheap.audit.reason_ar, cheap.audit.reason_ar)
+    check("a penny product is now published at the cost of shipping it, not "
+          "refused for being cheap",
+          cheap.decision == rules.Decision.PUBLISH, str(cheap.audit.reason_code))
+    check("and its price covers its freight with the margin on top",
+          cheap.final_price_sar > Decimal(cheap.audit.freight_sar),
+          f"{cheap.final_price_sar} vs {cheap.audit.freight_sar}")
+    check("CONTROL the goods were genuinely worth pennies - it is the freight "
+          "that lifted it, not a repriced product",
+          Decimal(cheap.audit.cost_sar) - Decimal(cheap.audit.freight_sar)
+          < Decimal("0.10"),
+          f"{cheap.audit.cost_sar} - {cheap.audit.freight_sar}")
 
     dearer = engine.evaluate(one_variant("12.00"), {})[0]
     check("CONTROL an ordinary product is unaffected",
           dearer.decision == rules.Decision.PUBLISH, str(dearer.audit.reason_code))
 
-    # CONTROL: it is the client's number, not mine. Zero restores the old
-    # behaviour exactly.
+    # CONTROL: the floor is still his number and still in force - it simply
+    # sits far below anything a real freight charge can produce.
+    high = engine_with_floor("500")
+    refused = high.evaluate(one_variant("12.00"), {})[0]
+    check("CONTROL raising the floor rejects more, so the number is really in "
+          "force", refused.audit.reason_code == "below_min_price",
+          refused.audit.reason_code)
+    check("and the reason names both numbers, in Arabic",
+          "الحد الأدنى" in refused.audit.reason_ar, refused.audit.reason_ar)
     off = engine_with_floor("0")
     check("CONTROL KDX_MIN_PRICE_SAR=0 publishes what the arithmetic produces",
           off.evaluate(one_variant("0.12"), {})[0].decision == rules.Decision.PUBLISH)
-    higher = engine_with_floor("20")
-    check("CONTROL raising it rejects more, so the number is really in force",
-          higher.evaluate(one_variant("12.00"), {})[0].audit.reason_code == "below_min_price")
 
     # He answered on 2026-08-30: "اجعلها الحد الادنى 0.01". The floor stops a
     # zero and nothing else, which is what he asked for - a 0.08 SAR stone is

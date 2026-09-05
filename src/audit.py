@@ -47,6 +47,10 @@ COLUMNS = [
     "freight_sar",
     "volume_m3",
     "volume_source",
+    # Same rule again, same day: the box itself, appended after the three that
+    # were appended this morning. "35x28x6cm (clothing)" is what turns a
+    # shipping figure he disagrees with into a box he can correct.
+    "volume_note",
 ]
 
 REASONS_AR = {

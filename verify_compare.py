@@ -265,10 +265,18 @@ def main() -> int:
     print("9. with no match at all the engine falls back to margin")
     empty = compare.hits_for_product(compare.FixtureProvider(), product, "Something Else Entirely")
     fallback = engine.evaluate(product, empty)[0]
-    check("a heavy unmatched product is held back rather than guessed at",
-          fallback.decision == rules.Decision.REJECT
-          and fallback.audit.reason_code == "heavy_and_unmatched",
+    # 5 September. This used to be a refusal - a heavy product with no rival
+    # was held back, because there was no freight figure and pricing it from
+    # the goods alone would have given away the carriage. His rate card closed
+    # that hole and he opened the gate himself the same day.
+    check("a heavy unmatched product is now published at cost plus freight "
+          "plus margin",
+          fallback.decision == rules.Decision.PUBLISH
+          and fallback.audit.reason_code == "margin_unmatched_heavy",
           f"{fallback.decision} / {fallback.audit.reason_code}")
+    check("and its price still clears its landed cost, freight included",
+          fallback.final_price_sar > Decimal(fallback.audit.cost_sar),
+          f"{fallback.final_price_sar} vs {fallback.audit.cost_sar}")
 
     print("10. the recorded LIVE responses, and what they actually contain")
     # Both files are real SerpApi responses on the client's own key, kept so

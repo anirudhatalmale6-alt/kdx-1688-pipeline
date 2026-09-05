@@ -258,20 +258,29 @@ def main() -> int:
           empty_cache.get(BOILER) is None,
           "caching a non-answer would suppress the search for a week")
 
-    # The consequence the client needs to know before choosing a plan. A LIGHT
-    # product with no comparison is still published, priced by margin. A HEAVY
-    # one is not - his own rule is that a heavy product with no match is never
-    # published - so an exhausted search allowance does not merely change
-    # prices, it stops heavy products reaching the shop at all.
+    # The consequence the client needs to know before choosing a plan. It
+    # changed on 5 September, when he opened the heavy-unmatched gate: an
+    # exhausted allowance used to stop heavy products reaching the shop at all,
+    # and now it only changes their price - from a rival's minus his discount
+    # to his own cost plus freight plus margin. Both are published, and both
+    # rows have to say that nobody looked, because "no rival was found" and
+    # "no rival was sought" are different facts about his catalogue.
     light = starved.run_offer("104843239419")
     check("a light product still publishes, priced by margin",
-          light.published > 0 and light.results[0].audit.reason_code == "priced_by_margin",
-          light.results[0].audit.reason_code)
-    check("but a heavy one is held back, because it could not be matched",
-          heavy.published == 0, str(heavy.published))
-    check("and the audit says nobody looked, not that nothing was found",
+          light.published > 0, str(light.published))
+    check("and a heavy one publishes now too, at cost plus freight plus margin",
+          heavy.published > 0, str(heavy.published))
+    check("the audit says nobody looked, not that nothing was found",
           all(result.audit.reason_code == "not_compared" for result in heavy.results),
           str([result.audit.reason_code for result in heavy.results]))
+    check("and it says it on the light one as well, where the price also came "
+          "from a margin nobody checked against the market",
+          all(result.audit.reason_code == "not_compared" for result in light.results
+              if result.audit.decision in ("publish", "update")),
+          str([result.audit.reason_code for result in light.results]))
+    check("the basis column carries the same warning, in Arabic",
+          all("بدون مقارنة" in result.audit.pricing_basis for result in heavy.results),
+          str([result.audit.pricing_basis for result in heavy.results]))
     check("CONTROL: with the allowance intact that same product IS published",
           first.published > 0 and first.results[0].audit.reason_code != "not_compared",
           "the difference between the two runs is the search, nothing else")
