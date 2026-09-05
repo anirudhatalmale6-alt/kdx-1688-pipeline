@@ -112,10 +112,29 @@ def has_usable_weight(normalised: dict) -> bool:
     What does not count is the blanket light default. It sets weight_assumed
     with no category behind it, and it is the invented number this whole module
     exists to stop publishing.
+
+    5 SEPTEMBER - and this is his instruction, not a relaxation of his rule.
+    His objection on 3 September was to guessing which side of the 2 kg line a
+    product falls, because that decides what the customer is charged for
+    carriage. He has now answered that himself:
+
+        "وافعل وزن المنتج على الموجود في 1688 او وهمي اكثر من 10 kg حتى اكمل
+         اعداد الشحن المجاني من خلال لوحة التحكم"
+
+    A made-up figure over 10 kg is over his line, so an unweighed product is
+    filed as FREE shipping - the side where the customer is charged nothing -
+    and the carriage is in the price already, from the carton. The guess he
+    refused was one that could overcharge his customer. This one cannot.
+
+    Set KDX_VIRTUAL_WEIGHT_KG=0 and the check goes back to refusing, in one
+    restart, with no release.
     """
     if not normalised.get("weight_assumed"):
         return True
-    return bool(str(normalised.get("weight_category_id") or "").strip())
+    if bool(str(normalised.get("weight_category_id") or "").strip()):
+        return True
+    import mapping
+    return mapping.VIRTUAL_WEIGHT_KG > 0
 
 
 def missing_after_translation(enriched: dict) -> str | None:

@@ -117,13 +117,34 @@ check("a category answered with its own measurements - real",
 check("a number the client typed for the department - real",
       completeness.has_usable_weight(
           offer(weight_assumed=True, weight_category_id="6")))
-check("the blanket light default - NOT real, this is the one he refused",
-      not completeness.has_usable_weight(offer(weight_assumed=True)))
-check("and it rejects, naming the weight",
+# 5 September. The blanket default was the guess he refused on the 3rd,
+# because it decided what the customer pays for carriage. He then supplied the
+# guess himself - "او وهمي اكثر من 10 kg" - which lands on the free-shipping
+# side, where the customer pays nothing, and the carriage is in the price from
+# the carton. So it now publishes, and setting his number to 0 puts the
+# refusal back.
+check("with his virtual weight in force, an unweighed product is publishable",
+      completeness.has_usable_weight(offer(weight_assumed=True)))
+check("and nothing rejects it before the translator is even asked",
       completeness.missing_before_translation(
+          offer(weight_assumed=True, weight_kg=1.0)) is None)
+
+import mapping as mapping_module                                  # noqa: E402
+_kept = mapping_module.VIRTUAL_WEIGHT_KG
+mapping_module.VIRTUAL_WEIGHT_KG = Decimal("0")
+check("CONTROL his number set to zero restores the refusal he asked for on "
+      "3 September, in one setting",
+      not completeness.has_usable_weight(offer(weight_assumed=True))
+      and completeness.missing_before_translation(
           offer(weight_assumed=True, weight_kg=1.0)) == "no_weight")
-check("an empty category id does not count as a category having answered",
-      not completeness.has_usable_weight(offer(weight_assumed=True, weight_category_id="")))
+check("CONTROL and an empty category id still does not count as a category "
+      "having answered",
+      not completeness.has_usable_weight(offer(weight_assumed=True,
+                                               weight_category_id="")))
+mapping_module.VIRTUAL_WEIGHT_KG = _kept
+check("CONTROL back with his number, it publishes again - so it is the "
+      "setting doing the work, not the fixture",
+      completeness.has_usable_weight(offer(weight_assumed=True)))
 check("the Arabic for no_weight explains BOTH sources failed, not just the supplier",
       "المورّد" in completeness.reason_ar("no_weight")
       and "تصنيف" in completeness.reason_ar("no_weight"))
@@ -156,8 +177,9 @@ check("two names, spaces and all",
       completeness.missing_before_translation(
           offer(weight_assumed=True, images=[])) is None)
 del os.environ["KDX_COMPLETENESS_SKIP"]
-check("CONTROL the skip list really was what let it through",
-      completeness.missing_before_translation(offer(weight_assumed=True)) == "no_weight")
+check("CONTROL the skip list really was what let the PHOTO through",
+      completeness.missing_before_translation(
+          offer(weight_assumed=True, images=[])) == "no_photo")
 
 
 # --------------------------------------------------------------------------
