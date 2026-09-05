@@ -110,9 +110,15 @@ def _spread(values: list) -> Decimal:
 
 
 def hits_disagree(hits: list) -> bool:
-    """Do the rival prices contradict each other badly enough to refute the match?"""
-    eligible = [hit.price_sar for hit in hits if hit.match_score >= MATCH_THRESHOLD]
-    return _spread(eligible) > MAX_HIT_SPREAD
+    """
+    Is there no price in this set that another price stands near?
+
+    The question the audit reason answers, so it has to be asked the same way
+    cheapest_supported asks it - a row that says "rivals disagree" about a set
+    that did in fact price the product would be a lie in the file he reads.
+    """
+    eligible = [hit for hit in hits if hit.match_score >= MATCH_THRESHOLD]
+    return bool(eligible) and cheapest_supported(eligible) is None
 
 
 def variants_disagree(product) -> bool:
@@ -452,9 +458,52 @@ def best_match(hits: list, variant: Variant,
     ]
     if not eligible:
         return None
-    if _spread([hit.price_sar for hit in eligible]) > MAX_HIT_SPREAD:
-        return None
-    return min(eligible, key=lambda hit: hit.price_sar)
+    return cheapest_supported(eligible)
+
+
+def cheapest_supported(hits: list) -> CompetitorHit | None:
+    """
+    The cheapest rival price that another rival price stands near.
+
+    His instruction is to take the cheapest of the five apps, and that stays -
+    this only decides which rows are allowed to be "the cheapest".
+
+    WHY NOT A SPREAD BAR. The first version of this refused the whole set when
+    its prices spanned more than MAX_HIT_SPREAD. Measured against every rival
+    set the system has really collected - 66 offers that returned two or more
+    distinct prices - that is unshippable: the spreads run smoothly from 1.05x
+    to 41.48x with no gap anywhere to put a line in.
+
+        bar 1.5x  drops 59 of 66      bar 2.5x  drops 47 of 66
+        bar 2.0x  drops 52 of 66      bar 3.0x  drops 40 of 66
+
+    Any bar throws away most of the comparison he paid for, and no bar is
+    defensible over the one next to it. A threshold on that one number cannot
+    separate these cases, so the rule needs a second signal instead.
+
+    THE SECOND SIGNAL IS COMPANY. Several sellers of one product cluster; a
+    category listing has a long cheap tail of different things. So a price is
+    usable when at least one OTHER price sits within MAX_HIT_SPREAD of it, and
+    the cheapest such price wins. An isolated bottom row - 12.00 SAR under a
+    cluster at 110-115 - is not the same product being sold cheaply, it is a
+    different product, and it is exactly the row that would undercut our own
+    cost.
+
+    A set with a single price has nothing to be tested against and is taken as
+    it always was: refusing it would delete the ordinary case, where one app
+    out of five carries the item.
+    """
+    prices = sorted(hits, key=lambda hit: hit.price_sar)
+    if len(prices) == 1:
+        return prices[0]
+    for index, hit in enumerate(prices):
+        for other in prices[index + 1:]:
+            if other.price_sar <= hit.price_sar * MAX_HIT_SPREAD:
+                return hit
+        # Nothing above it is near it. If nothing below it was near it either -
+        # and nothing was, or we would have returned already - this row stands
+        # alone and the next one up gets its turn.
+    return None
 
 
 # --------------------------------------------------------------------------

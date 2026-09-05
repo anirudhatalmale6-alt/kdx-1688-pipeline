@@ -147,14 +147,36 @@ check("variants at one price still accept a product-scope hit",
 section("3. The rival prices refuting themselves")
 # --------------------------------------------------------------------------
 
-# Same one-price listing, but now the rivals disagree 4x among themselves.
+# Two prices, each standing alone: neither can be checked against the other, so
+# the set prices nothing.
 refuting = run(single, hits(["289.00", "1169.99"]))
-check("a contradictory rival set is not used",
+check("a rival set where nothing has company is not used",
       refuting[0].audit.matched_platform, "")
 check("and says so", refuting[0].audit.reason_code, "margin_rivals_disagree")
-check("hits_disagree agrees", rules.hits_disagree(hits(RIVALS)), True)
-check("and is quiet when they agree",
+
+# The rule is "cheapest price that another price stands near", NOT "cheapest".
+def picked(*prices):
+    got = rules.cheapest_supported(
+        [rules.CompetitorHit(platform="Amazon", price_sar=Decimal(p),
+                             match_score=Decimal("100")) for p in prices])
+    return str(got.price_sar) if got else "REFUSED"
+
+
+check("a lone cheap row under a cluster is skipped for the cluster",
+      picked("12.00", "110.00", "115.00"), "110.00")
+check("a single rival price is still used, as it always was",
+      picked("100.00"), "100.00")
+check("two prices that agree take the cheaper", picked("100.00", "120.00"), "100.00")
+check("two prices that do not are both refused", picked("100.00", "400.00"), "REFUSED")
+check("the puller's own set has company at the bottom",
+      picked(*RIVALS), "289.00")
+check("hits_disagree answers the same question",
+      rules.hits_disagree(hits(["100.00", "400.00"])), True)
+check("and is quiet when a price has company",
       rules.hits_disagree(hits(["100.00", "120.00"])), False)
+
+# So the puller is NOT saved by the price rule - it is saved by the listing
+# rule, and it matters that the test says which one did the work.
 check("variants_disagree reads the listing", rules.variants_disagree(puller()), True)
 check("and clears a listing sold at one price",
       rules.variants_disagree(puller(["140", "150"])), False)
@@ -163,11 +185,11 @@ check("and clears a listing sold at one price",
 os.environ["KDX_MAX_HIT_SPREAD"] = "99"
 import importlib                                            # noqa: E402
 importlib.reload(rules)
-check("raising KDX_MAX_HIT_SPREAD lets the contradictory set back in",
-      rules.hits_disagree([rules.CompetitorHit(platform="Amazon",
-                                               price_sar=Decimal(p),
-                                               match_score=Decimal("100"))
-                           for p in RIVALS]), False)
+check("raising KDX_MAX_HIT_SPREAD gives the isolated cheap row company again",
+      str(rules.cheapest_supported(
+          [rules.CompetitorHit(platform="Amazon", price_sar=Decimal(p),
+                               match_score=Decimal("100"))
+           for p in ("12.00", "110.00", "115.00")]).price_sar), "12.00")
 del os.environ["KDX_MAX_HIT_SPREAD"]
 importlib.reload(rules)
 check("and removing it restores the shipped bar", str(rules.MAX_HIT_SPREAD), "1.5")
