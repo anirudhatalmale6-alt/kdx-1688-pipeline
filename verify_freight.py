@@ -130,6 +130,33 @@ check("CONTROL clothing OPTIONS are not dimensions - 裙长 is a hem length, "
 check("CONTROL a stated size WINS over every default below it",
       freight.volume_m3("收纳箱 45x30x15cm")[1] == "declared")
 
+# 1072111096507, from the live run of 5 September: the seller states the size
+# of the OBJECT. 32 x 32 x 9 mm is a true measurement and not a parcel.
+volume, source, evidence = freight.volume_m3("挂锁 规格 32*32*9mm")
+check("a stated size smaller than any real parcel is lifted to the smallest "
+      "parcel, not shipped for one halala",
+      source == "declared" and close(volume, "0.00075", "0.0000001"),
+      f"{source} {volume}")
+check("and the row shows both numbers, so the lift is visible",
+      "32*32*9" in evidence and "15x10x5" in evidence, evidence)
+check("which is 0.76 SAR instead of 0.01",
+      close(freight.shipping_sar(volume, False), "0.76"),
+      str(freight.shipping_sar(volume, False)))
+check("CONTROL a stated size ABOVE the floor is untouched",
+      close(freight.volume_m3("收纳箱 45x30x15cm")[0], "0.02025", "0.0000001"))
+
+import tempfile as _tf                                              # noqa: E402
+_h = _tf.NamedTemporaryFile("w", suffix=".csv", delete=False, encoding="utf-8")
+_h.write("777,4,4,1\n")
+_h.close()
+_kept_file = freight.DIMS_FILE
+freight.DIMS_FILE = _h.name
+check("CONTROL a box HE types is never lifted - if he measured it, that is "
+      "the box",
+      close(freight.volume_m3("挂锁", offer_id="777")[0], "0.000016", "0.0000001"),
+      str(freight.volume_m3("挂锁", offer_id="777")[0]))
+freight.DIMS_FILE = _kept_file
+
 print("\n5. the default carton - his decision of 5 September, no kilograms in "
       "it anywhere")
 volume, source, evidence = freight.volume_m3("连衣裙 夏季新款")

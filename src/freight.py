@@ -164,6 +164,22 @@ FAMILY_BOXES_CM: list = [
     ("jewellery",  ("首饰", "饰品", "手链", "项链", "耳环", "戒指"),  15, 10, 5),   # 0.76
 ]
 
+# The smallest parcel a courier actually carries, in centimetres.
+#
+# Measured on the live run of 5 September 07:48. A seller who states a size
+# states the SIZE OF THE THING, not of the box it travels in: offer
+# 1072111096507 says "32*32*9mm", which is 0.0000092 m3 and one halala of
+# freight. 181 more rows came in at "14.5*8.5*5.5". Both are true measurements
+# of the object and neither is a parcel - nobody ships a 3 cm square in nothing.
+#
+# So a size READ FROM A LISTING is lifted to at least this. A size HE TYPES is
+# not: if he measures a box himself, that is the box.
+#
+# 15 x 10 x 5 cm = 0.00075 m3 = 0.76 SAR.
+MIN_PARCEL_CM = (_decimal_env("KDX_FREIGHT_MIN_L_CM", "15"),
+                 _decimal_env("KDX_FREIGHT_MIN_W_CM", "10"),
+                 _decimal_env("KDX_FREIGHT_MIN_H_CM", "5"))
+
 # A file he can put sizes in himself, one product per line, when a particular
 # box matters enough to measure:  offer_id,length_cm,width_cm,height_cm
 DIMS_FILE = os.environ.get("KDX_FREIGHT_DIMS_FILE", "/opt/kdx/dims.csv")
@@ -401,6 +417,11 @@ def volume_m3(text: str = "", offer_id: str = "", family_category: str = "",
 
     declared = dimensions_from_text(text) if text else None
     if declared:
+        floor = _box_m3(*MIN_PARCEL_CM)
+        if declared[0] < floor:
+            length, width, height = MIN_PARCEL_CM
+            return (floor, "declared",
+                    f"{declared[1]} -> {length}x{width}x{height}cm (أقل طرد)")
         return declared[0], "declared", declared[1]
 
     family = family_box(family_category, family_title or (
