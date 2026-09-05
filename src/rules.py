@@ -49,6 +49,83 @@ MARKUP_BANDS = [
 # Weight boundary that decides the shipping flag, in kilograms.
 LIGHT_MAX_KG = Decimal("2")
 
+# --------------------------------------------------------------------------
+# When one photograph is not evidence about one variant
+# --------------------------------------------------------------------------
+#
+# THE CLIENT'S REPORT, 5 September 2026, on offer 1078382952230 - an industrial
+# hydraulic bearing puller. Three complaints in three messages, and they are one
+# fault seen from three sides:
+#
+#   "هذا المنتج يحتوي على 10 صور للشراء بينما في متجرنا فقط 5"
+#   "لدينا في المتجر سعر موحد بينما هذا المنتج يحتوي على اكثر من سعر"
+#   "هذا المنتج ليس متوفر في امازون لقد قمت بفحصة والتاكد [...] الاسعار داخل
+#    امازون تتراوح بين 1000 الى 6000 ريال بينما سعر المنتج الحالي 283.22"
+#
+# WHAT THE AUDIT SHOWS. The listing has ten SKUs - 整体/分体 at 5, 10, 20, 30 and
+# 50 tonnes - costing between 78.15 and 641.91 SAR landed. Every one of the ten
+# was priced from ONE Amazon row at 289.00 SAR: five published at 283.22 and
+# five refused as selling at a loss. That is his "10 became 5" and his "one
+# price" in the same stroke.
+#
+# WHY. Two facts about the search, both measured in the stored comparison:
+#
+#   1. All ten SKUs share a single photograph on 1688 - the listing has one
+#      image and the tonnage is written in the option name, not shown. The
+#      picture search therefore runs once per PRODUCT (LENS_SCOPE=product), and
+#      its answer is handed to every variant with an empty variant tag.
+#   2. The five rival rows it returned are 289.00, 336.10, 521.55, 687.90 and
+#      1169.99 SAR - and all five are stamped match_score 100, because in the
+#      shopping stage a row inherits the picture's score rather than earning its
+#      own. A set of prices spanning 4.0x cannot all be the same product.
+#
+# So the photograph identified a KIND of tool, and the cheapest member of that
+# kind then priced a machine eight times its size. His rule from 28 August said
+# this in advance - "prohibited to cross the cheap 1688 variant with the
+# expensive rival" - and product-scope searching quietly broke it.
+#
+# TWO GUARDS, both failing to the margin, which is where he already agreed an
+# unmatched product should land:
+#
+#   * rival prices that disagree among themselves by more than MAX_HIT_SPREAD
+#     are not an identification, whatever score they carry;
+#   * an untagged (product-scope) hit may not price a listing whose own variants
+#     disagree by more than MAX_VARIANT_SPREAD - one photo, many prices, so the
+#     photo cannot say which one it found.
+#
+# 1.5 is deliberately loose. Genuine sellers of one item differ by tens of
+# percent; these differ by four hundred. A tighter bar would start throwing away
+# real matches, and the point is to catch the case where the evidence refutes
+# itself, not to require rival sellers to agree.
+MAX_HIT_SPREAD = Decimal(os.environ.get("KDX_MAX_HIT_SPREAD", "1.5"))
+MAX_VARIANT_SPREAD = Decimal(os.environ.get("KDX_MAX_VARIANT_SPREAD", "1.5"))
+
+
+def _spread(values: list) -> Decimal:
+    """Ratio of the largest to the smallest, or 1 when there is nothing to compare."""
+    usable = [Decimal(str(value)) for value in values if value and Decimal(str(value)) > 0]
+    if len(usable) < 2:
+        return Decimal("1")
+    return max(usable) / min(usable)
+
+
+def hits_disagree(hits: list) -> bool:
+    """Do the rival prices contradict each other badly enough to refute the match?"""
+    eligible = [hit.price_sar for hit in hits if hit.match_score >= MATCH_THRESHOLD]
+    return _spread(eligible) > MAX_HIT_SPREAD
+
+
+def variants_disagree(product) -> bool:
+    """
+    Does this listing sell things at prices too different for one photo to mean?
+
+    Read off the 1688 prices, before freight and before any margin, because it
+    is a question about what the seller is selling - a 5 tonne puller and a 50
+    tonne puller - and not about what we would charge for it.
+    """
+    return _spread([variant.price_cny for variant in getattr(product, "variants", [])
+                    if variant.stock > 0]) > MAX_VARIANT_SPREAD
+
 # The cheapest thing worth putting in a shop.
 #
 # Not one of the client's rules - it comes from looking at what the first real
@@ -347,21 +424,35 @@ def marked_up_price(cost_sar: Decimal) -> tuple[Decimal, Decimal]:
     raise AssertionError("unreachable: last band has no upper bound")
 
 
-def best_match(hits: list, variant: Variant) -> CompetitorHit | None:
+def best_match(hits: list, variant: Variant,
+               allow_untagged: bool = True) -> CompetitorHit | None:
     """
     Cheapest competitor offer that is genuinely the SAME variant.
 
-    Two guards the client asked for explicitly:
+    Three guards the client asked for, the third added on 5 September after he
+    found a hydraulic puller priced from the wrong machine:
       - only hits scoring >= 95 count as the same product;
       - a hit is only usable against the variant it was matched to, so the
-        cheap 1688 colour is never compared against an expensive rival colour.
+        cheap 1688 colour is never compared against an expensive rival colour;
+      - `allow_untagged=False` withdraws the licence product-scope hits have to
+        stand in for every variant. The caller decides, because whether one
+        photo can speak for ten options is a fact about the LISTING, not about
+        the hit - see variants_disagree.
+
+    And one guard on the evidence itself: rival prices that disagree by more
+    than MAX_HIT_SPREAD refute each other, so none of them is used. The
+    cheapest of a contradictory set is the worst possible choice - it is
+    exactly the row that undercuts our own cost.
     """
     eligible = [
         hit for hit in hits
         if hit.match_score >= MATCH_THRESHOLD
-        and (not hit.matched_variant or hit.matched_variant == variant.sku_id)
+        and (hit.matched_variant == variant.sku_id
+             or (allow_untagged and not hit.matched_variant))
     ]
     if not eligible:
+        return None
+    if _spread([hit.price_sar for hit in eligible]) > MAX_HIT_SPREAD:
         return None
     return min(eligible, key=lambda hit: hit.price_sar)
 
@@ -463,12 +554,19 @@ class Engine:
                 for variant in product.variants
             ]
 
+        # Asked once per listing, not once per variant: it is a property of the
+        # listing, and asking it per variant would let the answer differ between
+        # two options of the same product.
+        allow_untagged = not variants_disagree(product)
         return [
-            self._evaluate_variant(product, variant, hits_by_variant.get(variant.sku_id, []))
+            self._evaluate_variant(product, variant,
+                                   hits_by_variant.get(variant.sku_id, []),
+                                   allow_untagged=allow_untagged)
             for variant in product.variants
         ]
 
-    def _evaluate_variant(self, product: Product, variant: Variant, hits: list) -> PricingResult:
+    def _evaluate_variant(self, product: Product, variant: Variant, hits: list,
+                          allow_untagged: bool = True) -> PricingResult:
         if variant.stock <= 0:
             return self._reject(product, variant, "out_of_stock",
                                 "غير متوفر في 1688 - لا يتم النشر")
@@ -492,7 +590,18 @@ class Engine:
         # "ثم اجعل هامش الربح".
         cost = money(self.goods_cost_sar(variant) + quote["sar"])
         requires_shipping, shipping_type = shipping_flag(variant.weight_kg)
-        match = best_match(hits, variant)
+        match = best_match(hits, variant, allow_untagged=allow_untagged)
+        # Why the comparison was dropped, when it was dropped by one of the two
+        # 5-September guards rather than by nobody selling the thing. Kept apart
+        # in the audit so he can count them: "found nothing" and "found
+        # something that refuted itself" are different facts about his catalogue
+        # and he asked for the reason on every row.
+        refuted = ""
+        if match is None and hits:
+            if not allow_untagged and any(not hit.matched_variant for hit in hits):
+                refuted = "photo_not_variant"
+            elif hits_disagree(hits):
+                refuted = "rivals_disagree"
 
         if match:
             price, discount = undercut_price(match.price_sar)
@@ -577,12 +686,19 @@ class Engine:
                 shipping_type=shipping_type,
             )
         basis = f"التكلفة زائد هامش {int(markup * 100)}%"
+        if refuted == "photo_not_variant":
+            basis += " (صورة واحدة لعدة أسعار - لا تصلح للمقارنة)"
+        elif refuted == "rivals_disagree":
+            basis += " (أسعار المنافسين متضاربة - لم تُعتمد)"
         # Its own reason code so he can count the products this gate let
         # through, and so the day he wants it shut again is one line, not an
         # archaeology exercise over the audit file.
+        code = "margin_unmatched_heavy" if heavy_unmatched else ""
+        if refuted:
+            code = f"margin_{refuted}"
         return self._accept(product, variant, price, basis, cost, None,
                             requires_shipping, shipping_type,
-                            reason_code="margin_unmatched_heavy" if heavy_unmatched else "")
+                            reason_code=code)
 
     # -- record builders ----------------------------------------------------
 

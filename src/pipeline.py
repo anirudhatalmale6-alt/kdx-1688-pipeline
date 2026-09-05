@@ -162,6 +162,23 @@ def to_kdx_variants(results: list, terms: dict) -> list:
     return list(grouped.values())
 
 
+def _card_shipping(results: list) -> str:
+    """
+    The shipping flag for the product card, read off the options being sold.
+
+    Only published rows count: a refused option is not in the shop, so letting
+    it decide how the shop describes delivery would be describing something
+    nobody can buy. With nothing published the answer is empty, and
+    mapping.shipment_flag falls back to the weight exactly as before.
+    """
+    flags = [(result.audit.requires_shipping or "").strip().lower()
+             for result in results
+             if result.decision in (rules.Decision.PUBLISH, rules.Decision.UPDATE)]
+    if not flags:
+        return ""
+    return "yes" if "yes" in flags else "no"
+
+
 def _restate_uncompared(results: list) -> None:
     """
     Say so, in the audit, when a price was set without anyone comparing.
@@ -833,6 +850,12 @@ class Pipeline:
             variants=variants,
             description_ar=enriched.get("description_ar", ""),
             description_en=enriched.get("description_en", ""),
+            # The card's flag comes from the engine, and it is read off the
+            # options that are actually being published - the same set the card
+            # price comes from. "Fast if any of them is fast" is the lightest
+            # option deciding, which is exactly what weight_kg=min() above
+            # already does; stated here so the two cannot drift apart.
+            requires_shipping=_card_shipping(results),
         )
 
         # The photographs are checked here, on the way out, because his shop

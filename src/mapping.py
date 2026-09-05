@@ -79,6 +79,45 @@ def needs_shipment(weight_kg) -> bool:
     return Decimal(str(weight_kg)) <= LIGHT_MAX_KG
 
 
+# 🚨 5 September 2026, and the reason this indirection exists at all.
+#
+# The client sent three screenshots from his own shop: a Bluetooth tracker tag
+# at 16.22 SAR, a paper cup carrier at 16.16, a small wall lamp at 243.05 - all
+# three showing "توصيل مجاني" with 25-40 working days, the slow free channel.
+# His verdict: "انت تسحب منتجات صغيرة وتجعلها شحن مجاني [...] هذا العمل غير
+# صحيح وغير مقبول".
+#
+# He was right, and the audit file said the OPPOSITE. All three rows read
+# shipping_type=fast, because the audit records what the ENGINE decided from the
+# weight it resolved. The payload did not: it ran the placeholder weight - the
+# 10.5 kg he asked for on 5 September so his panel could configure free shipping
+# - back through needs_shipment(), and 10.5 kg is over the 2 kg line, so every
+# product 1688 never weighed went to his shop flagged heavy.
+#
+# ⭐⭐ The lesson worth more than the fix: MY OWN LOG WAS NOT EVIDENCE ABOUT
+# WHAT I SENT. Two places computed the same flag from two different numbers, and
+# the file I would have checked showed the right answer while the shop showed the
+# wrong one. The flag is now decided once, by the engine, and the payload is
+# handed the result - it is no longer able to reach a different verdict.
+#
+# The placeholder itself is unchanged and still sent in the weight field, which
+# is what he actually asked for. It fills a field. It no longer decides one.
+def shipment_flag(requires_shipping: str, weight_kg=None) -> bool:
+    """
+    The flag KDX renders, taken from the engine's own shipping decision.
+
+    `requires_shipping` is the audit's own column - "yes" fast, "no" free. When
+    a caller has no engine decision to offer, the weight is used exactly as
+    before, so every existing call site keeps its behaviour.
+    """
+    flag = (requires_shipping or "").strip().lower()
+    if flag in ("yes", "true", "fast"):
+        return True
+    if flag in ("no", "false", "free"):
+        return False
+    return needs_shipment(weight_kg if weight_kg is not None else 0)
+
+
 def weight_to_send(weight_kg, assumed: bool = False) -> Decimal:
     """The figure that goes in the payload: measured if it exists, else his."""
     if assumed:
@@ -120,7 +159,8 @@ def _money(value) -> float:
     return float(Decimal(str(value)).quantize(Decimal("0.01")))
 
 
-def variant_block(variants, weight_assumed: bool = False) -> list:
+def variant_block(variants, weight_assumed: bool = False,
+                  requires_shipping: str = "") -> list:
     """
     One entry per photo, because that is the unit KDX will render: an image with
     its own price under it.
@@ -158,7 +198,13 @@ def variant_block(variants, weight_assumed: bool = False) -> list:
                 # read one of them.
                 sent = weight_to_send(size["weight"], weight_assumed)
                 entry["weight"] = float(sent)
-                entry["needs_shipment"] = needs_shipment(sent)
+                # And the same rule about the FLAG: a real weight decides for
+                # itself, a placeholder never does. Without the engine's verdict
+                # the size would fall back to 10.5 kg and go free-shipping while
+                # the product card above it said fast.
+                entry["needs_shipment"] = (
+                    shipment_flag(requires_shipping, size["weight"])
+                    if weight_assumed else needs_shipment(sent))
             sizes.append(entry)
 
         # A variant with no size axis still has to carry a price of its own,
@@ -192,7 +238,8 @@ def to_kdx_product(*, offer_id: str, name_ar: str, name_en: str, name_original: 
                    price_sar=None, weight_kg, images: list, sizes=None, variants=None,
                    main_category: dict | None = None, sub_category: dict | None = None,
                    description_ar: str = "", description_en: str = "",
-                   product_url: str = "", weight_assumed: bool = False) -> dict:
+                   product_url: str = "", weight_assumed: bool = False,
+                   requires_shipping: str = "") -> dict:
     """
     Build one product in the client's schema.
 
@@ -214,7 +261,7 @@ def to_kdx_product(*, offer_id: str, name_ar: str, name_en: str, name_original: 
     if not name_en:
         raise ValueError("name_en is required by KDX")
 
-    block = variant_block(variants, weight_assumed)
+    block = variant_block(variants, weight_assumed, requires_shipping)
     if block:
         card_price = min(entry["price_min"] for entry in block)
         highest = max(entry["price_max"] for entry in block)
@@ -254,11 +301,11 @@ def to_kdx_product(*, offer_id: str, name_ar: str, name_en: str, name_original: 
         "price_min": card_price,
         "price_max": highest,
         "sizes": flat_sizes,
-        # The same number the flag is decided from, so the two can never
-        # disagree in his shop: a product marked fast delivery and priced from a
-        # heavier weight would overcharge, and the reverse undercharges.
+        # The weight field carries his placeholder when nobody weighed the
+        # thing; the FLAG comes from the engine. See shipment_flag - letting the
+        # placeholder decide the flag is the bug he reported on 5 September.
         WEIGHT_FIELD: float(weight_to_send(weight_kg, weight_assumed)),
-        "needs_shipment": needs_shipment(weight_to_send(weight_kg, weight_assumed)),
+        "needs_shipment": shipment_flag(requires_shipping, weight_kg),
     }
     if block:
         product["variants"] = block
@@ -290,4 +337,7 @@ def from_pricing(result, product, enriched: dict, *, main_category=None,
         sub_category=sub_category,
         description_ar=enriched.get("description_ar", ""),
         description_en=enriched.get("description_en", ""),
+        # The engine's own verdict, the same string the audit column carries,
+        # so the row in his log and the flag in his shop are one decision.
+        requires_shipping=getattr(result.audit, "requires_shipping", ""),
     )
