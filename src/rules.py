@@ -128,6 +128,10 @@ def variants_disagree(product) -> bool:
     Read off the 1688 prices, before freight and before any margin, because it
     is a question about what the seller is selling - a 5 tonne puller and a 50
     tonne puller - and not about what we would charge for it.
+
+    Kept because it is the plain reading of the fault and it is what the client
+    was told. It is NOT what the engine acts on: see photo_covers_listing,
+    which asks the same question without a threshold in it.
     """
     return _spread([variant.price_cny for variant in getattr(product, "variants", [])
                     if variant.stock > 0]) > MAX_VARIANT_SPREAD
@@ -571,6 +575,61 @@ class Engine:
             return goods
         return money(goods + self.freight_quote(product, variant)["sar"])
 
+    def photo_covers_listing(self, product: Product, hits_by_variant: dict) -> bool:
+        """
+        May one product-scope rival price stand for every option in this listing?
+
+        Only when the price it would set covers the DEAREST option's landed
+        cost. That is not a threshold anyone chose - it is his own loss guard,
+        asked once for the listing instead of once per option.
+
+        WHY NOT A SPREAD BAR HERE EITHER. The first version refused any listing
+        whose options differed by more than 1.5x. Measured over the 95 offers
+        that have really received a rival price, that bar drops 41 of them, and
+        the option-spread distribution is as smooth as the rival-price one - no
+        cliff at 1.5, or 2, or 3. It would have deleted nearly half the
+        comparison he paid for on a number picked by feel.
+
+        This asks the question the fault actually poses, and it has exactly one
+        answer that means "the photograph is talking about a subset":
+
+            min(option costs) < undercut price <= max(option costs)
+
+        The price can pay for some of the options and not the others, so it
+        cannot be about all of them. The hydraulic puller lands here on its own
+        numbers: 289.00 SAR undercut to 283.22, against options costing 78.15 to
+        641.91 landed.
+
+        The two cases on either side are deliberately left alone, because
+        neither is an attribution problem and one of them is his rule:
+
+          price above every option   nothing sells at a loss, so which option
+                                     the rival was does not change any outcome.
+          price below every option   every option would be a loss. That is his
+                                     loss guard of 3 September - light products
+                                     fall through to the margin, heavy ones stop
+                                     - and it must keep firing, with the rival
+                                     still on the row as the evidence for it.
+                                     Withdrawing the hit here would silently
+                                     publish heavy products he asked to refuse.
+
+        A listing whose search returned nothing untagged is unaffected, and so
+        is one whose options all cost the same.
+        """
+        untagged = [hit for lst in (hits_by_variant or {}).values() for hit in lst
+                    if not hit.matched_variant and hit.match_score >= MATCH_THRESHOLD]
+        if not untagged:
+            return True
+        chosen = cheapest_supported(untagged)
+        if chosen is None:
+            return True                 # nothing usable anyway; best_match will refuse
+        price, _ = undercut_price(chosen.price_sar)
+        costs = [self.landed_cost_sar(variant, product)
+                 for variant in product.variants if variant.stock > 0]
+        if not costs:
+            return True
+        return not (min(costs) < price <= max(costs))
+
     def evaluate(self, product: Product, hits_by_variant: dict) -> list:
         """Run every variant of one listing through the rules."""
         banned = find_banned_term(product)
@@ -606,7 +665,7 @@ class Engine:
         # Asked once per listing, not once per variant: it is a property of the
         # listing, and asking it per variant would let the answer differ between
         # two options of the same product.
-        allow_untagged = not variants_disagree(product)
+        allow_untagged = self.photo_covers_listing(product, hits_by_variant)
         return [
             self._evaluate_variant(product, variant,
                                    hits_by_variant.get(variant.sku_id, []),

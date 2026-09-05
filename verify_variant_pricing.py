@@ -137,11 +137,35 @@ check("a lone variant is still priced from the cheapest rival",
 check("and undercuts it by the client's percentage",
       str(agreed[0].final_price_sar), "97.00")
 
-# Several variants that cost the SAME are still one product to a photograph.
+# Several variants that cost the SAME are still one product to a photograph -
+# provided the price the photo brings back covers them. 140 CNY of goods plus
+# 44.89 SAR of freight is 123.04 landed, so the rivals have to sit above that;
+# a 100.00 SAR rival would be refused here and rightly, because undercutting it
+# to 97.00 is a loss on every one of the four.
 same = puller(["140"] * 4)
-agreed_multi = run(same, hits(["100.00", "105.00"]))
+agreed_multi = run(same, hits(["300.00", "320.00"]))
 check("variants at one price still accept a product-scope hit",
       {r.audit.matched_platform for r in agreed_multi}, {"Amazon"})
+# And a rival UNDER every option's cost is not an attribution problem at all -
+# it is his loss guard of 3 September, which must go on firing untouched. The
+# rival stays on the row as the evidence, and the price comes from the margin.
+# These options are 12 kg, so the heavy half of that rule applies: they stop.
+# That is the case this fix must NOT swallow - withdrawing the hit here would
+# have published, at a margin, the very products he asked to refuse.
+below = run(same, hits(["100.00", "105.00"]))
+check("a rival under every option is still his loss case, not this one",
+      {r.audit.reason_code for r in below}, {"would_sell_at_loss"})
+check("and the rival stays on the row as the evidence",
+      {r.audit.matched_platform for r in below}, {"Amazon"})
+
+light_same = rules.Product(
+    offer_id="901", title_zh="棉袜", description_zh="", images=["a.jpg"],
+    category_path="服饰 > 袜", variants=[
+        rules.Variant(sku_id=f"L{i}", attributes={}, price_cny=Decimal("40"),
+                      stock=9, weight_kg=Decimal("0.3")) for i in range(3)])
+light_below = run(light_same, hits(["20.00", "21.00"]))
+check("and a LIGHT one falls through to the margin, as he ruled",
+      {r.audit.reason_code for r in light_below}, {"margin_rivals_below_cost"})
 
 # --------------------------------------------------------------------------
 section("3. The rival prices refuting themselves")
@@ -180,6 +204,22 @@ check("and is quiet when a price has company",
 check("variants_disagree reads the listing", rules.variants_disagree(puller()), True)
 check("and clears a listing sold at one price",
       rules.variants_disagree(puller(["140", "150"])), False)
+
+# The rule the engine actually applies has no threshold in it: 289.00 undercut
+# to 283.22 cannot cover an option costing 641.91 landed.
+by_sku = {v.sku_id: hits() for v in puller().variants}
+check("the photo does not cover the puller's dearest option",
+      ENGINE.photo_covers_listing(puller(), by_sku), False)
+covered = puller(["140", "150"])
+check("and does cover a listing whose options it can all pay for",
+      ENGINE.photo_covers_listing(covered,
+                                  {v.sku_id: hits(["300.00", "320.00"])
+                                   for v in covered.variants}), True)
+check("a listing nobody found is unaffected",
+      ENGINE.photo_covers_listing(puller(), {}), True)
+check("and so is one whose hits are all variant-tagged",
+      ENGINE.photo_covers_listing(
+          puller(), {v.sku_id: hits(variant=v.sku_id) for v in puller().variants}), True)
 
 # The threshold is a setting, not a belief.
 os.environ["KDX_MAX_HIT_SPREAD"] = "99"
