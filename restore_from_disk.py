@@ -38,6 +38,7 @@ axis and more than one thing to buy. See MIRROR_OPTIONS_AS_SIZES in mapping.
 from __future__ import annotations
 
 import argparse
+import csv
 import glob
 import json
 import os
@@ -64,6 +65,12 @@ ALWAYS_EXCLUDE = ("1080706692044",)
 OFFER_IN_URL = re.compile(r"offer/(\d+)")
 BARE_ID = re.compile(r"^\s*(\d{6,})\s*$")
 
+# The audit writes "2026-09-05 16:33:07" - a space, not the T of an ISO
+# timestamp. Comparing against "2026-09-05T16:28" matched nothing at all and
+# looked exactly like "the batch published nothing", which is the worst kind of
+# wrong answer here: it would have let the same products go out twice.
+AUDIT_TIME = "%Y-%m-%d %H:%M:%S"
+
 
 def excluded_ids(path: str) -> set:
     """
@@ -82,6 +89,32 @@ def excluded_ids(path: str) -> set:
             if bare:
                 ids.add(bare.group(1))
     return ids
+
+
+def published_since(moment: str, logs_dir: str) -> set:
+    """
+    Offers the running batch has already put into the shop since `moment`.
+
+    The batch keeps publishing while this runs, and every product it publishes
+    is written to out/ - so without this, the restore would find that file and
+    send the same offer a second time, doubling its options in a shop that had
+    it right. `moment` is compared as text against the audit's own format, so
+    it must be written the same way: "2026-09-05 16:28", never with a T.
+    """
+    if not moment:
+        return set()
+    if "T" in moment:
+        raise SystemExit("the audit writes 'YYYY-MM-DD HH:MM:SS' with a space, "
+                         f"not a T: {moment!r} would match nothing")
+    offers = set()
+    for path in sorted(glob.glob(os.path.join(logs_dir, "audit-*.csv"))):
+        with open(path, encoding="utf-8-sig", newline="") as handle:
+            for row in csv.DictReader(handle):
+                if (row.get("decision") or "").strip() == "publish" \
+                        and (row.get("timestamp") or "") >= moment:
+                    offers.add((row.get("offer_id") or "").strip())
+    offers.discard("")
+    return offers
 
 
 def payload_files(out_dir: str) -> dict:
@@ -163,6 +196,11 @@ def main() -> int:
                         help="send everything, including the review list")
     parser.add_argument("--state", default="",
                         help="file of offers already restored, for resuming")
+    parser.add_argument("--not-published-since", default="", metavar="'YYYY-MM-DD HH:MM'",
+                        help="leave out whatever the running batch has already put "
+                             "in the shop since this moment, so it is not sent twice")
+    parser.add_argument("--logs-dir", default="",
+                        help="where the audit CSVs are (default: the run's logs/)")
     args = parser.parse_args()
 
     here = os.path.dirname(os.path.abspath(__file__))
@@ -180,15 +218,21 @@ def main() -> int:
 
     files = payload_files(out_dir)
     already = done_already(state)
+    fresh = published_since(args.not_published_since,
+                            args.logs_dir or paths.state_path("logs", "KDX_LOGS_DIR"))
 
     chosen = [(offer_id, path) for offer_id, path in sorted(files.items())
-              if offer_id not in skip and offer_id not in already]
+              if offer_id not in skip and offer_id not in already
+              and offer_id not in fresh]
     if args.limit:
         chosen = chosen[:args.limit]
 
     print(f"payloads on disk      {len(files)}")
     print(f"on the review list    {len(files.keys() & skip)}  (not sent)")
     print(f"already restored      {len(files.keys() & already)}")
+    if args.not_published_since:
+        print(f"published just now    {len(files.keys() & fresh)}  (the batch has "
+              f"these, sending them again would double their options)")
     print(f"to send now           {len(chosen)}")
 
     products = []

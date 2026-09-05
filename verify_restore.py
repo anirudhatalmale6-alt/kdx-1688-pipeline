@@ -130,6 +130,42 @@ check("...and it is the later PRICE that would be sent",
       restore.load(files["111"])["price"], 12.0)
 
 # --------------------------------------------------------------------------
+section("What the batch published a minute ago must not be sent again")
+# --------------------------------------------------------------------------
+
+logs = os.path.join(work, "logs")
+os.makedirs(logs, exist_ok=True)
+with open(os.path.join(logs, "audit-2026-09.csv"), "w",
+          encoding="utf-8-sig", newline="") as handle:
+    handle.write("timestamp,offer_id,sku_id,decision,reason_code\n")
+    handle.write("2026-09-05 15:00:00,111,a,publish,\n")      # before the moment
+    handle.write("2026-09-05 16:31:07,222,b,publish,\n")      # after it
+    handle.write("2026-09-05 16:32:00,999,c,reject,mains_spec\n")
+
+check("only what was published after the moment counts",
+      restore.published_since("2026-09-05 16:28", logs), {"222"})
+check("a rejected offer is not in the shop, so not excluded",
+      "999" in restore.published_since("2026-09-05 16:28", logs), False)
+check("no moment given, nothing excluded", restore.published_since("", logs), set())
+
+# The audit writes a space. An ISO 'T' silently matches nothing, which reads as
+# "the batch published nothing" and would send those products a second time.
+try:
+    restore.published_since("2026-09-05T16:28", logs)
+    check("a T-shaped timestamp is refused, not quietly empty", "allowed", "refused")
+except SystemExit:
+    check("a T-shaped timestamp is refused, not quietly empty", "refused", "refused")
+
+guarded = subprocess.run(
+    [sys.executable, os.path.join(HERE, "restore_from_disk.py"),
+     "--out-dir", out, "--state", os.path.join(work, "dry2.txt"), "--no-exclude",
+     "--logs-dir", logs, "--not-published-since", "2026-09-05 16:28"],
+    capture_output=True, text=True, env=dict(os.environ), timeout=120)
+check("the freshly published one drops out of the run",
+      "to send now           1" in guarded.stdout, True)
+check("...and the run says why", "would double their options" in guarded.stdout, True)
+
+# --------------------------------------------------------------------------
 section("Mirroring options into sizes[] is a copy, and a narrow one")
 # --------------------------------------------------------------------------
 
