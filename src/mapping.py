@@ -159,6 +159,46 @@ def _money(value) -> float:
     return float(Decimal(str(value)).quantize(Decimal("0.01")))
 
 
+# OPTIONS AS SIZES, 5 September.
+#
+# Every purchase option lives in variants[], with its own price and its own
+# photo. But variants is outside the ten fields his importer validates - it is
+# accepted by the HTTP layer and then discarded - and an offer with no size axis
+# sends sizes[] empty. So a front end reading only sizes has nowhere to find the
+# fifty prices, and shows one.
+#
+# Mirroring the options into sizes[] with their prices renders them on his
+# current site with no change on his side. It is off until he asks for it,
+# because turning it on changes what every sizeless product looks like, and he
+# is reviewing the current shape right now.
+#
+# Narrow on purpose: only when there is no real size axis. Where sizes exist
+# they keep travelling without prices, exactly as they do today.
+MIRROR_OPTIONS_AS_SIZES = os.environ.get(
+    "KDX_OPTIONS_AS_SIZES", "").strip().lower() in ("1", "yes", "true", "on")
+
+
+def options_as_sizes(block: list) -> list:
+    """
+    One sizes[] entry per purchase option, carrying that option's own price.
+
+    The option's name is its own - the colour/style text 1688 hangs the photo
+    off - so the shop lists what the buyer actually chooses between.
+    """
+    entries = []
+    for entry in block:
+        if not entry["original"]:
+            continue
+        item = {"original": entry["original"],
+                "en": entry["en"],
+                "ar": entry["ar"],
+                "price": entry["price_min"]}
+        if entry.get("image"):
+            item["image"] = entry["image"]
+        entries.append(item)
+    return entries
+
+
 def variant_block(variants, weight_assumed: bool = False,
                   requires_shipping: str = "") -> list:
     """
@@ -279,6 +319,9 @@ def to_kdx_product(*, offer_id: str, name_ar: str, name_en: str, name_original: 
                 name = {"original": size["original"], "en": size["en"], "ar": size["ar"]}
                 if name not in flat_sizes:
                     flat_sizes.append(name)
+        # No size axis and more than one thing to buy: see MIRROR_OPTIONS_AS_SIZES.
+        if MIRROR_OPTIONS_AS_SIZES and not flat_sizes and len(block) > 1:
+            flat_sizes = options_as_sizes(block)
     else:
         if price_sar is None:
             raise ValueError("price_sar is required when no variants are given")
